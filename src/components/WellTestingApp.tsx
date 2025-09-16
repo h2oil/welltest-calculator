@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Download, Upload, Trash2 } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 import DanielOrificeCalculator from './calculators/DanielOrificeCalculator';
 import ChokeRateCalculator from './calculators/ChokeRateCalculator';
@@ -20,6 +22,15 @@ const WellTestingApp = () => {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
   const [activeTab, setActiveTab] = useState('daniel-orifice');
   const { toast } = useToast();
+  const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
 
   // Load stored data on mount
   useEffect(() => {
@@ -121,6 +132,29 @@ const WellTestingApp = () => {
     });
   };
 
+  // Handle sign out
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render app if no user
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top Navigation */}
@@ -134,6 +168,10 @@ const WellTestingApp = () => {
               <Badge variant="secondary" className="text-xs">
                 Professional Calculator Suite
               </Badge>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>{user.email}</span>
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -181,6 +219,16 @@ const WellTestingApp = () => {
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>Clear</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="flex items-center space-x-1"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
                 </Button>
               </div>
             </div>

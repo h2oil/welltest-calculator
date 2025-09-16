@@ -23,8 +23,20 @@ export const fahrenheitToCelsius = (fahrenheit: number): number =>
 export const celsiusToKelvin = (celsius: number): number => 
   celsius + 273.15;
 
+export const kelvinToCelsius = (kelvin: number): number => 
+  kelvin - 273.15;
+
+export const fahrenheitToKelvin = (fahrenheit: number): number => 
+  (fahrenheit - 32) * 5/9 + 273.15;
+
+export const kelvinToFahrenheit = (kelvin: number): number => 
+  (kelvin - 273.15) * 9/5 + 32;
+
 export const fahrenheitToRankine = (fahrenheit: number): number => 
   fahrenheit + 459.67;
+
+export const rankineToFahrenheit = (rankine: number): number => 
+  rankine - 459.67;
 
 // Pressure Conversions
 export const psiaToKPa = (psia: number): number => 
@@ -44,6 +56,31 @@ export const kPaToBar = (kPa: number): number =>
 
 export const barToKPa = (bar: number): number => 
   bar * 100;
+
+// Extended Pressure Conversions
+export const psiaToInwg = (psia: number): number => 
+  psia * 27.7076;
+
+export const inwgToPsia = (inwg: number): number => 
+  inwg / 27.7076;
+
+export const psigToPsia = (psig: number): number => 
+  psig + 14.7;
+
+export const psiaToPsig = (psia: number): number => 
+  psia - 14.7;
+
+export const barToInwg = (bar: number): number => 
+  bar * 401.865;
+
+export const inwgToBar = (inwg: number): number => 
+  inwg / 401.865;
+
+export const kPaToInwg = (kPa: number): number => 
+  kPa * 4.01865;
+
+export const inwgToKPa = (inwg: number): number => 
+  inwg / 4.01865;
 
 // Length Conversions
 export const inchesToMm = (inches: number): number => 
@@ -134,14 +171,26 @@ export const convertValue = (
 ): number => {
   const conversions: Record<string, Record<string, (val: number) => number>> = {
     temperature: {
-      'C_to_F': celsiusToFahrenheit,
-      'F_to_C': fahrenheitToCelsius,
+      'degC_to_degF': celsiusToFahrenheit,
+      'degF_to_degC': fahrenheitToCelsius,
+      'degC_to_K': celsiusToKelvin,
+      'K_to_degC': kelvinToCelsius,
+      'degF_to_K': fahrenheitToKelvin,
+      'K_to_degF': kelvinToFahrenheit,
     },
     pressure: {
       'psia_to_kPa': psiaToKPa,
       'kPa_to_psia': kPaToPsia,
       'psia_to_bar': psiaToBar,
       'bar_to_psia': barToPsia,
+      'psia_to_inwg': psiaToInwg,
+      'inwg_to_psia': inwgToPsia,
+      'psig_to_psia': psigToPsia,
+      'psia_to_psig': psiaToPsig,
+      'bar_to_inwg': barToInwg,
+      'inwg_to_bar': inwgToBar,
+      'kPa_to_inwg': kPaToInwg,
+      'inwg_to_kPa': inwgToKPa,
     },
     length: {
       'in_to_mm': inchesToMm,
