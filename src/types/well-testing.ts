@@ -145,6 +145,102 @@ export interface APIGravityOutputs {
   notes: string[];
 }
 
+export interface FlareGasComposition {
+  ch4: number; // Methane mole %
+  c2h6: number; // Ethane mole %
+  c3h8: number; // Propane mole %
+  iC4: number; // Iso-butane mole %
+  nC4: number; // Normal butane mole %
+  c5Plus: number; // C5+ mole %
+  h2: number; // Hydrogen mole %
+  n2: number; // Nitrogen mole %
+  co2: number; // Carbon dioxide mole %
+  h2s: number; // Hydrogen sulfide mole %
+}
+
+export interface FlareRadiationInputs {
+  // Operating data
+  gasRate: number; // MMSCFD or MSCMD
+  flareTipHeight: number; // m or ft
+  windSpeed: number; // m/s or mph
+  windDirection: number; // degrees from north
+  
+  // Flare geometry
+  tipDiameter: number; // m or ft
+  tipPressure: number; // kPa or psia
+  tipTemperature: number; // K or °F
+  
+  // Gas properties
+  gasComposition: FlareGasComposition;
+  
+  // Optional parameters
+  emissiveFraction?: number; // Override calculated value
+  atmosphericHumidity: number; // % relative humidity
+  ambientTemperature: number; // K or °F
+  noiseReferenceDistance: number; // m or ft
+  
+  // Contour customization
+  radiationContours: number[]; // kW/m² values
+  noiseContours: number[]; // dB(A) values
+}
+
+export interface FlareRadiationOutputs {
+  // Derived properties
+  molecularWeight: number; // kg/kmol
+  lhv: number; // MJ/kg
+  hhv: number; // MJ/kg
+  gamma: number; // Cp/Cv ratio
+  compressibilityFactor: number; // Z
+  density: number; // kg/m³
+  viscosity: number; // Pa·s
+  chRatio: number; // C/H ratio
+  sootIndex: number; // Soot index surrogate
+  
+  // Flare performance
+  emissiveFraction: number; // χ
+  exitVelocity: number; // m/s
+  momentumFlux: number; // kg·m/s²
+  buoyancyParameter: number; // Dimensionless
+  
+  // Flame geometry
+  flameLength: number; // m
+  flameTilt: number; // degrees
+  radiantCenter: {
+    x: number; // m
+    y: number; // m
+    z: number; // m
+  };
+  
+  // Radiation results
+  radiationFootprint: {
+    contours: Array<{
+      level: number; // kW/m²
+      points: Array<{x: number; y: number; z: number}>;
+      maxDistance: number; // m
+    }>;
+    maxRadiation: number; // kW/m²
+    maxDistance: number; // m
+  };
+  
+  // Noise results
+  noiseFootprint: {
+    contours: Array<{
+      level: number; // dB(A)
+      points: Array<{x: number; y: number; z: number}>;
+      maxDistance: number; // m
+    }>;
+    maxNoise: number; // dB(A)
+    maxDistance: number; // m
+  };
+  
+  // Atmospheric conditions
+  atmosphericTransmissivity: number; // τ
+  airAbsorption: number; // dB/m
+  
+  warnings: string[];
+  notes: string[];
+}
+
 export interface CalculationSession {
   unitSystem: UnitSystem;
   standardConditions: StandardConditions;
@@ -154,5 +250,6 @@ export interface CalculationSession {
   gor: GORInputs;
   velocity: VelocityInputs;
   apiGravity: APIGravityInputs;
+  flareRadiation: FlareRadiationInputs;
   notes: Record<string, string>;
 }

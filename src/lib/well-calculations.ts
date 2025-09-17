@@ -20,6 +20,9 @@ import type {
   VelocityOutputs,
   APIGravityInputs,
   APIGravityOutputs,
+  FlareRadiationInputs,
+  FlareRadiationOutputs,
+  FlareGasComposition,
 } from '@/types/well-testing';
 
 // Daniel Orifice Calculations
@@ -500,4 +503,363 @@ export const calculateAPIGravity = (inputs: APIGravityInputs): APIGravityOutputs
     warnings,
     notes
   };
+};
+
+// Flare Radiation and Noise Calculations (API Standard 521)
+export const calculateFlareRadiation = (inputs: FlareRadiationInputs): FlareRadiationOutputs => {
+  const warnings: string[] = [];
+  const notes: string[] = [];
+
+  // Validate inputs
+  if (inputs.gasRate <= 0) {
+    throw new Error('Gas rate must be greater than 0');
+  }
+  if (inputs.tipDiameter <= 0) {
+    throw new Error('Tip diameter must be greater than 0');
+  }
+  if (inputs.tipPressure <= 0) {
+    throw new Error('Tip pressure must be greater than 0');
+  }
+  if (inputs.tipTemperature <= 0) {
+    throw new Error('Tip temperature must be greater than 0');
+  }
+
+  // Calculate derived gas properties
+  const gasProps = calculateGasProperties(inputs.gasComposition);
+  
+  // Calculate emissive fraction
+  const emissiveFraction = inputs.emissiveFraction || calculateEmissiveFraction(inputs.gasComposition);
+  
+  // Calculate exit velocity and momentum
+  const exitVelocity = calculateExitVelocity(inputs, gasProps);
+  const momentumFlux = gasProps.density * exitVelocity * exitVelocity;
+  const buoyancyParameter = calculateBuoyancyParameter(inputs, gasProps);
+  
+  // Calculate flame geometry
+  const flameGeometry = calculateFlameGeometry(inputs, exitVelocity, momentumFlux, buoyancyParameter);
+  
+  // Calculate atmospheric conditions
+  const atmosphericTransmissivity = calculateAtmosphericTransmissivity(inputs);
+  const airAbsorption = calculateAirAbsorption(inputs);
+  
+  // Calculate radiation footprint
+  const radiationFootprint = calculateRadiationFootprint(
+    inputs, 
+    flameGeometry, 
+    emissiveFraction, 
+    atmosphericTransmissivity,
+    gasProps
+  );
+  
+  // Calculate noise footprint
+  const noiseFootprint = calculateNoiseFootprint(
+    inputs, 
+    exitVelocity, 
+    gasProps, 
+    airAbsorption
+  );
+
+  // Add warnings and notes
+  if (emissiveFraction > 0.4) {
+    warnings.push('High emissive fraction - verify gas composition and soot formation');
+  }
+  if (exitVelocity > 200) {
+    warnings.push('High exit velocity - check for potential noise issues');
+  }
+  if (flameGeometry.length > 100) {
+    warnings.push('Very long flame - verify flame stability and radiation calculations');
+  }
+
+  notes.push(`Emissive fraction calculated from gas composition: ${emissiveFraction.toFixed(3)}`);
+  notes.push(`Flame length: ${flameGeometry.length.toFixed(1)} m, Tilt: ${flameGeometry.tilt.toFixed(1)}°`);
+  notes.push(`Maximum radiation: ${radiationFootprint.maxRadiation.toFixed(1)} kW/m²`);
+  notes.push(`Maximum noise: ${noiseFootprint.maxNoise.toFixed(1)} dB(A)`);
+
+  return {
+    // Derived properties
+    molecularWeight: gasProps.molecularWeight,
+    lhv: gasProps.lhv,
+    hhv: gasProps.hhv,
+    gamma: gasProps.gamma,
+    compressibilityFactor: gasProps.compressibilityFactor,
+    density: gasProps.density,
+    viscosity: gasProps.viscosity,
+    chRatio: gasProps.chRatio,
+    sootIndex: gasProps.sootIndex,
+    
+    // Flare performance
+    emissiveFraction,
+    exitVelocity,
+    momentumFlux,
+    buoyancyParameter,
+    
+    // Flame geometry
+    flameLength: flameGeometry.length,
+    flameTilt: flameGeometry.tilt,
+    radiantCenter: flameGeometry.radiantCenter,
+    
+    // Results
+    radiationFootprint,
+    noiseFootprint,
+    
+    // Atmospheric conditions
+    atmosphericTransmissivity,
+    airAbsorption,
+    
+    warnings,
+    notes
+  };
+};
+
+// Helper functions for flare calculations
+const calculateGasProperties = (composition: FlareGasComposition) => {
+  // Molecular weights (kg/kmol)
+  const mw = {
+    ch4: 16.04, c2h6: 30.07, c3h8: 44.10, iC4: 58.12, nC4: 58.12,
+    c5Plus: 72.15, h2: 2.02, n2: 28.01, co2: 44.01, h2s: 34.08
+  };
+  
+  // LHV values (MJ/kg)
+  const lhv = {
+    ch4: 50.0, c2h6: 47.5, c3h8: 46.4, iC4: 45.6, nC4: 45.6,
+    c5Plus: 44.8, h2: 120.0, n2: 0, co2: 0, h2s: 15.4
+  };
+  
+  // HHV values (MJ/kg)
+  const hhv = {
+    ch4: 55.5, c2h6: 51.9, c3h8: 50.4, iC4: 49.5, nC4: 49.5,
+    c5Plus: 48.6, h2: 142.0, n2: 0, co2: 0, h2s: 16.5
+  };
+  
+  // Calculate mixture properties
+  const totalMoles = Object.values(composition).reduce((sum, val) => sum + val, 0);
+  if (Math.abs(totalMoles - 100) > 0.1) {
+    throw new Error('Gas composition must sum to 100%');
+  }
+  
+  const molecularWeight = Object.entries(composition).reduce((sum, [key, mol]) => 
+    sum + (mol / 100) * mw[key as keyof typeof mw], 0);
+  
+  const lhvMix = Object.entries(composition).reduce((sum, [key, mol]) => 
+    sum + (mol / 100) * lhv[key as keyof typeof lhv], 0);
+  
+  const hhvMix = Object.entries(composition).reduce((sum, [key, mol]) => 
+    sum + (mol / 100) * hhv[key as keyof typeof hhv], 0);
+  
+  // Calculate C/H ratio
+  const carbonAtoms = (composition.ch4 * 1 + composition.c2h6 * 2 + composition.c3h8 * 3 + 
+    composition.iC4 * 4 + composition.nC4 * 4 + composition.c5Plus * 5) / 100;
+  
+  const hydrogenAtoms = (composition.ch4 * 4 + composition.c2h6 * 6 + composition.c3h8 * 8 + 
+    composition.iC4 * 10 + composition.nC4 * 10 + composition.c5Plus * 12 + 
+    composition.h2 * 2) / 100;
+  
+  const chRatio = carbonAtoms / hydrogenAtoms;
+  
+  // Soot index surrogate (higher for heavier hydrocarbons)
+  const sootIndex = (composition.c2h6 * 0.1 + composition.c3h8 * 0.2 + 
+    composition.iC4 * 0.3 + composition.nC4 * 0.3 + composition.c5Plus * 0.4) / 100;
+  
+  // Estimate gamma (Cp/Cv) - simplified correlation
+  const gamma = 1.3 + 0.1 * (composition.h2 / 100) - 0.05 * (composition.co2 / 100);
+  
+  // Estimate compressibility factor Z - simplified correlation
+  const z = 0.9 + 0.1 * (composition.h2 / 100) - 0.05 * (composition.co2 / 100);
+  
+  return {
+    molecularWeight,
+    lhv: lhvMix,
+    hhv: hhvMix,
+    gamma,
+    compressibilityFactor: z,
+    density: 0, // Will be calculated with pressure/temperature
+    viscosity: 0, // Will be calculated with pressure/temperature
+    chRatio,
+    sootIndex
+  };
+};
+
+const calculateEmissiveFraction = (composition: FlareGasComposition): number => {
+  const gasProps = calculateGasProperties(composition);
+  
+  // Base emissive fraction from C/H ratio
+  const chBase = Math.max(0.10, Math.min(0.40, 0.10 + 0.20 * (gasProps.chRatio - 0.25)));
+  
+  // Correction for CO2 and H2S
+  const co2Correction = 0.15 * (composition.co2 / 100);
+  const h2sCorrection = 0.10 * (composition.h2s / 100);
+  
+  const emissiveFraction = Math.max(0.15, Math.min(0.45, chBase * (1 + co2Correction + h2sCorrection)));
+  
+  return emissiveFraction;
+};
+
+const calculateExitVelocity = (inputs: FlareRadiationInputs, gasProps: any): number => {
+  // Convert standard flow to actual flow
+  const standardFlow = inputs.gasRate * 1e6; // Convert MMSCFD to SCFD
+  const actualFlow = standardFlow * (STANDARD_CONDITIONS.pressure_psia / inputs.tipPressure) * 
+    (inputs.tipTemperature / STANDARD_CONDITIONS.temperature_F) * gasProps.compressibilityFactor;
+  
+  // Calculate tip area
+  const tipArea = Math.PI * Math.pow(inputs.tipDiameter / 2, 2);
+  
+  // Calculate exit velocity
+  const exitVelocity = actualFlow / (tipArea * 3600); // Convert to m/s
+  
+  return exitVelocity;
+};
+
+const calculateBuoyancyParameter = (inputs: FlareRadiationInputs, gasProps: any): number => {
+  // Calculate density at tip conditions
+  const R = 8314.47; // Universal gas constant J/(kmol·K)
+  const density = (inputs.tipPressure * 1000 * gasProps.molecularWeight) / 
+    (R * inputs.tipTemperature * gasProps.compressibilityFactor);
+  
+  // Air density at ambient conditions (simplified)
+  const airDensity = 1.225; // kg/m³ at 15°C, 1 atm
+  
+  // Buoyancy parameter
+  const buoyancyParam = (density - airDensity) / airDensity;
+  
+  return buoyancyParam;
+};
+
+const calculateFlameGeometry = (inputs: FlareRadiationInputs, exitVelocity: number, momentumFlux: number, buoyancyParam: number) => {
+  // Flame length correlation (API 521)
+  const flameLength = 0.2 * Math.pow(momentumFlux / 1000, 0.5) * Math.pow(1 + buoyancyParam, 0.5);
+  
+  // Flame tilt correlation
+  const windEffect = Math.pow(inputs.windSpeed / exitVelocity, 0.5);
+  const flameTilt = Math.min(45, 30 * windEffect);
+  
+  // Radiant center location (simplified)
+  const radiantCenter = {
+    x: (flameLength / 2) * Math.sin(flameTilt * Math.PI / 180),
+    y: (flameLength / 2) * Math.cos(flameTilt * Math.PI / 180),
+    z: inputs.flareTipHeight + (flameLength / 2) * Math.cos(flameTilt * Math.PI / 180)
+  };
+  
+  return {
+    length: flameLength,
+    tilt: flameTilt,
+    radiantCenter
+  };
+};
+
+const calculateAtmosphericTransmissivity = (inputs: FlareRadiationInputs): number => {
+  // Simplified atmospheric transmissivity calculation
+  const humidity = inputs.atmosphericHumidity / 100;
+  const temperature = inputs.ambientTemperature;
+  
+  // Basic correlation for atmospheric transmissivity
+  const transmissivity = 0.9 - 0.1 * humidity - 0.05 * Math.max(0, (temperature - 288) / 50);
+  
+  return Math.max(0.5, Math.min(1.0, transmissivity));
+};
+
+const calculateAirAbsorption = (inputs: FlareRadiationInputs): number => {
+  // Air absorption coefficient (dB/m) - simplified
+  const humidity = inputs.atmosphericHumidity / 100;
+  const temperature = inputs.ambientTemperature;
+  
+  const absorption = 0.01 + 0.005 * humidity + 0.002 * Math.max(0, (temperature - 288) / 50);
+  
+  return absorption;
+};
+
+const calculateRadiationFootprint = (
+  inputs: FlareRadiationInputs, 
+  flameGeometry: any, 
+  emissiveFraction: number, 
+  transmissivity: number,
+  gasProps: any
+) => {
+  const contours = inputs.radiationContours.map(level => {
+    const points: Array<{x: number; y: number; z: number}> = [];
+    const maxDistance = calculateMaxRadiationDistance(level, flameGeometry, emissiveFraction, transmissivity, gasProps);
+    
+    // Generate contour points (simplified circular approximation)
+    const numPoints = 36;
+    for (let i = 0; i < numPoints; i++) {
+      const angle = (i * 2 * Math.PI) / numPoints;
+      const distance = maxDistance * (0.5 + 0.5 * Math.cos(angle));
+      points.push({
+        x: flameGeometry.radiantCenter.x + distance * Math.cos(angle),
+        y: flameGeometry.radiantCenter.y + distance * Math.sin(angle),
+        z: 0 // Ground level
+      });
+    }
+    
+    return {
+      level,
+      points,
+      maxDistance
+    };
+  });
+  
+  const maxRadiation = Math.max(...contours.map(c => c.level));
+  const maxDistance = Math.max(...contours.map(c => c.maxDistance));
+  
+  return {
+    contours,
+    maxRadiation,
+    maxDistance
+  };
+};
+
+const calculateMaxRadiationDistance = (level: number, flameGeometry: any, emissiveFraction: number, transmissivity: number, gasProps: any): number => {
+  // Simplified radiation calculation
+  const radiantIntensity = emissiveFraction * gasProps.lhv * 1000; // Convert to kW
+  const distance = Math.sqrt(radiantIntensity * transmissivity / (4 * Math.PI * level));
+  
+  return distance;
+};
+
+const calculateNoiseFootprint = (
+  inputs: FlareRadiationInputs, 
+  exitVelocity: number, 
+  gasProps: any, 
+  airAbsorption: number
+) => {
+  // Sound power level calculation (simplified)
+  const soundPowerLevel = 120 + 10 * Math.log10(gasProps.density * Math.pow(exitVelocity, 4) / 1e12);
+  
+  const contours = inputs.noiseContours.map(level => {
+    const points: Array<{x: number; y: number; z: number}> = [];
+    const maxDistance = calculateMaxNoiseDistance(level, soundPowerLevel, airAbsorption);
+    
+    // Generate contour points (simplified circular approximation)
+    const numPoints = 36;
+    for (let i = 0; i < numPoints; i++) {
+      const angle = (i * 2 * Math.PI) / numPoints;
+      const distance = maxDistance * (0.5 + 0.5 * Math.cos(angle));
+      points.push({
+        x: distance * Math.cos(angle),
+        y: distance * Math.sin(angle),
+        z: 0 // Ground level
+      });
+    }
+    
+    return {
+      level,
+      points,
+      maxDistance
+    };
+  });
+  
+  const maxNoise = Math.max(...contours.map(c => c.level));
+  const maxDistance = Math.max(...contours.map(c => c.maxDistance));
+  
+  return {
+    contours,
+    maxNoise,
+    maxDistance
+  };
+};
+
+const calculateMaxNoiseDistance = (level: number, soundPowerLevel: number, airAbsorption: number): number => {
+  // Spherical spreading with air absorption
+  const distance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20);
+  
+  return distance;
 };
