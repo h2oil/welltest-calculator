@@ -1,0 +1,16 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Oil well derrick -->
+  <path d="M16 2L20 8H12L16 2Z" fill="#1f2937"/>
+  <path d="M12 8H20V26H12V8Z" fill="#374151"/>
+  <path d="M14 8H18V26H14V8Z" fill="#4b5563"/>
+  
+  <!-- Oil pump -->
+  <circle cx="16" cy="28" r="2" fill="#6b7280"/>
+  <path d="M16 26V30" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Oil drops -->
+  <circle cx="8" cy="20" r="1" fill="#f59e0b"/>
+  <circle cx="24" cy="18" r="1" fill="#f59e0b"/>
+  <circle cx="10" cy="24" r="0.5" fill="#f59e0b"/>
+  <circle cx="22" cy="22" r="0.5" fill="#f59e0b"/>
+</svg>

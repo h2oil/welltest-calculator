@@ -1,73 +1,69 @@
-# Welcome to your Lovable project
+# H2Oil Well Testing Calculator
 
-## Project info
+A professional well testing calculator suite designed for the oil and gas industry. This application provides comprehensive tools for well testing calculations including orifice flow, choke rates, critical flow conditions, gas-oil ratios, and more.
 
-**URL**: https://lovable.dev/projects/406be990-b2e4-4b62-a056-b5dede29e517
+## Features
 
-## How can I edit this code?
+- **Daniel Orifice Calculator** - Gas flow through orifices
+- **Choke Rate Calculator** - Well choke flow rates  
+- **Critical Flow Calculator** - Critical flow conditions
+- **GOR Calculator** - Gas-Oil Ratio calculations
+- **Gas Velocity Calculator** - Gas velocity in pipes
+- **Unit Converter** - Comprehensive unit conversions
+- **Google OAuth Authentication** - Secure user authentication
+- **Data Export/Import** - Save and share calculation sessions
+- **Dual Unit Systems** - Metric and Field units support
 
-There are several ways of editing your application.
+## Technology Stack
 
-**Use Lovable**
+- **Frontend**: React 18 + TypeScript + Vite
+- **UI Components**: Radix UI + Tailwind CSS
+- **Authentication**: Supabase Auth with Google OAuth
+- **Database**: Supabase PostgreSQL
+- **Deployment**: Vercel-ready
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/406be990-b2e4-4b62-a056-b5dede29e517) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
 
-**Use your preferred IDE**
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/loloil123/wellspring-calculator.git
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# Navigate to the project directory
+cd wellspring-calculator
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# Install dependencies
+npm install
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
+Create a `.env.local` file:
+```
+VITE_APP_URL=http://localhost:8081
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Available Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Deployment
 
-## What technologies are used for this project?
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions to Vercel.
 
-This project is built with:
+## Contributing
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+This is a professional tool for the oil and gas industry. For feature requests or bug reports, please create an issue in the repository.
 
-## How can I deploy this project?
+## License
 
-Simply open [Lovable](https://lovable.dev/projects/406be990-b2e4-4b62-a056-b5dede29e517) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Professional use license for oil and gas industry applications.
