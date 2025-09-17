@@ -754,24 +754,31 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
                     </Button>
                   </div>
                   
-                  {show2D && outputs && (
-                    <Flare2DViewer
-                      flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
-                      tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
-                      flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
-                      flameTilt={outputs.flameTilt}
-                      windSpeed={convertFromSI(inputs.windSpeed, perFieldUnits.windSpeed)}
-                      windDirection={inputs.windDirection}
-                      radiationContours={outputs.radiationFootprint.contours}
-                      noiseContours={outputs.noiseFootprint.contours}
-                      emissiveFraction={outputs.emissiveFraction}
-                      exitVelocity={outputs.exitVelocity}
-                      unitSystem={unitSystem}
-                      onExportPNG={handleExportPNG}
-                      onExportCSV={handleExportCSV}
-                      onExportJSON={handleExportJSON}
-                    />
-                  )}
+                  {show2D && outputs && (() => {
+                    console.log('Flare2DViewer props:', {
+                      radiationContours: outputs.radiationFootprint?.contours?.length || 0,
+                      noiseContours: outputs.noiseFootprint?.contours?.length || 0,
+                      outputs: outputs
+                    });
+                    return (
+                      <Flare2DViewer
+                        flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
+                        tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
+                        flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
+                        flameTilt={outputs.flameTilt}
+                        windSpeed={convertFromSI(inputs.windSpeed, perFieldUnits.windSpeed)}
+                        windDirection={inputs.windDirection}
+                        radiationContours={outputs.radiationFootprint?.contours || []}
+                        noiseContours={outputs.noiseFootprint?.contours || []}
+                        emissiveFraction={outputs.emissiveFraction}
+                        exitVelocity={outputs.exitVelocity}
+                        unitSystem={unitSystem}
+                        onExportPNG={handleExportPNG}
+                        onExportCSV={handleExportCSV}
+                        onExportJSON={handleExportJSON}
+                      />
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
