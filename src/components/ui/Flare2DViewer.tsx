@@ -111,23 +111,70 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.fillStyle = '#f8f9fa';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
+    // Draw grid with meter measurements
     if (showGrid) {
       ctx.strokeStyle = '#e9ecef';
       ctx.lineWidth = 0.5;
-      const gridSize = 20 * scale;
-      for (let x = 0; x < canvas.width; x += gridSize) {
+      ctx.font = '10px Arial';
+      ctx.fillStyle = '#666';
+      ctx.textAlign = 'center';
+      
+      // Calculate grid spacing based on zoom level
+      const baseGridSize = 50; // 50m base grid
+      const gridSize = baseGridSize * scale;
+      const gridSpacing = Math.max(20, Math.min(100, gridSize)); // Min 20px, max 100px
+      
+      // Draw vertical grid lines
+      for (let x = centerX % gridSpacing; x < canvas.width; x += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
+        
+        // Add distance labels on x-axis
+        if (showLabels && x !== centerX) {
+          const distance = Math.abs((x - centerX) / scale);
+          if (distance > 0 && distance % 50 === 0) { // Every 50m
+            ctx.fillText(
+              `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              x, canvas.height - 5
+            );
+          }
+        }
       }
-      for (let y = 0; y < canvas.height; y += gridSize) {
+      
+      // Draw horizontal grid lines
+      for (let y = centerY % gridSpacing; y < canvas.height; y += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
+        
+        // Add distance labels on y-axis
+        if (showLabels && y !== centerY) {
+          const distance = Math.abs((y - centerY) / scale);
+          if (distance > 0 && distance % 50 === 0) { // Every 50m
+            ctx.save();
+            ctx.translate(10, y);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(
+              `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              0, 0
+            );
+            ctx.restore();
+          }
+        }
       }
+      
+      // Draw center crosshairs
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX, 0);
+      ctx.lineTo(centerX, canvas.height);
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(canvas.width, centerY);
+      ctx.stroke();
     }
 
     // Draw radiation contours
@@ -309,23 +356,70 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.fillStyle = '#f8f9fa';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
+    // Draw grid with meter measurements
     if (showGrid) {
       ctx.strokeStyle = '#e9ecef';
       ctx.lineWidth = 0.5;
-      const gridSize = 20 * scale;
-      for (let x = 0; x < canvas.width; x += gridSize) {
+      ctx.font = '10px Arial';
+      ctx.fillStyle = '#666';
+      ctx.textAlign = 'center';
+      
+      // Calculate grid spacing based on zoom level
+      const baseGridSize = 50; // 50m base grid
+      const gridSize = baseGridSize * scale;
+      const gridSpacing = Math.max(20, Math.min(100, gridSize)); // Min 20px, max 100px
+      
+      // Draw vertical grid lines
+      for (let x = centerX % gridSpacing; x < canvas.width; x += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
+        
+        // Add distance labels on x-axis
+        if (showLabels && x !== centerX) {
+          const distance = Math.abs((x - centerX) / scale);
+          if (distance > 0 && distance % 50 === 0) { // Every 50m
+            ctx.fillText(
+              `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              x, canvas.height - 5
+            );
+          }
+        }
       }
-      for (let y = 0; y < canvas.height; y += gridSize) {
+      
+      // Draw horizontal grid lines
+      for (let y = 0; y < canvas.height; y += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
+        
+        // Add height labels on y-axis
+        if (showLabels) {
+          const height = Math.abs((groundY - y) / scale);
+          if (height > 0 && height % 25 === 0) { // Every 25m height
+            ctx.save();
+            ctx.translate(10, y);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(
+              `${(height * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              0, 0
+            );
+            ctx.restore();
+          }
+        }
       }
+      
+      // Draw center crosshairs
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX, 0);
+      ctx.lineTo(centerX, canvas.height);
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(canvas.width, groundY);
+      ctx.stroke();
     }
 
     // Draw ground
@@ -553,6 +647,27 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           </Button>
         </div>
         
+        <div className="flex gap-2 items-center">
+          <span className="text-sm text-muted-foreground">Zoom:</span>
+          <Button
+            onClick={() => setZoom(prev => Math.max(0.1, prev * 0.8))}
+            variant="outline"
+            size="sm"
+          >
+            -
+          </Button>
+          <span className="text-sm font-mono w-16 text-center">
+            {(zoom * 100).toFixed(0)}%
+          </span>
+          <Button
+            onClick={() => setZoom(prev => Math.min(5, prev * 1.25))}
+            variant="outline"
+            size="sm"
+          >
+            +
+          </Button>
+        </div>
+        
         <div className="flex gap-2">
           <Button onClick={onExportPNG} variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
@@ -601,8 +716,17 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         </Card>
       )}
 
-      {/* Two View Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Instructions */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="pt-4">
+          <div className="text-sm text-blue-800">
+            <strong>Navigation:</strong> Mouse wheel to zoom • Click and drag to pan • Hover over contours for details
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Two View Layout - Stacked Vertically */}
+      <div className="space-y-6">
         {/* Top View */}
         <Card>
           <CardHeader className="pb-2">
@@ -612,7 +736,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-96 border rounded-lg relative overflow-hidden">
+            <div className="w-full h-[500px] border rounded-lg relative overflow-hidden">
               <canvas
                 ref={topViewRef}
                 className="w-full h-full cursor-move"
@@ -633,7 +757,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-96 border rounded-lg relative overflow-hidden">
+            <div className="w-full h-[500px] border rounded-lg relative overflow-hidden">
               <canvas
                 ref={sideViewRef}
                 className="w-full h-full cursor-move"
