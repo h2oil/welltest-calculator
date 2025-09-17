@@ -56,8 +56,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const [hoveredContour, setHoveredContour] = useState<{type: 'radiation' | 'noise', level: number, distance: number} | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
-  const [topZoom, setTopZoom] = useState(0.5); // Default to 100m view (200m / 0.5 = 100m visible)
-  const [sideZoom, setSideZoom] = useState(0.5); // Default to 100m view
+  const [topZoom, setTopZoom] = useState(1.0); // Default to 100m view (-50m to +50m)
+  const [sideZoom, setSideZoom] = useState(1.0); // Default to 100m view (-50m to +50m)
   const [topPan, setTopPan] = useState({ x: 0, y: 0 });
   const [sidePan, setSidePan] = useState({ x: 0, y: 0 });
   const [topViewMode, setTopViewMode] = useState<'heat' | 'noise'>('heat');
@@ -168,17 +168,6 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.moveTo(x, 0);
         ctx.lineTo(x, displayHeight);
         ctx.stroke();
-        
-        // Add distance labels on x-axis
-        if (showLabels && x !== centerX) {
-          const distance = Math.abs((x - centerX) / scale);
-          if (distance > 0 && distance % 10 === 0 && distance <= 200) { // Every 10m, max 200m
-            ctx.fillText(
-              `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
-              x, displayHeight - 5
-            );
-          }
-        }
       }
       
       // Draw horizontal grid lines
@@ -187,16 +176,35 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.moveTo(0, y);
         ctx.lineTo(displayWidth, y);
         ctx.stroke();
+      }
+      
+      // Draw grid labels every 10m
+      if (showLabels) {
+        const visibleRange = 50 / topZoom; // 50m visible range
+        const labelStep = 10; // 10m steps
         
-        // Add distance labels on y-axis
-        if (showLabels && y !== centerY) {
-          const distance = Math.abs((y - centerY) / scale);
-          if (distance > 0 && distance % 10 === 0 && distance <= 200) { // Every 10m, max 200m
+        // X-axis labels
+        for (let distance = -visibleRange; distance <= visibleRange; distance += labelStep) {
+          if (distance === 0) continue; // Skip center line
+          const x = centerX + (distance * scale);
+          if (x >= 0 && x <= displayWidth) {
+            ctx.fillText(
+              `${(Math.abs(distance) * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              x, displayHeight - 5
+            );
+          }
+        }
+        
+        // Y-axis labels
+        for (let distance = -visibleRange; distance <= visibleRange; distance += labelStep) {
+          if (distance === 0) continue; // Skip center line
+          const y = centerY - (distance * scale);
+          if (y >= 0 && y <= displayHeight) {
             ctx.save();
             ctx.translate(10, y);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText(
-              `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              `${(Math.abs(distance) * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
               0, 0
             );
             ctx.restore();
@@ -490,17 +498,6 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.moveTo(x, 0);
         ctx.lineTo(x, displayHeight);
         ctx.stroke();
-        
-        // Add distance labels on x-axis
-        if (showLabels && x !== centerX) {
-          const distance = Math.abs((x - centerX) / scale);
-          if (distance > 0 && distance % 10 === 0 && distance <= 200) { // Every 10m, max 200m
-            ctx.fillText(
-              `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
-              x, displayHeight - 5
-            );
-          }
-        }
       }
       
       // Draw horizontal grid lines
@@ -509,11 +506,30 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.moveTo(0, y);
         ctx.lineTo(displayWidth, y);
         ctx.stroke();
+      }
+      
+      // Draw grid labels every 10m
+      if (showLabels) {
+        const visibleRange = 50 / sideZoom; // 50m visible range
+        const labelStep = 10; // 10m steps
         
-        // Add height labels on y-axis
-        if (showLabels) {
-          const height = Math.abs((groundY - y) / scale);
-          if (height > 0 && height % 10 === 0 && height <= 200) { // Every 10m height, max 200m
+        // X-axis labels (distance from center)
+        for (let distance = -visibleRange; distance <= visibleRange; distance += labelStep) {
+          if (distance === 0) continue; // Skip center line
+          const x = centerX + (distance * scale);
+          if (x >= 0 && x <= displayWidth) {
+            ctx.fillText(
+              `${(Math.abs(distance) * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              x, displayHeight - 5
+            );
+          }
+        }
+        
+        // Y-axis labels (height from ground)
+        for (let height = 0; height <= visibleRange; height += labelStep) {
+          if (height === 0) continue; // Skip ground line
+          const y = groundY - (height * scale);
+          if (y >= 0 && y <= displayHeight) {
             ctx.save();
             ctx.translate(10, y);
             ctx.rotate(-Math.PI / 2);
