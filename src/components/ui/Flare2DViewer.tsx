@@ -62,7 +62,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const [sidePan, setSidePan] = useState({ x: 0, y: 0 });
   const [topViewMode, setTopViewMode] = useState<'heat' | 'noise'>('heat');
   const [sideViewMode, setSideViewMode] = useState<'heat' | 'noise'>('heat');
-  const [selectedContours, setSelectedContours] = useState<number[]>([0, 1, 2]); // Default to first 3 contours
+  const [selectedRadiationContours, setSelectedRadiationContours] = useState<number[]>([0, 1, 2]); // Default to first 3 radiation contours
+  const [selectedNoiseContours, setSelectedNoiseContours] = useState<number[]>([0, 1, 2]); // Default to first 3 noise contours
   const [customContourValues, setCustomContourValues] = useState<number[]>([]);
   const { toast } = useToast();
 
@@ -227,7 +228,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     if (topViewMode === 'heat') {
       // Draw radiation contours (filter by selected contours)
       radiationData.forEach((contour, index) => {
-        if (!selectedContours.includes(index)) return;
+        if (!selectedRadiationContours.includes(index)) return;
         // Color gradient from red (high) to blue (low) matching reference image
         const colors = [
           'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
@@ -313,7 +314,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     } else {
       // Draw noise contours (filter by selected contours)
       noiseData.forEach((contour, index) => {
-        if (!selectedContours.includes(index)) return;
+        if (!selectedNoiseContours.includes(index)) return;
         const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
                      index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
                      'rgba(0, 255, 255, 0.2)';
@@ -448,7 +449,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(`Max Range: 200${getLengthUnit()}`, centerX, displayHeight - 5);
-  }, [processContours, topPan, topZoom, topViewMode, selectedContours, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processContours, topPan, topZoom, topViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Draw Side View (Elevation)
   const drawSideView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
@@ -609,7 +610,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     if (sideViewMode === 'heat') {
       // Draw radiation contours (vertical cross-section) - filter by selected contours
       radiationData.forEach((contour, index) => {
-        if (!selectedContours.includes(index)) return;
+        if (!selectedRadiationContours.includes(index)) return;
         // Color gradient from red (high) to blue (low) matching reference image
         const colors = [
           'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
@@ -707,7 +708,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     } else {
       // Draw noise contours (vertical cross-section) - filter by selected contours
       noiseData.forEach((contour, index) => {
-        if (!selectedContours.includes(index)) return;
+        if (!selectedNoiseContours.includes(index)) return;
         const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
                      index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
                      'rgba(0, 255, 255, 0.2)';
@@ -812,7 +813,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(`Max Range: 200${getLengthUnit()}`, displayWidth / 2, groundY - 5);
-  }, [processContours, sidePan, sideZoom, sideViewMode, selectedContours, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processContours, sidePan, sideZoom, sideViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Handle mouse events for interactivity
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>, viewType: 'top' | 'side') => {
@@ -1196,7 +1197,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                     'rgba(100, 50, 255, 0.4)'   // Purple-blue (1.388)
                   ];
                   const color = colors[index] || 'rgba(100, 100, 100, 0.3)';
-                  const isSelected = selectedContours.includes(index);
+                  const isSelected = selectedRadiationContours.includes(index);
                   
                   return (
                     <div key={index} className="flex items-center gap-2">
@@ -1205,9 +1206,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                         style={{ backgroundColor: color }}
                         onClick={() => {
                           if (isSelected) {
-                            setSelectedContours(prev => prev.filter(i => i !== index));
+                            setSelectedRadiationContours(prev => prev.filter(i => i !== index));
                           } else {
-                            setSelectedContours(prev => [...prev, index]);
+                            setSelectedRadiationContours(prev => [...prev, index]);
                           }
                         }}
                       />
@@ -1228,7 +1229,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
               <div className="space-y-1">
                 {noiseContours.map((contour, index) => {
                   const colors = ['rgba(0, 102, 255, 0.2)', 'rgba(0, 170, 255, 0.2)', 'rgba(0, 255, 255, 0.2)'];
-                  const isSelected = selectedContours.includes(index);
+                  const isSelected = selectedNoiseContours.includes(index);
                   
                   return (
                     <div key={index} className="flex items-center gap-2">
@@ -1237,9 +1238,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                         style={{ backgroundColor: colors[index] }}
                         onClick={() => {
                           if (isSelected) {
-                            setSelectedContours(prev => prev.filter(i => i !== index));
+                            setSelectedNoiseContours(prev => prev.filter(i => i !== index));
                           } else {
-                            setSelectedContours(prev => [...prev, index]);
+                            setSelectedNoiseContours(prev => [...prev, index]);
                           }
                         }}
                       />
@@ -1262,28 +1263,40 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 <Button
-                  onClick={() => setSelectedContours([0, 1, 2])}
+                  onClick={() => {
+                    setSelectedRadiationContours([0, 1, 2]);
+                    setSelectedNoiseContours([0, 1, 2]);
+                  }}
                   variant="outline"
                   size="sm"
                 >
                   Show First 3
                 </Button>
                 <Button
-                  onClick={() => setSelectedContours([0, 1, 2, 3, 4])}
+                  onClick={() => {
+                    setSelectedRadiationContours([0, 1, 2, 3, 4]);
+                    setSelectedNoiseContours([0, 1, 2, 3, 4]);
+                  }}
                   variant="outline"
                   size="sm"
                 >
                   Show First 5
                 </Button>
                 <Button
-                  onClick={() => setSelectedContours(Array.from({length: radiationContours.length}, (_, i) => i))}
+                  onClick={() => {
+                    setSelectedRadiationContours(Array.from({length: radiationContours.length}, (_, i) => i));
+                    setSelectedNoiseContours(Array.from({length: noiseContours.length}, (_, i) => i));
+                  }}
                   variant="outline"
                   size="sm"
                 >
                   Show All
                 </Button>
                 <Button
-                  onClick={() => setSelectedContours([])}
+                  onClick={() => {
+                    setSelectedRadiationContours([]);
+                    setSelectedNoiseContours([]);
+                  }}
                   variant="outline"
                   size="sm"
                 >
@@ -1292,7 +1305,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
               </div>
               
               <div className="text-sm text-muted-foreground">
-                Click on contour colors above to toggle visibility. Selected contours: {selectedContours.length} of {radiationContours.length}
+                Click on contour colors above to toggle visibility. Selected: {selectedRadiationContours.length} radiation, {selectedNoiseContours.length} noise
               </div>
             </div>
           </div>
