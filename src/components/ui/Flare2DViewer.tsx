@@ -158,8 +158,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       ctx.fillStyle = '#666';
       ctx.textAlign = 'center';
       
-      // Calculate grid spacing based on zoom level - 10m divisions, max 200m
-      const baseGridSize = 10; // 10m base grid
+      // Calculate grid spacing based on zoom level and unit system
+      const baseGridSize = unitSystem === 'metric' ? 10 : 30; // 10m or 10ft (30ft in meters)
       const gridSize = baseGridSize * scale;
       const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
       
@@ -183,7 +183,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       if (showLabels) {
         // Calculate actual visible range based on canvas size and zoom
         const maxVisibleDistance = Math.max(displayWidth, displayHeight) / (2 * scale);
-        const labelStep = 10; // 10m steps
+        const labelStep = unitSystem === 'metric' ? 10 : 30; // 10m or 10ft steps
         
         // X-axis labels
         for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += labelStep) {
@@ -514,8 +514,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       ctx.fillStyle = '#666';
       ctx.textAlign = 'center';
       
-      // Calculate grid spacing based on zoom level - 10m divisions, max 200m
-      const baseGridSize = 10; // 10m base grid
+      // Calculate grid spacing based on zoom level and unit system
+      const baseGridSize = unitSystem === 'metric' ? 10 : 30; // 10m or 10ft (30ft in meters)
       const gridSize = baseGridSize * scale;
       const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
       
@@ -539,7 +539,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       if (showLabels) {
         // Calculate actual visible range based on canvas size and zoom
         const maxVisibleDistance = Math.max(displayWidth, displayHeight) / (2 * scale);
-        const labelStep = 10; // 10m steps
+        const labelStep = unitSystem === 'metric' ? 10 : 30; // 10m or 10ft steps
         
         // X-axis labels (distance from center)
         for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += labelStep) {
