@@ -77,7 +77,7 @@ const GORCalculator = ({ unitSystem }: Props) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof GORInputs, value: any) => {
+  const handleInputChange = (field: keyof GORInputs, value: string | number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
   };
 

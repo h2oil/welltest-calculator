@@ -82,7 +82,7 @@ export const importSessionFromJSON = (jsonString: string): CalculationSession | 
 };
 
 // Copy Results to Clipboard
-export const copyResultsToClipboard = async (results: any, calculatorName: string): Promise<boolean> => {
+export const copyResultsToClipboard = async (results: Record<string, unknown>, calculatorName: string): Promise<boolean> => {
   try {
     const formattedResults = formatResultsForClipboard(results, calculatorName);
     await navigator.clipboard.writeText(formattedResults);
@@ -93,7 +93,7 @@ export const copyResultsToClipboard = async (results: any, calculatorName: strin
 };
 
 // Format results for clipboard
-const formatResultsForClipboard = (results: any, calculatorName: string): string => {
+const formatResultsForClipboard = (results: Record<string, unknown>, calculatorName: string): string => {
   const timestamp = new Date().toLocaleString();
   let output = `H2Oil Well Testing - ${calculatorName}\n`;
   output += `Generated: ${timestamp}\n`;

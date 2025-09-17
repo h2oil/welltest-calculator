@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getRedirectUrl } from '@/lib/config';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -47,7 +48,7 @@ export const useAuth = () => {
   };
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = getRedirectUrl();
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -71,6 +72,48 @@ export const useAuth = () => {
     return { error };
   };
 
+  const signInWithGoogle = async () => {
+    const redirectUrl = getRedirectUrl();
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+      
+      if (error) {
+        toast({
+          title: "Google Sign In Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error };
+      }
+      
+      // Success - user will be redirected
+      toast({
+        title: "Redirecting to Google",
+        description: "Please complete sign-in with your Google account",
+      });
+      
+      return { error: null };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast({
+        title: "Google Sign In Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { error: { message: errorMessage } };
+    }
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     
@@ -91,6 +134,7 @@ export const useAuth = () => {
     loading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
   };
 };
