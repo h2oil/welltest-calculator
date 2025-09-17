@@ -181,11 +181,12 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       
       // Draw grid labels every 10m
       if (showLabels) {
-        const visibleRange = 50 / topZoom; // 50m visible range
+        // Calculate actual visible range based on canvas size and zoom
+        const maxVisibleDistance = Math.max(displayWidth, displayHeight) / (2 * scale);
         const labelStep = 10; // 10m steps
         
         // X-axis labels
-        for (let distance = -visibleRange; distance <= visibleRange; distance += labelStep) {
+        for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += labelStep) {
           if (distance === 0) continue; // Skip center line
           const x = centerX + (distance * scale);
           if (x >= 0 && x <= displayWidth) {
@@ -197,7 +198,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         }
         
         // Y-axis labels
-        for (let distance = -visibleRange; distance <= visibleRange; distance += labelStep) {
+        for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += labelStep) {
           if (distance === 0) continue; // Skip center line
           const y = centerY - (distance * scale);
           if (y >= 0 && y <= displayHeight) {
@@ -473,11 +474,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.lineTo(centerX + 50, centerY);
     ctx.stroke();
     
-    // Add max range indicator
-    ctx.fillStyle = '#666';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(`Max Range: 200${getLengthUnit()}`, centerX, displayHeight - 5);
+    // Range indicator removed - now shows full visible range
   }, [processContours, topPan, topZoom, topViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Draw Side View (Elevation)
@@ -540,11 +537,12 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       
       // Draw grid labels every 10m
       if (showLabels) {
-        const visibleRange = 50 / sideZoom; // 50m visible range
+        // Calculate actual visible range based on canvas size and zoom
+        const maxVisibleDistance = Math.max(displayWidth, displayHeight) / (2 * scale);
         const labelStep = 10; // 10m steps
         
         // X-axis labels (distance from center)
-        for (let distance = -visibleRange; distance <= visibleRange; distance += labelStep) {
+        for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += labelStep) {
           if (distance === 0) continue; // Skip center line
           const x = centerX + (distance * scale);
           if (x >= 0 && x <= displayWidth) {
@@ -556,7 +554,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         }
         
         // Y-axis labels (height from ground)
-        for (let height = 0; height <= visibleRange; height += labelStep) {
+        for (let height = 0; height <= maxVisibleDistance; height += labelStep) {
           if (height === 0) continue; // Skip ground line
           const y = groundY - (height * scale);
           if (y >= 0 && y <= displayHeight) {
@@ -866,11 +864,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.textAlign = 'left';
     ctx.fillText(`${50 * getLengthFactor()} ${getLengthUnit()}`, 20, groundY - 25);
     
-    // Add max range indicator
-    ctx.fillStyle = '#666';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(`Max Range: 200${getLengthUnit()}`, displayWidth / 2, groundY - 5);
+    // Range indicator removed - now shows full visible range
   }, [processContours, sidePan, sideZoom, sideViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Handle mouse events for interactivity
