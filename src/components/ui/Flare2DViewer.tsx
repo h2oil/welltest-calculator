@@ -202,12 +202,23 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     if (topViewMode === 'heat') {
       // Draw radiation contours
       radiationData.forEach((contour, index) => {
-        const color = index === 0 ? 'rgba(255, 0, 0, 0.3)' : 
-                     index === 1 ? 'rgba(255, 136, 0, 0.3)' : 
-                     'rgba(255, 255, 0, 0.3)';
+        // Color gradient from red (high) to blue (low) matching reference image
+        const colors = [
+          'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
+          'rgba(255, 0, 0, 0.4)',    // Red (15.72)
+          'rgba(255, 100, 0, 0.4)',  // Red-orange (9.454)
+          'rgba(255, 150, 0, 0.4)',  // Orange (7.886)
+          'rgba(255, 200, 0, 0.4)',  // Yellow-orange (6.309)
+          'rgba(255, 255, 0, 0.4)',  // Yellow (4.732)
+          'rgba(150, 255, 150, 0.4)', // Light green (3.155)
+          'rgba(100, 200, 255, 0.4)', // Light blue (1.893)
+          'rgba(50, 150, 255, 0.4)',  // Medium blue (1.577)
+          'rgba(100, 50, 255, 0.4)'   // Purple-blue (1.388)
+        ];
+        const color = colors[index] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
-        ctx.strokeStyle = color.replace('0.3', '0.8');
+        ctx.strokeStyle = color.replace('0.4', '0.8');
         ctx.lineWidth = 2;
         
         // Draw contour using polar radii for wind effects
@@ -530,42 +541,96 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.fillStyle = '#90ee90';
     ctx.fillRect(0, groundY, displayWidth, 50);
 
-    // Draw flare stack
+    // Draw flare stack (vertical line from ground to tip)
     const stackHeight = flareHeight * scale;
-    const stackWidth = tipDiameter * scale * 10; // Exaggerate for visibility
-    ctx.fillStyle = '#666';
-    ctx.fillRect(centerX - stackWidth / 2, groundY - stackHeight, stackWidth, stackHeight);
+    const stackWidth = 4; // Fixed width for visibility
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = stackWidth;
+    ctx.beginPath();
+    ctx.moveTo(centerX, groundY);
+    ctx.lineTo(centerX, groundY - stackHeight);
+    ctx.stroke();
 
-    // Draw flame
+    // Draw flare tip (small circle)
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(centerX, groundY - stackHeight, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw flame (tilted line from tip)
     const flameBaseX = centerX;
     const flameBaseY = groundY - stackHeight;
     const flameTipX = flameBaseX + flameLength * scale * Math.sin(flameTilt * Math.PI / 180);
     const flameTipY = flameBaseY - flameLength * scale * Math.cos(flameTilt * Math.PI / 180);
 
-    ctx.fillStyle = 'rgba(255, 69, 0, 0.8)';
+    ctx.strokeStyle = '#ff4500';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(flameBaseX - stackWidth / 2, flameBaseY);
-    ctx.lineTo(flameBaseX + stackWidth / 2, flameBaseY);
+    ctx.moveTo(flameBaseX, flameBaseY);
     ctx.lineTo(flameTipX, flameTipY);
-    ctx.closePath();
-    ctx.fill();
+    ctx.stroke();
 
     // Draw contours based on selected mode
     if (sideViewMode === 'heat') {
       // Draw radiation contours (vertical cross-section)
       radiationData.forEach((contour, index) => {
-        const color = index === 0 ? 'rgba(255, 0, 0, 0.3)' : 
-                     index === 1 ? 'rgba(255, 136, 0, 0.3)' : 
-                     'rgba(255, 255, 0, 0.3)';
+        // Color gradient from red (high) to blue (low) matching reference image
+        const colors = [
+          'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
+          'rgba(255, 0, 0, 0.4)',    // Red (15.72)
+          'rgba(255, 100, 0, 0.4)',  // Red-orange (9.454)
+          'rgba(255, 150, 0, 0.4)',  // Orange (7.886)
+          'rgba(255, 200, 0, 0.4)',  // Yellow-orange (6.309)
+          'rgba(255, 255, 0, 0.4)',  // Yellow (4.732)
+          'rgba(150, 255, 150, 0.4)', // Light green (3.155)
+          'rgba(100, 200, 255, 0.4)', // Light blue (1.893)
+          'rgba(50, 150, 255, 0.4)',  // Medium blue (1.577)
+          'rgba(100, 50, 255, 0.4)'   // Purple-blue (1.388)
+        ];
+        const color = colors[index] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
-        ctx.strokeStyle = color.replace('0.3', '0.8');
+        ctx.strokeStyle = color.replace('0.4', '0.8');
         ctx.lineWidth = 2;
         
-        // Draw contour as vertical curve
+        // Draw contour as elliptical curve centered on flame radiant center
         const maxDist = contour.maxDistance * scale;
+        const flameCenterX = flameBaseX + (flameTipX - flameBaseX) * 0.5; // Midpoint of flame
+        const flameCenterY = flameBaseY + (flameTipY - flameBaseY) * 0.5;
+        
+        // Create elliptical contour based on wind and flame effects
         ctx.beginPath();
-        ctx.arc(centerX, groundY, maxDist, 0, Math.PI);
+        const numPoints = 72;
+        for (let i = 0; i < numPoints; i++) {
+          const angle = (i * 2 * Math.PI) / numPoints;
+          const windAngle = angle - (windDirection * Math.PI / 180);
+          
+          // Wind effect on contour shape
+          const windFactor = Math.cos(windAngle);
+          const windStretch = 1 + (windSpeed / 10) * windFactor;
+          const windCompress = 1 - (windSpeed / 20) * Math.abs(windFactor);
+          
+          let radius = maxDist;
+          if (windFactor > 0) {
+            radius *= windStretch;
+          } else {
+            radius *= Math.max(0.3, windCompress);
+          }
+          
+          // Apply flame tilt effect
+          const tiltEffect = 1 + 0.2 * Math.sin(windAngle) * (flameTilt / 45);
+          radius *= tiltEffect;
+          
+          const x = flameCenterX + radius * Math.cos(angle);
+          const y = flameCenterY + radius * Math.sin(angle) * 0.3; // Flatten for elevation view
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
@@ -577,9 +642,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           ctx.strokeStyle = '#fff';
           ctx.lineWidth = 3;
           
-          // Position label at the edge of the contour ring
-          const labelX = centerX + maxDist + 10;
-          const labelY = groundY - 10;
+          // Position label at the edge of the contour ring (right side)
+          const labelX = flameCenterX + maxDist + 10;
+          const labelY = flameCenterY - 10;
           
           // Draw text with white outline for visibility
           ctx.strokeText(
@@ -614,10 +679,44 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.strokeStyle = color.replace('0.2', '0.6');
         ctx.lineWidth = 1;
         
-        // Draw contour as vertical curve
+        // Draw contour as elliptical curve centered on flame radiant center
         const maxDist = contour.maxDistance * scale;
+        const flameCenterX = flameBaseX + (flameTipX - flameBaseX) * 0.5; // Midpoint of flame
+        const flameCenterY = flameBaseY + (flameTipY - flameBaseY) * 0.5;
+        
+        // Create elliptical contour based on wind and flame effects
         ctx.beginPath();
-        ctx.arc(centerX, groundY, maxDist, 0, Math.PI);
+        const numPoints = 72;
+        for (let i = 0; i < numPoints; i++) {
+          const angle = (i * 2 * Math.PI) / numPoints;
+          const windAngle = angle - (windDirection * Math.PI / 180);
+          
+          // Wind effect on contour shape
+          const windFactor = Math.cos(windAngle);
+          const windStretch = 1 + (windSpeed / 15) * windFactor;
+          const windCompress = 1 - (windSpeed / 25) * Math.abs(windFactor);
+          
+          let radius = maxDist;
+          if (windFactor > 0) {
+            radius *= windStretch;
+          } else {
+            radius *= Math.max(0.4, windCompress);
+          }
+          
+          // Apply flame tilt effect
+          const tiltEffect = 1 + 0.1 * Math.sin(windAngle) * (flameTilt / 45);
+          radius *= tiltEffect;
+          
+          const x = flameCenterX + radius * Math.cos(angle);
+          const y = flameCenterY + radius * Math.sin(angle) * 0.3; // Flatten for elevation view
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
@@ -629,9 +728,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           ctx.strokeStyle = '#fff';
           ctx.lineWidth = 3;
           
-          // Position label at the edge of the contour ring
-          const labelX = centerX + maxDist + 10;
-          const labelY = groundY + 10;
+          // Position label at the edge of the contour ring (right side)
+          const labelX = flameCenterX + maxDist + 10;
+          const labelY = flameCenterY + 10;
           
           // Draw text with white outline for visibility
           ctx.strokeText(

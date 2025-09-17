@@ -97,7 +97,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
     noiseReferenceDistance: 30, // Will be converted to SI
     
     // Contour customization
-    radiationContours: [4.73, 6.3, 12.6], // kW/m²
+    radiationContours: [1.388, 1.577, 1.893, 3.155, 4.732, 6.309, 7.886, 9.454, 15.72, 31.55], // kW/m²
     noiseContours: [70, 85, 100] // dB(A)
   });
 
