@@ -31,10 +31,10 @@ A professional well testing calculator suite designed for the oil and gas indust
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/loloil123/wellspring-calculator.git
+git clone https://github.com/loloil123/welltest-calculator.git
 
 # Navigate to the project directory
-cd wellspring-calculator
+cd welltest-calculator
 
 # Install dependencies
 npm install
