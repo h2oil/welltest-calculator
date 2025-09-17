@@ -1,8 +1,17 @@
 // Environment configuration for H2Oil Well Testing App
 
+// Get the current origin, handling both client and server-side rendering
+const getCurrentOrigin = (): string => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  // Fallback for server-side rendering or build time
+  return import.meta.env.VITE_APP_URL || 'https://welltest-calculator.vercel.app';
+};
+
 export const config = {
-  // App URL - defaults to current origin, can be overridden with VITE_APP_URL
-  appUrl: import.meta.env.VITE_APP_URL || window.location.origin,
+  // App URL - automatically detects current origin
+  appUrl: getCurrentOrigin(),
   
   // Environment detection
   isDevelopment: import.meta.env.DEV,
