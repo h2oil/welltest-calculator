@@ -192,7 +192,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           if (x >= 0 && x <= displayWidth) {
             ctx.fillText(
               `${(Math.abs(distance) * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
-              x, displayHeight - 5
+              x, centerY + 15
             );
           }
         }
@@ -548,7 +548,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           if (x >= 0 && x <= displayWidth) {
             ctx.fillText(
               `${(Math.abs(distance) * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
-              x, displayHeight - 5
+              x, groundY + 15
             );
           }
         }
