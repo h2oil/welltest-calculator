@@ -79,7 +79,7 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof DanielOrificeInputs, value: any) => {
+  const handleInputChange = (field: keyof DanielOrificeInputs, value: string | number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
   };
 

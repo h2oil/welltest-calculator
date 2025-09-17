@@ -66,7 +66,7 @@ const CriticalFlowCalculator = ({ unitSystem }: Props) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof CriticalFlowInputs, value: any) => {
+  const handleInputChange = (field: keyof CriticalFlowInputs, value: string | number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
   };
 

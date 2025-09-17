@@ -70,7 +70,7 @@ const GasVelocityCalculatorV2 = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof VelocityInputs, value: any) => {
+  const handleInputChange = (field: keyof VelocityInputs, value: string | number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
   };
 

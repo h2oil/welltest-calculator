@@ -74,7 +74,7 @@ const ChokeRateCalculator = ({ unitSystem }: Props) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof ChokeInputs, value: any) => {
+  const handleInputChange = (field: keyof ChokeInputs, value: string | number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
   };
 
