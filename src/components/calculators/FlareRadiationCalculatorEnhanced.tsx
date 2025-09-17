@@ -22,7 +22,8 @@ import {
   exportScenarioToJSON, importScenarioFromJSON, exportContoursToCSV,
   type FlareScenario, validateScenario, formatValueWithUnit
 } from '@/lib/unit-conversions-enhanced';
-import Flare3DViewerSimple from '@/components/ui/Flare3DViewerSimple';
+import Flare3DViewerCanvas from '@/components/ui/Flare3DViewerCanvas';
+import Flare3DViewerFallback from '@/components/ui/Flare3DViewerFallback';
 import InputWithUnit from '@/components/ui/InputWithUnit';
 import type { FlareRadiationInputs, FlareRadiationOutputs, UnitSystem, FlareGasComposition } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
@@ -119,18 +120,31 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
       setIsCalculating(true);
       try {
         const siInputs = getSIInputs();
+        console.log('Calculating flare radiation with inputs:', siInputs);
         const result = calculateFlareRadiation(siInputs);
+        console.log('Flare radiation calculation result:', result);
         setOutputs(result);
       } catch (error) {
+        console.error('Flare radiation calculation error:', error);
         setOutputs(null);
+        toast({
+          title: "Calculation Error",
+          description: `Failed to calculate flare radiation: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          variant: "destructive",
+        });
       } finally {
         setIsCalculating(false);
       }
+    } else {
+      console.log('Input validation failed');
+      setOutputs(null);
     }
   }, [inputs, perFieldUnits]);
 
   const validateInputs = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    console.log('Validating inputs:', inputs);
 
     if (!inputs.gasRate || inputs.gasRate <= 0) {
       newErrors.gasRate = 'Gas rate must be greater than 0';
@@ -158,6 +172,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
       newErrors.gasComposition = 'Gas composition must sum to 100%';
     }
 
+    console.log('Validation errors:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -680,21 +695,52 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
 
             <TabsContent value="3d" className="space-y-6">
               {outputs ? (
-                <Flare3DViewerSimple
-                  flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
-                  tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
-                  flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
-                  flameTilt={outputs.flameTilt}
-                  windSpeed={convertFromSI(inputs.windSpeed, perFieldUnits.windSpeed)}
-                  windDirection={inputs.windDirection}
-                  radiationContours={outputs.radiationFootprint.contours}
-                  noiseContours={outputs.noiseFootprint.contours}
-                  emissiveFraction={outputs.emissiveFraction}
-                  exitVelocity={outputs.exitVelocity}
-                  onExportPNG={handleExportPNG}
-                  onExportCSV={handleExportCSV}
-                  onExportJSON={handleExportJSON}
-                />
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => setShow3D(!show3D)} 
+                      variant="outline" 
+                      size="sm"
+                    >
+                      {show3D ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                      {show3D ? 'Hide 3D' : 'Show 3D'}
+                    </Button>
+                  </div>
+                  
+                  {show3D ? (
+                    <Flare3DViewerCanvas
+                      flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
+                      tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
+                      flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
+                      flameTilt={outputs.flameTilt}
+                      windSpeed={convertFromSI(inputs.windSpeed, perFieldUnits.windSpeed)}
+                      windDirection={inputs.windDirection}
+                      radiationContours={outputs.radiationFootprint.contours}
+                      noiseContours={outputs.noiseFootprint.contours}
+                      emissiveFraction={outputs.emissiveFraction}
+                      exitVelocity={outputs.exitVelocity}
+                      onExportPNG={handleExportPNG}
+                      onExportCSV={handleExportCSV}
+                      onExportJSON={handleExportJSON}
+                    />
+                  ) : (
+                    <Flare3DViewerFallback
+                      flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
+                      tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
+                      flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
+                      flameTilt={outputs.flameTilt}
+                      windSpeed={convertFromSI(inputs.windSpeed, perFieldUnits.windSpeed)}
+                      windDirection={inputs.windDirection}
+                      radiationContours={outputs.radiationFootprint.contours}
+                      noiseContours={outputs.noiseFootprint.contours}
+                      emissiveFraction={outputs.emissiveFraction}
+                      exitVelocity={outputs.exitVelocity}
+                      onExportPNG={handleExportPNG}
+                      onExportCSV={handleExportCSV}
+                      onExportJSON={handleExportJSON}
+                    />
+                  )}
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Flame className="h-12 w-12 mx-auto mb-4 opacity-50" />
