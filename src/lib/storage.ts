@@ -13,9 +13,9 @@ const STORAGE_KEYS = {
 export const getStoredUnitSystem = (): UnitSystem => {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.UNIT_SYSTEM);
-    return (stored as UnitSystem) || 'metric';
+    return (stored as UnitSystem) || 'field';
   } catch {
-    return 'metric';
+    return 'field';
   }
 };
 

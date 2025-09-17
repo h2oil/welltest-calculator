@@ -23,7 +23,7 @@ import type { UnitSystem, CalculationSession } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
 
 const WellTestingApp = () => {
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>('field');
   const [activeTab, setActiveTab] = useState('daniel-orifice');
   const { toast } = useToast();
   const { user, signOut, loading } = useAuth();
