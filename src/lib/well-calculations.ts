@@ -535,8 +535,16 @@ export const calculateFlareRadiation = (inputs: FlareRadiationInputs): FlareRadi
   
   // Calculate density at tip conditions
   const R = 8314.47; // Universal gas constant J/(kmol·K)
-  gasProps.density = (inputs.tipPressure * 1000 * gasProps.molecularWeight) / 
-    (R * inputs.tipTemperature * gasProps.compressibilityFactor);
+  
+  // Convert temperature from °F to Kelvin
+  const tipTemperatureK = (inputs.tipTemperature - 32) * 5/9 + 273.15;
+  
+  // Convert pressure from psia to Pa
+  const tipPressurePa = inputs.tipPressure * 6894.76; // psia to Pa
+  
+  // Calculate density in kg/m³
+  gasProps.density = (tipPressurePa * gasProps.molecularWeight) / 
+    (R * tipTemperatureK * gasProps.compressibilityFactor);
   
   // Calculate emissive fraction
   const emissiveFraction = inputs.emissiveFraction || calculateEmissiveFraction(inputs.gasComposition);
@@ -708,14 +716,27 @@ const calculateEmissiveFraction = (composition: FlareGasComposition): number => 
 const calculateExitVelocity = (inputs: FlareRadiationInputs, gasProps: any): number => {
   // Convert standard flow to actual flow
   const standardFlow = inputs.gasRate * 1e6; // Convert MMSCFD to SCFD
-  const actualFlow = standardFlow * (STANDARD_CONDITIONS.pressure_psia / inputs.tipPressure) * 
-    (inputs.tipTemperature / STANDARD_CONDITIONS.temperature_F) * gasProps.compressibilityFactor;
   
-  // Calculate tip area
+  // Convert temperature from °F to Kelvin for calculations
+  const tipTemperatureK = (inputs.tipTemperature - 32) * 5/9 + 273.15;
+  const standardTemperatureK = (STANDARD_CONDITIONS.temperature_F - 32) * 5/9 + 273.15;
+  
+  // Convert pressure from psia to Pa
+  const tipPressurePa = inputs.tipPressure * 6894.76; // psia to Pa
+  const standardPressurePa = STANDARD_CONDITIONS.pressure_psia * 6894.76; // psia to Pa
+  
+  // Calculate actual flow rate in m³/s
+  const actualFlow = standardFlow * (standardPressurePa / tipPressurePa) * 
+    (tipTemperatureK / standardTemperatureK) * gasProps.compressibilityFactor;
+  
+  // Convert SCFD to m³/s: 1 SCF = 0.0283168 m³, 1 day = 86400 s
+  const actualFlowM3s = actualFlow * 0.0283168 / 86400;
+  
+  // Calculate tip area in m²
   const tipArea = Math.PI * Math.pow(inputs.tipDiameter / 2, 2);
   
-  // Calculate exit velocity (convert SCFD to m/s)
-  const exitVelocity = (actualFlow * 0.0283168) / (tipArea * 86400); // Convert SCFD to m³/s, then to m/s
+  // Calculate exit velocity in m/s
+  const exitVelocity = actualFlowM3s / tipArea;
   
   return exitVelocity;
 };
@@ -723,8 +744,16 @@ const calculateExitVelocity = (inputs: FlareRadiationInputs, gasProps: any): num
 const calculateBuoyancyParameter = (inputs: FlareRadiationInputs, gasProps: any): number => {
   // Calculate density at tip conditions
   const R = 8314.47; // Universal gas constant J/(kmol·K)
-  const density = (inputs.tipPressure * 1000 * gasProps.molecularWeight) / 
-    (R * inputs.tipTemperature * gasProps.compressibilityFactor);
+  
+  // Convert temperature from °F to Kelvin
+  const tipTemperatureK = (inputs.tipTemperature - 32) * 5/9 + 273.15;
+  
+  // Convert pressure from psia to Pa
+  const tipPressurePa = inputs.tipPressure * 6894.76; // psia to Pa
+  
+  // Calculate density in kg/m³
+  const density = (tipPressurePa * gasProps.molecularWeight) / 
+    (R * tipTemperatureK * gasProps.compressibilityFactor);
   
   // Air density at ambient conditions (simplified)
   const airDensity = 1.225; // kg/m³ at 15°C, 1 atm
@@ -839,8 +868,24 @@ const calculatePolarRadii = (
   const numPoints = 72;
   const radii: number[] = [];
   
-  // Base radiation intensity (kW)
-  const radiantIntensity = emissiveFraction * gasProps.lhv * 1000;
+  // Calculate total radiant power (kW) - CRITICAL FIX
+  // Need mass flow rate to get total power
+  const standardFlow = inputs.gasRate * 1e6; // MMSCFD to SCFD
+  const tipTemperatureK = (inputs.tipTemperature - 32) * 5/9 + 273.15;
+  const standardTemperatureK = (STANDARD_CONDITIONS.temperature_F - 32) * 5/9 + 273.15;
+  const tipPressurePa = inputs.tipPressure * 6894.76;
+  const standardPressurePa = STANDARD_CONDITIONS.pressure_psia * 6894.76;
+  
+  // Actual flow rate in m³/s
+  const actualFlowM3s = standardFlow * (standardPressurePa / tipPressurePa) * 
+    (tipTemperatureK / standardTemperatureK) * gasProps.compressibilityFactor * 0.0283168 / 86400;
+  
+  // Mass flow rate in kg/s
+  const massFlowRate = actualFlowM3s * gasProps.density;
+  
+  // Total radiant power in kW
+  const totalRadiantPower = emissiveFraction * massFlowRate * gasProps.lhv; // MJ/kg * kg/s = MW, convert to kW
+  const radiantIntensity = totalRadiantPower * 1000; // Convert MW to kW
   
   // Wind parameters
   const windSpeed = inputs.windSpeed;
