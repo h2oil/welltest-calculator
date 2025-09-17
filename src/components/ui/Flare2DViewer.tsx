@@ -227,22 +227,31 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     // Draw contours based on selected mode
     if (topViewMode === 'heat') {
       // Draw radiation contours (filter by selected contours)
-      radiationData.forEach((contour, index) => {
-        if (!selectedRadiationContours.includes(index)) return;
-        // Color gradient from red (high) to blue (low) matching reference image
+      // Sort contours by level (highest to lowest) for proper color assignment
+      const sortedRadiationData = radiationData
+        .map((contour, index) => ({ contour, originalIndex: index }))
+        .sort((a, b) => b.contour.level - a.contour.level);
+      
+      sortedRadiationData.forEach(({ contour, originalIndex }) => {
+        if (!selectedRadiationContours.includes(originalIndex)) return;
+        
+        // Color gradient from red (highest) to blue (lowest)
         const colors = [
-          'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
-          'rgba(255, 0, 0, 0.4)',    // Red (15.72)
-          'rgba(255, 100, 0, 0.4)',  // Red-orange (9.454)
-          'rgba(255, 150, 0, 0.4)',  // Orange (7.886)
-          'rgba(255, 200, 0, 0.4)',  // Yellow-orange (6.309)
-          'rgba(255, 255, 0, 0.4)',  // Yellow (4.732)
-          'rgba(150, 255, 150, 0.4)', // Light green (3.155)
-          'rgba(100, 200, 255, 0.4)', // Light blue (1.893)
-          'rgba(50, 150, 255, 0.4)',  // Medium blue (1.577)
-          'rgba(100, 50, 255, 0.4)'   // Purple-blue (1.388)
+          'rgba(139, 0, 0, 0.4)',    // Dark red (highest level)
+          'rgba(255, 0, 0, 0.4)',    // Red
+          'rgba(255, 100, 0, 0.4)',  // Red-orange
+          'rgba(255, 150, 0, 0.4)',  // Orange
+          'rgba(255, 200, 0, 0.4)',  // Yellow-orange
+          'rgba(255, 255, 0, 0.4)',  // Yellow
+          'rgba(150, 255, 150, 0.4)', // Light green
+          'rgba(100, 200, 255, 0.4)', // Light blue
+          'rgba(50, 150, 255, 0.4)',  // Medium blue
+          'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
         ];
-        const color = colors[index] || 'rgba(100, 100, 100, 0.3)';
+        
+        // Find the color index based on sorted position
+        const colorIndex = sortedRadiationData.findIndex(item => item.originalIndex === originalIndex);
+        const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
         ctx.strokeStyle = color.replace('0.4', '0.8');
@@ -313,11 +322,31 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       });
     } else {
       // Draw noise contours (filter by selected contours)
-      noiseData.forEach((contour, index) => {
-        if (!selectedNoiseContours.includes(index)) return;
-        const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
-                     index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
-                     'rgba(0, 255, 255, 0.2)';
+      // Sort contours by level (highest to lowest) for proper color assignment
+      const sortedNoiseData = noiseData
+        .map((contour, index) => ({ contour, originalIndex: index }))
+        .sort((a, b) => b.contour.level - a.contour.level);
+      
+      sortedNoiseData.forEach(({ contour, originalIndex }) => {
+        if (!selectedNoiseContours.includes(originalIndex)) return;
+        
+        // Color gradient from red (highest) to blue (lowest)
+        const colors = [
+          'rgba(139, 0, 0, 0.4)',    // Dark red (highest level)
+          'rgba(255, 0, 0, 0.4)',    // Red
+          'rgba(255, 100, 0, 0.4)',  // Red-orange
+          'rgba(255, 150, 0, 0.4)',  // Orange
+          'rgba(255, 200, 0, 0.4)',  // Yellow-orange
+          'rgba(255, 255, 0, 0.4)',  // Yellow
+          'rgba(150, 255, 150, 0.4)', // Light green
+          'rgba(100, 200, 255, 0.4)', // Light blue
+          'rgba(50, 150, 255, 0.4)',  // Medium blue
+          'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
+        ];
+        
+        // Find the color index based on sorted position
+        const colorIndex = sortedNoiseData.findIndex(item => item.originalIndex === originalIndex);
+        const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
         ctx.strokeStyle = color.replace('0.2', '0.6');
@@ -609,22 +638,31 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     // Draw contours based on selected mode
     if (sideViewMode === 'heat') {
       // Draw radiation contours (vertical cross-section) - filter by selected contours
-      radiationData.forEach((contour, index) => {
-        if (!selectedRadiationContours.includes(index)) return;
-        // Color gradient from red (high) to blue (low) matching reference image
+      // Sort contours by level (highest to lowest) for proper color assignment
+      const sortedRadiationData = radiationData
+        .map((contour, index) => ({ contour, originalIndex: index }))
+        .sort((a, b) => b.contour.level - a.contour.level);
+      
+      sortedRadiationData.forEach(({ contour, originalIndex }) => {
+        if (!selectedRadiationContours.includes(originalIndex)) return;
+        
+        // Color gradient from red (highest) to blue (lowest)
         const colors = [
-          'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
-          'rgba(255, 0, 0, 0.4)',    // Red (15.72)
-          'rgba(255, 100, 0, 0.4)',  // Red-orange (9.454)
-          'rgba(255, 150, 0, 0.4)',  // Orange (7.886)
-          'rgba(255, 200, 0, 0.4)',  // Yellow-orange (6.309)
-          'rgba(255, 255, 0, 0.4)',  // Yellow (4.732)
-          'rgba(150, 255, 150, 0.4)', // Light green (3.155)
-          'rgba(100, 200, 255, 0.4)', // Light blue (1.893)
-          'rgba(50, 150, 255, 0.4)',  // Medium blue (1.577)
-          'rgba(100, 50, 255, 0.4)'   // Purple-blue (1.388)
+          'rgba(139, 0, 0, 0.4)',    // Dark red (highest level)
+          'rgba(255, 0, 0, 0.4)',    // Red
+          'rgba(255, 100, 0, 0.4)',  // Red-orange
+          'rgba(255, 150, 0, 0.4)',  // Orange
+          'rgba(255, 200, 0, 0.4)',  // Yellow-orange
+          'rgba(255, 255, 0, 0.4)',  // Yellow
+          'rgba(150, 255, 150, 0.4)', // Light green
+          'rgba(100, 200, 255, 0.4)', // Light blue
+          'rgba(50, 150, 255, 0.4)',  // Medium blue
+          'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
         ];
-        const color = colors[index] || 'rgba(100, 100, 100, 0.3)';
+        
+        // Find the color index based on sorted position
+        const colorIndex = sortedRadiationData.findIndex(item => item.originalIndex === originalIndex);
+        const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
         ctx.strokeStyle = color.replace('0.4', '0.8');
@@ -707,11 +745,31 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       });
     } else {
       // Draw noise contours (vertical cross-section) - filter by selected contours
-      noiseData.forEach((contour, index) => {
-        if (!selectedNoiseContours.includes(index)) return;
-        const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
-                     index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
-                     'rgba(0, 255, 255, 0.2)';
+      // Sort contours by level (highest to lowest) for proper color assignment
+      const sortedNoiseData = noiseData
+        .map((contour, index) => ({ contour, originalIndex: index }))
+        .sort((a, b) => b.contour.level - a.contour.level);
+      
+      sortedNoiseData.forEach(({ contour, originalIndex }) => {
+        if (!selectedNoiseContours.includes(originalIndex)) return;
+        
+        // Color gradient from red (highest) to blue (lowest)
+        const colors = [
+          'rgba(139, 0, 0, 0.4)',    // Dark red (highest level)
+          'rgba(255, 0, 0, 0.4)',    // Red
+          'rgba(255, 100, 0, 0.4)',  // Red-orange
+          'rgba(255, 150, 0, 0.4)',  // Orange
+          'rgba(255, 200, 0, 0.4)',  // Yellow-orange
+          'rgba(255, 255, 0, 0.4)',  // Yellow
+          'rgba(150, 255, 150, 0.4)', // Light green
+          'rgba(100, 200, 255, 0.4)', // Light blue
+          'rgba(50, 150, 255, 0.4)',  // Medium blue
+          'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
+        ];
+        
+        // Find the color index based on sorted position
+        const colorIndex = sortedNoiseData.findIndex(item => item.originalIndex === originalIndex);
+        const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
         ctx.strokeStyle = color.replace('0.2', '0.6');
@@ -1183,32 +1241,41 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                 Radiation Levels
               </h4>
               <div className="space-y-1">
-                {radiationContours.map((contour, index) => {
-                  const colors = [
-                    'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
-                    'rgba(255, 0, 0, 0.4)',    // Red (15.72)
-                    'rgba(255, 100, 0, 0.4)',  // Red-orange (9.454)
-                    'rgba(255, 150, 0, 0.4)',  // Orange (7.886)
-                    'rgba(255, 200, 0, 0.4)',  // Yellow-orange (6.309)
-                    'rgba(255, 255, 0, 0.4)',  // Yellow (4.732)
-                    'rgba(150, 255, 150, 0.4)', // Light green (3.155)
-                    'rgba(100, 200, 255, 0.4)', // Light blue (1.893)
-                    'rgba(50, 150, 255, 0.4)',  // Medium blue (1.577)
-                    'rgba(100, 50, 255, 0.4)'   // Purple-blue (1.388)
-                  ];
-                  const color = colors[index] || 'rgba(100, 100, 100, 0.3)';
-                  const isSelected = selectedRadiationContours.includes(index);
+                {radiationContours
+                  .map((contour, index) => ({ contour, originalIndex: index }))
+                  .sort((a, b) => b.contour.level - a.contour.level)
+                  .map(({ contour, originalIndex }) => {
+                    const colors = [
+                      'rgba(139, 0, 0, 0.4)',    // Dark red (highest level)
+                      'rgba(255, 0, 0, 0.4)',    // Red
+                      'rgba(255, 100, 0, 0.4)',  // Red-orange
+                      'rgba(255, 150, 0, 0.4)',  // Orange
+                      'rgba(255, 200, 0, 0.4)',  // Yellow-orange
+                      'rgba(255, 255, 0, 0.4)',  // Yellow
+                      'rgba(150, 255, 150, 0.4)', // Light green
+                      'rgba(100, 200, 255, 0.4)', // Light blue
+                      'rgba(50, 150, 255, 0.4)',  // Medium blue
+                      'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
+                    ];
+                    
+                    // Find the color index based on sorted position
+                    const sortedContours = radiationContours
+                      .map((c, i) => ({ contour: c, originalIndex: i }))
+                      .sort((a, b) => b.contour.level - a.contour.level);
+                    const colorIndex = sortedContours.findIndex(item => item.originalIndex === originalIndex);
+                    const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
+                    const isSelected = selectedRadiationContours.includes(originalIndex);
                   
                   return (
-                    <div key={index} className="flex items-center gap-2">
+                    <div key={originalIndex} className="flex items-center gap-2">
                       <div 
                         className={`w-4 h-4 rounded border cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
                         style={{ backgroundColor: color }}
                         onClick={() => {
                           if (isSelected) {
-                            setSelectedRadiationContours(prev => prev.filter(i => i !== index));
+                            setSelectedRadiationContours(prev => prev.filter(i => i !== originalIndex));
                           } else {
-                            setSelectedRadiationContours(prev => [...prev, index]);
+                            setSelectedRadiationContours(prev => [...prev, originalIndex]);
                           }
                         }}
                       />
@@ -1227,20 +1294,41 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                 Noise Levels
               </h4>
               <div className="space-y-1">
-                {noiseContours.map((contour, index) => {
-                  const colors = ['rgba(0, 102, 255, 0.2)', 'rgba(0, 170, 255, 0.2)', 'rgba(0, 255, 255, 0.2)'];
-                  const isSelected = selectedNoiseContours.includes(index);
+                {noiseContours
+                  .map((contour, index) => ({ contour, originalIndex: index }))
+                  .sort((a, b) => b.contour.level - a.contour.level)
+                  .map(({ contour, originalIndex }) => {
+                    const colors = [
+                      'rgba(139, 0, 0, 0.4)',    // Dark red (highest level)
+                      'rgba(255, 0, 0, 0.4)',    // Red
+                      'rgba(255, 100, 0, 0.4)',  // Red-orange
+                      'rgba(255, 150, 0, 0.4)',  // Orange
+                      'rgba(255, 200, 0, 0.4)',  // Yellow-orange
+                      'rgba(255, 255, 0, 0.4)',  // Yellow
+                      'rgba(150, 255, 150, 0.4)', // Light green
+                      'rgba(100, 200, 255, 0.4)', // Light blue
+                      'rgba(50, 150, 255, 0.4)',  // Medium blue
+                      'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
+                    ];
+                    
+                    // Find the color index based on sorted position
+                    const sortedContours = noiseContours
+                      .map((c, i) => ({ contour: c, originalIndex: i }))
+                      .sort((a, b) => b.contour.level - a.contour.level);
+                    const colorIndex = sortedContours.findIndex(item => item.originalIndex === originalIndex);
+                    const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
+                    const isSelected = selectedNoiseContours.includes(originalIndex);
                   
                   return (
-                    <div key={index} className="flex items-center gap-2">
+                    <div key={originalIndex} className="flex items-center gap-2">
                       <div 
                         className={`w-4 h-4 rounded border cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
-                        style={{ backgroundColor: colors[index] }}
+                        style={{ backgroundColor: color }}
                         onClick={() => {
                           if (isSelected) {
-                            setSelectedNoiseContours(prev => prev.filter(i => i !== index));
+                            setSelectedNoiseContours(prev => prev.filter(i => i !== originalIndex));
                           } else {
-                            setSelectedNoiseContours(prev => [...prev, index]);
+                            setSelectedNoiseContours(prev => [...prev, originalIndex]);
                           }
                         }}
                       />
