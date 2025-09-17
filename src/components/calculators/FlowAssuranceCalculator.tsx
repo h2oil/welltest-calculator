@@ -19,6 +19,7 @@ import {
 import { calculateFlowAssurance } from '@/lib/well-calculations';
 import { copyResultsToClipboard } from '@/lib/storage';
 import { EQUIPMENT_LIBRARY, getEquipmentByType, PIPE_SIZES } from '@/lib/equipment-library';
+import ProcessFlowDiagram from '@/components/ui/ProcessFlowDiagram';
 import type { FlowAssuranceInputs, FlowAssuranceOutputs, UnitSystem, Segment } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,7 +29,6 @@ interface Props {
 
 const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
   const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const [inputs, setInputs] = useState<FlowAssuranceInputs>({
     // Wellhead conditions
@@ -95,8 +95,8 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
   const [outputs, setOutputs] = useState<FlowAssuranceOutputs | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('schematic');
-  const [showSchematic, setShowSchematic] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   // Auto-calculate when inputs change
   useEffect(() => {
@@ -105,16 +105,13 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
       try {
         const result = calculateFlowAssurance(inputs);
         setOutputs(result);
-        if (showSchematic) {
-          renderSchematic(result);
-        }
       } catch (error) {
         setOutputs(null);
       } finally {
         setIsCalculating(false);
       }
     }
-  }, [inputs, showSchematic]);
+  }, [inputs]);
 
   const validateInputs = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -224,96 +221,8 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
     }
   };
 
-  const renderSchematic = (results: FlowAssuranceOutputs) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Set up coordinate system
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const margin = 50;
-    const equipmentWidth = 80;
-    const equipmentHeight = 60;
-    const spacing = (canvasWidth - 2 * margin - equipmentWidth) / 5;
-
-    // Draw flow line
-    ctx.strokeStyle = '#0066cc';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(margin, canvasHeight / 2);
-    ctx.lineTo(canvasWidth - margin, canvasHeight / 2);
-    ctx.stroke();
-
-    // Equipment blocks
-    const equipmentBlocks = [
-      { id: 'wellhead', name: 'Wellhead', x: margin, icon: '⛽' },
-      { id: 'esd', name: 'ESD/SSV', x: margin + spacing, icon: '🔒' },
-      { id: 'filter', name: 'Sand Filter', x: margin + spacing * 2, icon: '🔍' },
-      { id: 'choke', name: 'Choke', x: margin + spacing * 3, icon: '🎛️' },
-      { id: 'heater', name: 'Heater', x: margin + spacing * 4, icon: '🔥' },
-      { id: 'separator', name: 'Separator', x: margin + spacing * 5, icon: '🛢️' },
-      { id: 'flare', name: 'Flare', x: margin + spacing * 6, icon: '💨' }
-    ];
-
-    equipmentBlocks.forEach((block, index) => {
-      const y = canvasHeight / 2 - equipmentHeight / 2;
-      
-      // Draw equipment block
-      ctx.fillStyle = '#f8f9fa';
-      ctx.strokeStyle = '#dee2e6';
-      ctx.lineWidth = 2;
-      ctx.fillRect(block.x, y, equipmentWidth, equipmentHeight);
-      ctx.strokeRect(block.x, y, equipmentWidth, equipmentHeight);
-      
-      // Draw equipment icon
-      ctx.font = '24px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#495057';
-      ctx.fillText(block.icon, block.x + equipmentWidth / 2, y + 25);
-      
-      // Draw equipment name
-      ctx.font = '10px Arial';
-      ctx.fillText(block.name, block.x + equipmentWidth / 2, y + 40);
-      
-      // Draw data tile above equipment
-      if (results && index < results.nodes.length) {
-        const node = results.nodes[index];
-        const tileY = y - 30;
-        
-        // Data tile background
-        ctx.fillStyle = 'white';
-        ctx.strokeStyle = '#dee2e6';
-        ctx.lineWidth = 1;
-        ctx.fillRect(block.x - 10, tileY, equipmentWidth + 20, 25);
-        ctx.strokeRect(block.x - 10, tileY, equipmentWidth + 20, 25);
-        
-        // Data text
-        ctx.font = '8px Arial';
-        ctx.fillStyle = '#495057';
-        ctx.textAlign = 'center';
-        ctx.fillText(`P: ${(node.pressure / 1000).toFixed(0)} kPa`, block.x + equipmentWidth / 2, tileY + 10);
-        ctx.fillText(`T: ${(node.temperature - 273.15).toFixed(0)}°C`, block.x + equipmentWidth / 2, tileY + 20);
-        
-        // Warning badges
-        if (node.warnings.length > 0) {
-          const warningX = block.x + equipmentWidth + 5;
-          const warningY = y + 10;
-          
-          ctx.fillStyle = '#dc3545';
-          ctx.fillRect(warningX, warningY, 60, 15);
-          ctx.fillStyle = 'white';
-          ctx.font = '8px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText('WARNING', warningX + 30, warningY + 10);
-        }
-      }
-    });
+  const handleNodeClick = (nodeId: string) => {
+    setSelectedNode(selectedNode === nodeId ? null : nodeId);
   };
 
   const getEquipmentOptions = (type: string) => {
@@ -350,38 +259,12 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
             </TabsList>
 
             <TabsContent value="schematic" className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Process Flow Diagram</h3>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant={showSchematic ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setShowSchematic(!showSchematic)}
-                    >
-                      {showSchematic ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      {showSchematic ? 'Pause' : 'Resume'}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="border rounded-lg p-4 bg-muted/20">
-                  <canvas
-                    ref={canvasRef}
-                    width={800}
-                    height={300}
-                    className="w-full h-auto border rounded"
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                  />
-                </div>
-
-                {isCalculating && (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-sm text-muted-foreground mt-2">Calculating flow assurance...</p>
-                  </div>
-                )}
-              </div>
+              <ProcessFlowDiagram
+                outputs={outputs}
+                isCalculating={isCalculating}
+                onNodeClick={handleNodeClick}
+                selectedNode={selectedNode}
+              />
             </TabsContent>
 
             <TabsContent value="inputs" className="space-y-6">
