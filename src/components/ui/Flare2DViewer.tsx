@@ -173,6 +173,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.fillStyle = '#000';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
+        const radius = contour.maxDistance * scale;
         ctx.fillText(
           `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
           centerX, centerY - radius - 10
@@ -227,6 +228,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.fillStyle = '#000';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
+        const radius = contour.maxDistance * scale;
         ctx.fillText(
           `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
           centerX, centerY + radius + 20
