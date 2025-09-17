@@ -22,10 +22,11 @@ import {
   exportScenarioToJSON, importScenarioFromJSON, exportContoursToCSV,
   type FlareScenario, validateScenario, formatValueWithUnit
 } from '@/lib/unit-conversions-enhanced';
-import Flare3DViewerAdvanced from '@/components/ui/Flare3DViewerAdvanced';
+import Flare3DViewerSimple from '@/components/ui/Flare3DViewerSimple';
 import InputWithUnit from '@/components/ui/InputWithUnit';
 import type { FlareRadiationInputs, FlareRadiationOutputs, UnitSystem, FlareGasComposition } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
+
 
 interface Props {
   unitSystem: UnitSystem;
@@ -656,7 +657,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
 
             <TabsContent value="3d" className="space-y-6">
               {outputs ? (
-                <Flare3DViewerAdvanced
+                <Flare3DViewerSimple
                   flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
                   tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
                   flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
