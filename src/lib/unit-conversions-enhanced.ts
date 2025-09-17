@@ -72,6 +72,29 @@ export const UNIT_GROUPS = {
 };
 
 export const DEFAULT_UNITS = {
+  metric: {
+    length: 'm',
+    pressure: 'kPa',
+    temperature: 'C',
+    flowRate: 'MSCMD',
+    velocity: 'ms',
+    power: 'kW',
+    soundLevel: 'dBA',
+    angle: 'deg',
+    dimensionless: 'fraction'
+  },
+  field: {
+    length: 'ft',
+    pressure: 'psia',
+    temperature: 'F',
+    flowRate: 'MMSCFD',
+    velocity: 'fts',
+    power: 'kW',
+    soundLevel: 'dBA',
+    angle: 'deg',
+    dimensionless: 'fraction'
+  },
+  // Legacy support
   SI: {
     length: 'm',
     pressure: 'kPa',

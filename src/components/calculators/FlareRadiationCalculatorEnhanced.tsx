@@ -49,17 +49,29 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Per-field units
-  const [perFieldUnits, setPerFieldUnits] = useState<PerFieldUnits>({
-    gasRate: DEFAULT_UNITS[unitSystem].flowRate,
-    flareHeight: DEFAULT_UNITS[unitSystem].length,
-    tipDiameter: DEFAULT_UNITS[unitSystem].length,
-    tipPressure: DEFAULT_UNITS[unitSystem].pressure,
-    tipTemperature: DEFAULT_UNITS[unitSystem].temperature,
-    windSpeed: DEFAULT_UNITS[unitSystem].velocity,
-    windDirection: DEFAULT_UNITS[unitSystem].angle,
-    humidity: DEFAULT_UNITS[unitSystem].dimensionless,
-    noiseReferenceDistance: DEFAULT_UNITS[unitSystem].length
+  // Per-field units with error handling
+  const getDefaultUnits = (system: UnitSystem) => {
+    const units = DEFAULT_UNITS[system];
+    if (!units) {
+      console.warn(`Unknown unit system: ${system}, falling back to metric`);
+      return DEFAULT_UNITS.metric;
+    }
+    return units;
+  };
+
+  const [perFieldUnits, setPerFieldUnits] = useState<PerFieldUnits>(() => {
+    const defaultUnits = getDefaultUnits(unitSystem);
+    return {
+      gasRate: defaultUnits.flowRate,
+      flareHeight: defaultUnits.length,
+      tipDiameter: defaultUnits.length,
+      tipPressure: defaultUnits.pressure,
+      tipTemperature: defaultUnits.temperature,
+      windSpeed: defaultUnits.velocity,
+      windDirection: defaultUnits.angle,
+      humidity: defaultUnits.dimensionless,
+      noiseReferenceDistance: defaultUnits.length
+    };
   });
 
   const [inputs, setInputs] = useState<FlareRadiationInputs>({
@@ -96,6 +108,22 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   const [show3D, setShow3D] = useState(true);
   const [viewMode, setViewMode] = useState<'radiation' | 'noise' | 'both'>('both');
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Update perFieldUnits when unitSystem changes
+  useEffect(() => {
+    const defaultUnits = getDefaultUnits(unitSystem);
+    setPerFieldUnits({
+      gasRate: defaultUnits.flowRate,
+      flareHeight: defaultUnits.length,
+      tipDiameter: defaultUnits.length,
+      tipPressure: defaultUnits.pressure,
+      tipTemperature: defaultUnits.temperature,
+      windSpeed: defaultUnits.velocity,
+      windDirection: defaultUnits.angle,
+      humidity: defaultUnits.dimensionless,
+      noiseReferenceDistance: defaultUnits.length
+    });
+  }, [unitSystem]);
 
   // Convert inputs to SI for calculations
   const getSIInputs = (): FlareRadiationInputs => {
