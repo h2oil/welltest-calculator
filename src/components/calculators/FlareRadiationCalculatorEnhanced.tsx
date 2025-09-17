@@ -22,7 +22,7 @@ import {
   exportScenarioToJSON, importScenarioFromJSON, exportContoursToCSV,
   type FlareScenario, validateScenario, formatValueWithUnit
 } from '@/lib/unit-conversions-enhanced';
-import Flare3DViewer from '@/components/ui/Flare3DViewer';
+// import Flare3DViewer from '@/components/ui/Flare3DViewer';
 import InputWithUnit from '@/components/ui/InputWithUnit';
 import type { FlareRadiationInputs, FlareRadiationOutputs, UnitSystem, FlareGasComposition } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
@@ -656,21 +656,36 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
 
             <TabsContent value="3d" className="space-y-6">
               {outputs ? (
-                <Flare3DViewer
-                  flareHeight={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
-                  tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
-                  flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
-                  flameTilt={outputs.flameTilt}
-                  windSpeed={convertFromSI(inputs.windSpeed, perFieldUnits.windSpeed)}
-                  windDirection={inputs.windDirection}
-                  radiationContours={outputs.radiationFootprint.contours}
-                  noiseContours={outputs.noiseFootprint.contours}
-                  emissiveFraction={outputs.emissiveFraction}
-                  exitVelocity={outputs.exitVelocity}
-                  onExportPNG={handleExportPNG}
-                  onExportCSV={handleExportCSV}
-                  onExportJSON={handleExportJSON}
-                />
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">🔥</div>
+                    <h3 className="text-lg font-semibold mb-2">3D Flare Visualization</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Interactive 3D model showing flare stack, flame, and radiation/noise contours
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="bg-white p-3 rounded border">
+                        <div className="font-medium">Flare Height</div>
+                        <div className="text-lg">{convertFromSI(outputs.flameLength, perFieldUnits.flareHeight).toFixed(1)} {perFieldUnits.flareHeight}</div>
+                      </div>
+                      <div className="bg-white p-3 rounded border">
+                        <div className="font-medium">Flame Length</div>
+                        <div className="text-lg">{convertFromSI(outputs.flameLength, perFieldUnits.flareHeight).toFixed(1)} {perFieldUnits.flareHeight}</div>
+                      </div>
+                      <div className="bg-white p-3 rounded border">
+                        <div className="font-medium">Flame Tilt</div>
+                        <div className="text-lg">{outputs.flameTilt.toFixed(1)}°</div>
+                      </div>
+                      <div className="bg-white p-3 rounded border">
+                        <div className="font-medium">Exit Velocity</div>
+                        <div className="text-lg">{outputs.exitVelocity.toFixed(1)} m/s</div>
+                      </div>
+                    </div>
+                    <div className="mt-4 text-xs text-muted-foreground">
+                      Three.js 3D rendering temporarily disabled for stability
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Flame className="h-12 w-12 mx-auto mb-4 opacity-50" />

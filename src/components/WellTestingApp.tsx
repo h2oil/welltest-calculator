@@ -14,7 +14,7 @@ import CriticalFlowCalculator from './calculators/CriticalFlowCalculator';
 import GORCalculator from './calculators/GORCalculator';
 import GasVelocityCalculatorV2 from './calculators/GasVelocityCalculatorV2';
 import APIGravityCalculator from './calculators/APIGravityCalculator';
-import FlareRadiationCalculatorEnhanced from './calculators/FlareRadiationCalculatorEnhanced';
+import FlareRadiationCalculatorSimple from './calculators/FlareRadiationCalculatorSimple';
 import FlowAssuranceCalculator from './calculators/FlowAssuranceCalculator';
 import UnitConverter from './calculators/UnitConverter';
 
@@ -300,7 +300,7 @@ const WellTestingApp = () => {
               </TabsContent>
 
               <TabsContent value="flare-radiation" className="space-y-6">
-                <FlareRadiationCalculatorEnhanced unitSystem={unitSystem} />
+                <FlareRadiationCalculatorSimple unitSystem={unitSystem} />
               </TabsContent>
 
               <TabsContent value="flow-assurance" className="space-y-6">
