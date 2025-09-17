@@ -1,4 +1,4 @@
-import FlowAssuranceCalculatorSimplified from './FlowAssuranceCalculatorSimplified';
+import FlowAssuranceEnhanced from './FlowAssuranceEnhanced';
 import type { UnitSystem } from '@/types/well-testing';
 
 interface Props {
@@ -6,7 +6,7 @@ interface Props {
 }
 
 const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
-  return <FlowAssuranceCalculatorSimplified unitSystem={unitSystem} />;
+  return <FlowAssuranceEnhanced unitSystem={unitSystem} />;
 };
 
 export default FlowAssuranceCalculator;

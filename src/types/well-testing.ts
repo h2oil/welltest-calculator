@@ -348,6 +348,109 @@ export interface FlowAssuranceInputs {
   segments: Segment[];
 }
 
+// Enhanced Flow Assurance Types
+export type FluidKind = "gas" | "liquid" | "two-phase";
+
+export type NodeKind = "wellhead" | "esd" | "sand_filter" | "choke" | "separator" | "heater" | "manifold" | "valve" | "meter" | "custom" | "flare";
+
+export interface NodeSpec {
+  id: string;
+  kind: NodeKind;
+  label: string;
+  // Choke-only fields
+  choke?: {
+    mode: "fixed-bean" | "percent-open";
+    bean_d_in?: number;    // inches, for fixed-bean
+    percent_open?: number; // 0–100, maps to effective area
+    Cd?: number;           // default 0.82
+  };
+  // Separator-only fields
+  separator?: {
+    p_drop_override_kPa?: number; // optional fixed ΔP
+  };
+}
+
+export interface SegmentSpec {
+  id: string;
+  from: string; 
+  to: string;  // node ids
+  length_m: number;
+  id_inner_m: number;        // pipe inner diameter (per-user "pipe id size")
+  roughness_m?: number;      // default 4.6e-5 m (carbon steel)
+  fittingsK?: number;        // summed K factors for bends/tees/etc.
+  elevation_change_m?: number; // +upwards
+}
+
+export interface FluidSpec {
+  kind: FluidKind;
+  P_in_kPa: number;  // wellhead pressure
+  T_K: number;
+  Z?: number;        // default 1.0
+  k?: number;        // Cp/Cv; default 1.30 for gas
+  MW_kg_per_kmol?: number; // gas; default 18.2
+  rho_liq_kg_per_m3?: number; // liquid density if liquid or two-phase
+  mu_Pa_s?: number; // optional viscosity
+  gamma_g?: number; // optional gas SG
+  watercut_frac?: number; // for two-phase helper calcs
+  q_std: { unit: "MSCFD"|"Sm3/d"|"STB/d"; value: number }; // standard flow
+}
+
+export interface NodeState {
+  id: string;
+  kind: NodeKind;
+  label: string;
+  pressure_kPa: number;
+  temperature_K: number;
+  q_actual_m3_s: number;
+  mdot_kg_s: number;
+  density_kg_m3: number;
+  velocity_m_s?: number;
+  mach?: number;
+  reynolds?: number;
+  friction_factor?: number;
+  erosional_check: {
+    velocity_limit_m_s: number;
+    is_erosional: boolean;
+    mach_limit_exceeded: boolean;
+  };
+  warnings: string[];
+}
+
+export interface SegmentResult {
+  id: string;
+  from: string;
+  to: string;
+  deltaP_total_kPa: number;
+  deltaP_friction_kPa: number;
+  deltaP_fittings_kPa: number;
+  deltaP_hydrostatic_kPa: number;
+  velocity_m_s: number;
+  mach: number;
+  reynolds: number;
+  friction_factor: number;
+  length_m: number;
+  id_inner_m: number;
+  elevation_change_m: number;
+  erosional_check: {
+    velocity_limit_m_s: number;
+    is_erosional: boolean;
+    mach_limit_exceeded: boolean;
+  };
+}
+
+export interface NetworkResult {
+  nodes: NodeState[];
+  segments: SegmentResult[];
+  total_drawdown_kPa: number;
+  convergence: {
+    converged: boolean;
+    iterations: number;
+    max_pressure_change: number;
+    max_flow_mismatch: number;
+  };
+  warnings: string[];
+}
+
 export interface FlowAssuranceOutputs {
   // Node states
   nodes: NodeState[];
