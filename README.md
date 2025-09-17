@@ -1,7 +1,7 @@
 # H2Oil Well Testing Calculator
 
 <div align="center">
-  <img src="public/favicon.svg" alt="H2Oil Well Testing Calculator" width="64" height="64">
+  <img src="https://www.h2oil.co.uk/wp-content/uploads/2018/11/H2Oil-Logo-white-wide.png" alt="H2Oil Well Testing Calculator" width="64" height="64">
   <h3>Professional Well Testing Calculator Suite for Oil & Gas Industry</h3>
   <p>Comprehensive tools for well testing calculations, flow analysis, and unit conversions</p>
 </div>
