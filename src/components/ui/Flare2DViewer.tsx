@@ -62,6 +62,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const [sidePan, setSidePan] = useState({ x: 0, y: 0 });
   const [topViewMode, setTopViewMode] = useState<'heat' | 'noise'>('heat');
   const [sideViewMode, setSideViewMode] = useState<'heat' | 'noise'>('heat');
+  const [selectedContours, setSelectedContours] = useState<number[]>([0, 1, 2]); // Default to first 3 contours
+  const [customContourValues, setCustomContourValues] = useState<number[]>([]);
   const { toast } = useToast();
 
   // Convert units based on system
@@ -200,8 +202,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
 
     // Draw contours based on selected mode
     if (topViewMode === 'heat') {
-      // Draw radiation contours
+      // Draw radiation contours (filter by selected contours)
       radiationData.forEach((contour, index) => {
+        if (!selectedContours.includes(index)) return;
         // Color gradient from red (high) to blue (low) matching reference image
         const colors = [
           'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
@@ -285,8 +288,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         }
       });
     } else {
-      // Draw noise contours
+      // Draw noise contours (filter by selected contours)
       noiseData.forEach((contour, index) => {
+        if (!selectedContours.includes(index)) return;
         const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
                      index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
                      'rgba(0, 255, 255, 0.2)';
@@ -421,7 +425,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(`Max Range: 200${getLengthUnit()}`, centerX, displayHeight - 5);
-  }, [processContours, topPan, topZoom, topViewMode, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processContours, topPan, topZoom, topViewMode, selectedContours, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Draw Side View (Elevation)
   const drawSideView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
@@ -572,8 +576,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
 
     // Draw contours based on selected mode
     if (sideViewMode === 'heat') {
-      // Draw radiation contours (vertical cross-section)
+      // Draw radiation contours (vertical cross-section) - filter by selected contours
       radiationData.forEach((contour, index) => {
+        if (!selectedContours.includes(index)) return;
         // Color gradient from red (high) to blue (low) matching reference image
         const colors = [
           'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
@@ -669,8 +674,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         }
       });
     } else {
-      // Draw noise contours (vertical cross-section)
+      // Draw noise contours (vertical cross-section) - filter by selected contours
       noiseData.forEach((contour, index) => {
+        if (!selectedContours.includes(index)) return;
         const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
                      index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
                      'rgba(0, 255, 255, 0.2)';
@@ -775,7 +781,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(`Max Range: 200${getLengthUnit()}`, displayWidth / 2, groundY - 5);
-  }, [processContours, sidePan, sideZoom, sideViewMode, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processContours, sidePan, sideZoom, sideViewMode, selectedContours, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Handle mouse events for interactivity
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>, viewType: 'top' | 'side') => {
@@ -1146,14 +1152,35 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
               </h4>
               <div className="space-y-1">
                 {radiationContours.map((contour, index) => {
-                  const colors = ['#ff0000', '#ff8800', '#ffff00'];
+                  const colors = [
+                    'rgba(139, 0, 0, 0.4)',    // Dark red (31.55)
+                    'rgba(255, 0, 0, 0.4)',    // Red (15.72)
+                    'rgba(255, 100, 0, 0.4)',  // Red-orange (9.454)
+                    'rgba(255, 150, 0, 0.4)',  // Orange (7.886)
+                    'rgba(255, 200, 0, 0.4)',  // Yellow-orange (6.309)
+                    'rgba(255, 255, 0, 0.4)',  // Yellow (4.732)
+                    'rgba(150, 255, 150, 0.4)', // Light green (3.155)
+                    'rgba(100, 200, 255, 0.4)', // Light blue (1.893)
+                    'rgba(50, 150, 255, 0.4)',  // Medium blue (1.577)
+                    'rgba(100, 50, 255, 0.4)'   // Purple-blue (1.388)
+                  ];
+                  const color = colors[index] || 'rgba(100, 100, 100, 0.3)';
+                  const isSelected = selectedContours.includes(index);
+                  
                   return (
                     <div key={index} className="flex items-center gap-2">
                       <div 
-                        className="w-4 h-4 rounded-full border-2"
-                        style={{ backgroundColor: colors[index] + '40', borderColor: colors[index] }}
+                        className={`w-4 h-4 rounded border cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedContours(prev => prev.filter(i => i !== index));
+                          } else {
+                            setSelectedContours(prev => [...prev, index]);
+                          }
+                        }}
                       />
-                      <span className="text-sm">
+                      <span className={`text-sm ${isSelected ? 'font-semibold' : ''}`}>
                         {contour.level.toFixed(1)} {getPowerUnit()}
                       </span>
                     </div>
@@ -1169,19 +1196,72 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
               </h4>
               <div className="space-y-1">
                 {noiseContours.map((contour, index) => {
-                  const colors = ['#0066ff', '#00aaff', '#00ffff'];
+                  const colors = ['rgba(0, 102, 255, 0.2)', 'rgba(0, 170, 255, 0.2)', 'rgba(0, 255, 255, 0.2)'];
+                  const isSelected = selectedContours.includes(index);
+                  
                   return (
                     <div key={index} className="flex items-center gap-2">
                       <div 
-                        className="w-4 h-4 rounded-full border-2"
-                        style={{ backgroundColor: colors[index] + '40', borderColor: colors[index] }}
+                        className={`w-4 h-4 rounded border cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                        style={{ backgroundColor: colors[index] }}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedContours(prev => prev.filter(i => i !== index));
+                          } else {
+                            setSelectedContours(prev => [...prev, index]);
+                          }
+                        }}
                       />
-                      <span className="text-sm">
+                      <span className={`text-sm ${isSelected ? 'font-semibold' : ''}`}>
                         {contour.level.toFixed(0)} {getSoundUnit()}
                       </span>
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+          
+          {/* Custom Contour Controls */}
+          <div className="mt-6 pt-4 border-t">
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <RotateCcw className="h-4 w-4" />
+              Custom Contour Control
+            </h4>
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={() => setSelectedContours([0, 1, 2])}
+                  variant="outline"
+                  size="sm"
+                >
+                  Show First 3
+                </Button>
+                <Button
+                  onClick={() => setSelectedContours([0, 1, 2, 3, 4])}
+                  variant="outline"
+                  size="sm"
+                >
+                  Show First 5
+                </Button>
+                <Button
+                  onClick={() => setSelectedContours(Array.from({length: radiationContours.length}, (_, i) => i))}
+                  variant="outline"
+                  size="sm"
+                >
+                  Show All
+                </Button>
+                <Button
+                  onClick={() => setSelectedContours([])}
+                  variant="outline"
+                  size="sm"
+                >
+                  Hide All
+                </Button>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                Click on contour colors above to toggle visibility. Selected contours: {selectedContours.length} of {radiationContours.length}
               </div>
             </div>
           </div>
