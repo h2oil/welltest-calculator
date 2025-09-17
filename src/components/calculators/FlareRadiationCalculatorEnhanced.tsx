@@ -124,6 +124,26 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
     });
   }, [unitSystem]);
 
+  // Convert input values when unit system changes
+  useEffect(() => {
+    const defaultUnits = getDefaultUnits(unitSystem);
+    
+    // Convert current input values to the new unit system
+    setInputs(prevInputs => ({
+      ...prevInputs,
+      gasRate: convertFromSI(convertToSI(prevInputs.gasRate, perFieldUnits.gasRate), defaultUnits.flowRate),
+      flareTipHeight: convertFromSI(convertToSI(prevInputs.flareTipHeight, perFieldUnits.flareHeight), defaultUnits.length),
+      tipDiameter: convertFromSI(convertToSI(prevInputs.tipDiameter, perFieldUnits.tipDiameter), defaultUnits.length),
+      tipPressure: convertFromSI(convertToSI(prevInputs.tipPressure, perFieldUnits.tipPressure), defaultUnits.pressure),
+      tipTemperature: convertFromSI(convertToSI(prevInputs.tipTemperature, perFieldUnits.tipTemperature), defaultUnits.temperature),
+      windSpeed: convertFromSI(convertToSI(prevInputs.windSpeed, perFieldUnits.windSpeed), defaultUnits.velocity),
+      windDirection: convertFromSI(convertToSI(prevInputs.windDirection, perFieldUnits.windDirection), defaultUnits.angle),
+      atmosphericHumidity: convertFromSI(convertToSI(prevInputs.atmosphericHumidity, perFieldUnits.humidity), defaultUnits.dimensionless),
+      ambientTemperature: convertFromSI(convertToSI(prevInputs.ambientTemperature, perFieldUnits.tipTemperature), defaultUnits.temperature),
+      noiseReferenceDistance: convertFromSI(convertToSI(prevInputs.noiseReferenceDistance, perFieldUnits.noiseReferenceDistance), defaultUnits.length)
+    }));
+  }, [unitSystem, perFieldUnits]);
+
   // Convert inputs to SI for calculations
   const getSIInputs = (): FlareRadiationInputs => {
     return {

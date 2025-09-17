@@ -19,6 +19,7 @@ import {
 import { calculateFlowAssurance } from '@/lib/well-calculations';
 import { copyResultsToClipboard } from '@/lib/storage';
 import { EQUIPMENT_LIBRARY, getEquipmentByType, PIPE_SIZES } from '@/lib/equipment-library';
+import { convertToSI, convertFromSI, DEFAULT_UNITS } from '@/lib/unit-conversions-enhanced';
 import ProcessFlowDiagram from '@/components/ui/ProcessFlowDiagram';
 import type { FlowAssuranceInputs, FlowAssuranceOutputs, UnitSystem, Segment } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
@@ -119,6 +120,16 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
       }
     }
   }, [inputs, unitSystem]);
+
+  // Convert input values when unit system changes
+  useEffect(() => {
+    setInputs(prevInputs => ({
+      ...prevInputs,
+      gasRate: convertGasRateFromSI(convertGasRateToSI(prevInputs.gasRate)),
+      oilRate: convertOilWaterRateFromSI(convertOilWaterRateToSI(prevInputs.oilRate)),
+      waterRate: convertOilWaterRateFromSI(convertOilWaterRateToSI(prevInputs.waterRate))
+    }));
+  }, [unitSystem]);
 
   const validateInputs = (): boolean => {
     const newErrors: Record<string, string> = {};
