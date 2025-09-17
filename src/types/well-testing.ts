@@ -241,6 +241,143 @@ export interface FlareRadiationOutputs {
   notes: string[];
 }
 
+// Flow Assurance Model Types
+export interface EquipmentModel {
+  id: string;
+  type: 'esd' | 'filter' | 'choke' | 'heater' | 'separator' | 'flare';
+  name: string;
+  manufacturer: string;
+  model: string;
+  parameters: Record<string, number>;
+  calculationMethod: string;
+  description: string;
+}
+
+export interface PhaseProperties {
+  density: number; // kg/m³
+  viscosity: number; // Pa·s
+  specificGravity: number;
+  compressibilityFactor?: number; // For gas
+  heatCapacity?: number; // J/(kg·K)
+}
+
+export interface NodeState {
+  nodeId: string;
+  pressure: number; // Pa
+  temperature: number; // K
+  gasRate: number; // m³/s
+  oilRate: number; // m³/s
+  waterRate: number; // m³/s
+  velocity: number; // m/s
+  reynoldsNumber: number;
+  pressureDrop: number; // Pa
+  phaseProperties: {
+    gas: PhaseProperties;
+    oil: PhaseProperties;
+    water: PhaseProperties;
+  };
+  warnings: string[];
+  notes: string[];
+}
+
+export interface Segment {
+  id: string;
+  fromNode: string;
+  toNode: string;
+  lineId: number; // mm
+  schedule: string;
+  length: number; // m
+  roughness: number; // mm
+  fittings: {
+    elbows: number;
+    tees: number;
+    reducers: number;
+    other: number;
+  };
+  kFactor: number; // Total K factor for fittings
+  pressureDrop: number; // Pa
+  velocity: number; // m/s
+  reynoldsNumber: number;
+  frictionFactor: number;
+}
+
+export interface FlowAssuranceInputs {
+  // Wellhead conditions
+  wellheadPressure: number; // Pa
+  wellheadTemperature: number; // K
+  
+  // Flow rates
+  gasRate: number; // m³/s
+  oilRate: number; // m³/s
+  waterRate: number; // m³/s
+  
+  // Phase properties
+  gasSpecificGravity: number;
+  oilSpecificGravity: number;
+  waterSpecificGravity: number;
+  gasComposition?: FlareGasComposition;
+  
+  // Velocity limits
+  maxHoseVelocity: number; // m/s
+  maxPipeVelocity: number; // m/s
+  
+  // Ambient conditions
+  ambientTemperature: number; // K
+  ambientPressure: number; // Pa
+  
+  // Equipment selections
+  equipmentSelections: {
+    esd: string;
+    filter: string;
+    choke: string;
+    heater: string;
+    separator: string;
+    flare: string;
+  };
+  
+  // Separator settings
+  separatorSetPressure: number; // Pa
+  separatorType: '2-phase' | '3-phase';
+  separatorOperatingMode: 'atmospheric' | 'pressured';
+  
+  // Choke settings
+  chokeOpening: number; // % or bean size
+  chokeType: 'fixed-bean' | 'adjustable';
+  
+  // Line segments
+  segments: Segment[];
+}
+
+export interface FlowAssuranceOutputs {
+  // Node states
+  nodes: NodeState[];
+  
+  // System summary
+  totalSystemPressureDrop: number; // Pa
+  requiredBackPressure: number; // Pa
+  backPressureValveOpening: number; // %
+  limitingElement: string;
+  
+  // Equipment performance
+  equipmentPerformance: {
+    esd: { pressureDrop: number; status: string };
+    filter: { pressureDrop: number; foulingFactor: number; status: string };
+    choke: { pressureDrop: number; isCritical: boolean; status: string };
+    heater: { duty: number; outletTemperature: number; status: string };
+    separator: { pressure: number; capacity: number; status: string };
+    flare: { pressureDrop: number; status: string };
+  };
+  
+  // Warnings and alerts
+  systemWarnings: string[];
+  criticalAlerts: string[];
+  
+  // Performance metrics
+  overallEfficiency: number; // %
+  energyConsumption: number; // kW
+  pressureRecovery: number; // %
+}
+
 export interface CalculationSession {
   unitSystem: UnitSystem;
   standardConditions: StandardConditions;
@@ -251,5 +388,6 @@ export interface CalculationSession {
   velocity: VelocityInputs;
   apiGravity: APIGravityInputs;
   flareRadiation: FlareRadiationInputs;
+  flowAssurance: FlowAssuranceInputs;
   notes: Record<string, string>;
 }

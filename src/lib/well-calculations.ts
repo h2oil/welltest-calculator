@@ -23,6 +23,12 @@ import type {
   FlareRadiationInputs,
   FlareRadiationOutputs,
   FlareGasComposition,
+  FlowAssuranceInputs,
+  FlowAssuranceOutputs,
+  NodeState,
+  Segment,
+  PhaseProperties,
+  EquipmentModel,
 } from '@/types/well-testing';
 
 // Daniel Orifice Calculations
@@ -862,4 +868,354 @@ const calculateMaxNoiseDistance = (level: number, soundPowerLevel: number, airAb
   const distance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20);
   
   return distance;
+};
+
+// Flow Assurance Calculations
+export const calculateFlowAssurance = (inputs: FlowAssuranceInputs): FlowAssuranceOutputs => {
+  const warnings: string[] = [];
+  const criticalAlerts: string[] = [];
+  
+  // Initialize node states
+  const nodes: NodeState[] = [];
+  
+  // Calculate phase properties
+  const phaseProperties = calculatePhaseProperties(inputs);
+  
+  // Calculate initial node (wellhead)
+  const wellheadNode: NodeState = {
+    nodeId: 'wellhead',
+    pressure: inputs.wellheadPressure,
+    temperature: inputs.wellheadTemperature,
+    gasRate: inputs.gasRate,
+    oilRate: inputs.oilRate,
+    waterRate: inputs.waterRate,
+    velocity: 0,
+    reynoldsNumber: 0,
+    pressureDrop: 0,
+    phaseProperties,
+    warnings: [],
+    notes: ['Wellhead conditions']
+  };
+  nodes.push(wellheadNode);
+  
+  // Process each equipment block and segments
+  let currentPressure = inputs.wellheadPressure;
+  let currentTemperature = inputs.wellheadTemperature;
+  let totalPressureDrop = 0;
+  
+  // Equipment processing order
+  const equipmentOrder = ['esd', 'filter', 'choke', 'heater', 'separator', 'flare'];
+  
+  for (let i = 0; i < equipmentOrder.length; i++) {
+    const equipmentType = equipmentOrder[i];
+    const equipmentId = inputs.equipmentSelections[equipmentType as keyof typeof inputs.equipmentSelections];
+    
+    // Calculate equipment pressure drop
+    const equipmentResult = calculateEquipmentPressureDrop(
+      equipmentType,
+      equipmentId,
+      currentPressure,
+      currentTemperature,
+      inputs,
+      phaseProperties
+    );
+    
+    // Update pressure and temperature
+    currentPressure -= equipmentResult.pressureDrop;
+    currentTemperature = equipmentResult.outletTemperature;
+    totalPressureDrop += equipmentResult.pressureDrop;
+    
+    // Create node state
+    const node: NodeState = {
+      nodeId: `${equipmentType}_outlet`,
+      pressure: currentPressure,
+      temperature: currentTemperature,
+      gasRate: inputs.gasRate,
+      oilRate: inputs.oilRate,
+      waterRate: inputs.waterRate,
+      velocity: equipmentResult.velocity,
+      reynoldsNumber: equipmentResult.reynoldsNumber,
+      pressureDrop: equipmentResult.pressureDrop,
+      phaseProperties: calculatePhasePropertiesAtConditions(phaseProperties, currentPressure, currentTemperature),
+      warnings: equipmentResult.warnings,
+      notes: equipmentResult.notes
+    };
+    nodes.push(node);
+    
+    // Add warnings and alerts
+    warnings.push(...equipmentResult.warnings);
+    if (equipmentResult.isCritical) {
+      criticalAlerts.push(`${equipmentType.toUpperCase()}: Critical flow detected`);
+    }
+  }
+  
+  // Calculate system performance metrics
+  const systemPerformance = calculateSystemPerformance(inputs, nodes, totalPressureDrop);
+  
+  // Calculate equipment performance summary
+  const equipmentPerformance = calculateEquipmentPerformanceSummary(inputs, nodes);
+  
+  return {
+    nodes,
+    totalSystemPressureDrop: totalPressureDrop,
+    requiredBackPressure: systemPerformance.requiredBackPressure,
+    backPressureValveOpening: systemPerformance.backPressureValveOpening,
+    limitingElement: systemPerformance.limitingElement,
+    equipmentPerformance,
+    systemWarnings: warnings,
+    criticalAlerts,
+    overallEfficiency: systemPerformance.overallEfficiency,
+    energyConsumption: systemPerformance.energyConsumption,
+    pressureRecovery: systemPerformance.pressureRecovery
+  };
+};
+
+// Helper functions for flow assurance calculations
+const calculatePhaseProperties = (inputs: FlowAssuranceInputs) => {
+  const gasProperties: PhaseProperties = {
+    density: calculateGasDensity(inputs.ambientPressure, inputs.ambientTemperature, 16.04, 0.9), // Simplified
+    viscosity: 1.8e-5, // Pa·s at standard conditions
+    specificGravity: inputs.gasSpecificGravity,
+    compressibilityFactor: 0.9,
+    heatCapacity: 1000 // J/(kg·K)
+  };
+  
+  const oilProperties: PhaseProperties = {
+    density: inputs.oilSpecificGravity * 1000, // kg/m³
+    viscosity: 0.001, // Pa·s
+    specificGravity: inputs.oilSpecificGravity,
+    heatCapacity: 2000 // J/(kg·K)
+  };
+  
+  const waterProperties: PhaseProperties = {
+    density: inputs.waterSpecificGravity * 1000, // kg/m³
+    viscosity: 0.001, // Pa·s
+    specificGravity: inputs.waterSpecificGravity,
+    heatCapacity: 4180 // J/(kg·K)
+  };
+  
+  return {
+    gas: gasProperties,
+    oil: oilProperties,
+    water: waterProperties
+  };
+};
+
+const calculatePhasePropertiesAtConditions = (baseProperties: any, pressure: number, temperature: number) => {
+  // Simplified temperature and pressure corrections
+  const temperatureRatio = temperature / 288; // Reference temperature
+  const pressureRatio = pressure / 101325; // Reference pressure
+  
+  return {
+    gas: {
+      ...baseProperties.gas,
+      density: baseProperties.gas.density * pressureRatio / temperatureRatio,
+      viscosity: baseProperties.gas.viscosity * Math.pow(temperatureRatio, 0.7)
+    },
+    oil: {
+      ...baseProperties.oil,
+      density: baseProperties.oil.density * (1 - 0.0005 * (temperature - 288)),
+      viscosity: baseProperties.oil.viscosity * Math.exp(-0.01 * (temperature - 288))
+    },
+    water: {
+      ...baseProperties.water,
+      density: baseProperties.water.density * (1 - 0.0002 * (temperature - 288)),
+      viscosity: baseProperties.water.viscosity * Math.exp(-0.02 * (temperature - 288))
+    }
+  };
+};
+
+const calculateEquipmentPressureDrop = (
+  equipmentType: string,
+  equipmentId: string,
+  inletPressure: number,
+  inletTemperature: number,
+  inputs: FlowAssuranceInputs,
+  phaseProperties: any
+) => {
+  const warnings: string[] = [];
+  const notes: string[] = [];
+  let pressureDrop = 0;
+  let outletTemperature = inletTemperature;
+  let velocity = 0;
+  let reynoldsNumber = 0;
+  let isCritical = false;
+  
+  // Calculate total flow rate and mixture properties
+  const totalFlowRate = inputs.gasRate + inputs.oilRate + inputs.waterRate;
+  const mixtureDensity = (inputs.gasRate * phaseProperties.gas.density + 
+    inputs.oilRate * phaseProperties.oil.density + 
+    inputs.waterRate * phaseProperties.water.density) / totalFlowRate;
+  
+  // Equipment-specific calculations
+  switch (equipmentType) {
+    case 'esd':
+      pressureDrop = calculateESDPressureDrop(equipmentId, totalFlowRate, mixtureDensity);
+      notes.push('ESD/SSV pressure drop calculated');
+      break;
+      
+    case 'filter':
+      pressureDrop = calculateFilterPressureDrop(equipmentId, totalFlowRate, mixtureDensity);
+      notes.push('Sand filter pressure drop calculated');
+      break;
+      
+    case 'choke':
+      const chokeResult = calculateChokePressureDrop(equipmentId, inletPressure, totalFlowRate, mixtureDensity, inputs);
+      pressureDrop = chokeResult.pressureDrop;
+      isCritical = chokeResult.isCritical;
+      if (isCritical) {
+        warnings.push('CRITICAL FLOW: Choke is operating at critical conditions');
+      }
+      notes.push('Choke pressure drop calculated');
+      break;
+      
+    case 'heater':
+      const heaterResult = calculateHeaterPerformance(equipmentId, inletPressure, inletTemperature, totalFlowRate, mixtureDensity, inputs);
+      pressureDrop = heaterResult.pressureDrop;
+      outletTemperature = heaterResult.outletTemperature;
+      notes.push(`Heater outlet temperature: ${outletTemperature.toFixed(1)}K`);
+      break;
+      
+    case 'separator':
+      pressureDrop = calculateSeparatorPressureDrop(equipmentId, totalFlowRate, mixtureDensity);
+      notes.push('Separator pressure drop calculated');
+      break;
+      
+    case 'flare':
+      pressureDrop = calculateFlarePressureDrop(equipmentId, totalFlowRate, mixtureDensity);
+      notes.push('Flare stack pressure drop calculated');
+      break;
+  }
+  
+  // Calculate velocity and Reynolds number
+  velocity = totalFlowRate / (Math.PI * Math.pow(0.1, 2) / 4); // Simplified pipe area
+  reynoldsNumber = (mixtureDensity * velocity * 0.1) / phaseProperties.gas.viscosity; // Simplified
+  
+  // Check velocity limits
+  if (velocity > inputs.maxHoseVelocity) {
+    warnings.push('VEL WARNING: Velocity exceeds maximum hose limit');
+  }
+  if (velocity > inputs.maxPipeVelocity) {
+    warnings.push('VEL WARNING: Velocity exceeds maximum pipe limit');
+  }
+  
+  return {
+    pressureDrop,
+    outletTemperature,
+    velocity,
+    reynoldsNumber,
+    isCritical,
+    warnings,
+    notes
+  };
+};
+
+const calculateESDPressureDrop = (equipmentId: string, flowRate: number, density: number): number => {
+  // Simplified ESD pressure drop calculation
+  const cv = 100; // Flow coefficient (simplified)
+  const pressureDrop = Math.pow(flowRate / cv, 2) * density / 2;
+  return pressureDrop;
+};
+
+const calculateFilterPressureDrop = (equipmentId: string, flowRate: number, density: number): number => {
+  // Simplified filter pressure drop calculation
+  const foulingFactor = 1.5; // Fouling factor
+  const pressureDrop = foulingFactor * Math.pow(flowRate, 1.8) * density / 1000;
+  return pressureDrop;
+};
+
+const calculateChokePressureDrop = (equipmentId: string, inletPressure: number, flowRate: number, density: number, inputs: FlowAssuranceInputs) => {
+  // Choke pressure drop calculation with critical flow check
+  const gamma = 1.3; // Specific heat ratio
+  const criticalRatio = Math.pow(2 / (gamma + 1), gamma / (gamma - 1));
+  
+  let pressureDrop = 0;
+  let isCritical = false;
+  
+  if (inputs.chokeType === 'fixed-bean') {
+    const beanSize = inputs.chokeOpening; // mm
+    const area = Math.PI * Math.pow(beanSize / 2000, 2); // m²
+    const velocity = flowRate / area;
+    
+    // Check for critical flow
+    const downstreamPressure = inletPressure * 0.5; // Simplified
+    if (downstreamPressure / inletPressure < criticalRatio) {
+      isCritical = true;
+      pressureDrop = inletPressure * (1 - criticalRatio);
+    } else {
+      pressureDrop = inletPressure - downstreamPressure;
+    }
+  } else {
+    // Adjustable choke
+    const opening = inputs.chokeOpening / 100; // Convert % to fraction
+    const cv = 50 * opening; // Flow coefficient
+    pressureDrop = Math.pow(flowRate / cv, 2) * density / 2;
+    
+    if (pressureDrop / inletPressure > (1 - criticalRatio)) {
+      isCritical = true;
+      pressureDrop = inletPressure * (1 - criticalRatio);
+    }
+  }
+  
+  return { pressureDrop, isCritical };
+};
+
+const calculateHeaterPerformance = (equipmentId: string, inletPressure: number, inletTemperature: number, flowRate: number, density: number, inputs: FlowAssuranceInputs) => {
+  // Simplified heater calculation
+  const ua = 1000; // Overall heat transfer coefficient (W/K)
+  const targetTemperature = inputs.ambientTemperature + 50; // Target outlet temperature
+  const lmtd = (targetTemperature - inletTemperature) / Math.log((targetTemperature - inputs.ambientTemperature) / (inletTemperature - inputs.ambientTemperature));
+  
+  const duty = ua * lmtd; // W
+  const outletTemperature = inletTemperature + duty / (flowRate * density * 2000); // Simplified heat capacity
+  
+  // Pressure drop through heater tubes
+  const pressureDrop = 0.1 * inletPressure; // Simplified
+  
+  return { pressureDrop, outletTemperature };
+};
+
+const calculateSeparatorPressureDrop = (equipmentId: string, flowRate: number, density: number): number => {
+  // Simplified separator pressure drop
+  const pressureDrop = 0.05 * 101325; // 5% of atmospheric pressure
+  return pressureDrop;
+};
+
+const calculateFlarePressureDrop = (equipmentId: string, flowRate: number, density: number): number => {
+  // Simplified flare pressure drop
+  const pressureDrop = 0.02 * 101325; // 2% of atmospheric pressure
+  return pressureDrop;
+};
+
+const calculateSystemPerformance = (inputs: FlowAssuranceInputs, nodes: NodeState[], totalPressureDrop: number) => {
+  const requiredBackPressure = Math.max(0, inputs.separatorSetPressure - nodes[nodes.length - 1].pressure);
+  const backPressureValveOpening = Math.min(100, (requiredBackPressure / inputs.separatorSetPressure) * 100);
+  
+  // Find limiting element (highest pressure drop)
+  const limitingElement = 'choke'; // Simplified
+  
+  // Calculate efficiency metrics
+  const overallEfficiency = Math.max(0, 100 - (totalPressureDrop / inputs.wellheadPressure) * 100);
+  const energyConsumption = totalPressureDrop * (inputs.gasRate + inputs.oilRate + inputs.waterRate) / 1000; // kW
+  const pressureRecovery = Math.max(0, (inputs.wellheadPressure - nodes[nodes.length - 1].pressure) / inputs.wellheadPressure * 100);
+  
+  return {
+    requiredBackPressure,
+    backPressureValveOpening,
+    limitingElement,
+    overallEfficiency,
+    energyConsumption,
+    pressureRecovery
+  };
+};
+
+const calculateEquipmentPerformanceSummary = (inputs: FlowAssuranceInputs, nodes: NodeState[]) => {
+  return {
+    esd: { pressureDrop: 0, status: 'Normal' },
+    filter: { pressureDrop: 0, foulingFactor: 1.0, status: 'Normal' },
+    choke: { pressureDrop: 0, isCritical: false, status: 'Normal' },
+    heater: { duty: 0, outletTemperature: 0, status: 'Normal' },
+    separator: { pressure: 0, capacity: 100, status: 'Normal' },
+    flare: { pressureDrop: 0, status: 'Normal' }
+  };
 };
