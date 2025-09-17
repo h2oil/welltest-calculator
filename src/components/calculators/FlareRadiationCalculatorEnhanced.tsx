@@ -75,7 +75,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
 
   const [inputs, setInputs] = useState<FlareRadiationInputs>({
     // Operating data
-    gasRate: 10, // Will be converted to SI
+    gasRate: 5, // Will be converted to SI
     flareTipHeight: 30, // Will be converted to SI
     windSpeed: 5, // Will be converted to SI
     windDirection: 0, // degrees
@@ -234,7 +234,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
 
   const handleReset = () => {
     setInputs({
-      gasRate: 10,
+      gasRate: 5,
       flareTipHeight: 30,
       windSpeed: 5,
       windDirection: 0,
@@ -734,7 +734,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
                     </Button>
                   </div>
                   
-                  {show2D && (
+                  {show2D && outputs && (
                     <Flare2DViewer
                       flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
                       tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}

@@ -66,6 +66,21 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const [customContourValues, setCustomContourValues] = useState<number[]>([]);
   const { toast } = useToast();
 
+  // Debug logging for prop changes
+  useEffect(() => {
+    console.log('Flare2DViewer props updated:', {
+      flareHeight,
+      tipDiameter,
+      flameLength,
+      flameTilt,
+      windSpeed,
+      windDirection,
+      radiationContours: radiationContours?.length,
+      noiseContours: noiseContours?.length,
+      unitSystem
+    });
+  }, [flareHeight, tipDiameter, flameLength, flameTilt, windSpeed, windDirection, radiationContours, noiseContours, unitSystem]);
+
   // Convert units based on system
   const getLengthUnit = () => unitSystem === 'metric' ? 'm' : 'ft';
   const getLengthFactor = () => unitSystem === 'metric' ? 1 : 3.28084;
