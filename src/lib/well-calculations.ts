@@ -787,24 +787,34 @@ const calculateRadiationFootprint = (
 ) => {
   const contours = inputs.radiationContours.map(level => {
     const points: Array<{x: number; y: number; z: number}> = [];
-    const maxDistance = calculateMaxRadiationDistance(level, flameGeometry, emissiveFraction, transmissivity, gasProps);
     
-    // Generate contour points (simplified circular approximation)
-    const numPoints = 36;
+    // Calculate polar radii for wind-affected contours
+    const polarRadii = calculatePolarRadii(level, flameGeometry, emissiveFraction, transmissivity, gasProps, inputs);
+    
+    // Generate contour points using polar coordinates
+    const numPoints = 72; // Higher resolution for better accuracy
     for (let i = 0; i < numPoints; i++) {
       const angle = (i * 2 * Math.PI) / numPoints;
-      const distance = maxDistance * (0.5 + 0.5 * Math.cos(angle));
+      const distance = polarRadii[i];
+      
+      // Convert polar to Cartesian coordinates
+      const x = flameGeometry.radiantCenter.x + distance * Math.cos(angle);
+      const y = flameGeometry.radiantCenter.y + distance * Math.sin(angle);
+      
       points.push({
-        x: flameGeometry.radiantCenter.x + distance * Math.cos(angle),
-        y: flameGeometry.radiantCenter.y + distance * Math.sin(angle),
+        x,
+        y,
         z: 0 // Ground level
       });
     }
     
+    const maxDistance = Math.max(...polarRadii);
+    
     return {
       level,
       points,
-      maxDistance
+      maxDistance,
+      polarRadii
     };
   });
   
@@ -816,6 +826,47 @@ const calculateRadiationFootprint = (
     maxRadiation,
     maxDistance
   };
+};
+
+const calculatePolarRadii = (
+  level: number, 
+  flameGeometry: any, 
+  emissiveFraction: number, 
+  transmissivity: number, 
+  gasProps: any,
+  inputs: FlareRadiationInputs
+): number[] => {
+  const numPoints = 72;
+  const radii: number[] = [];
+  
+  // Base radiation intensity (kW)
+  const radiantIntensity = emissiveFraction * gasProps.lhv * 1000;
+  
+  // Wind parameters
+  const windSpeed = inputs.windSpeed;
+  const windDirection = inputs.windDirection * Math.PI / 180; // Convert to radians
+  
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i * 2 * Math.PI) / numPoints;
+    
+    // Calculate wind effect on radiation pattern
+    // Wind stretches the contour downwind and compresses it upwind
+    const windAngle = angle - windDirection;
+    const windEffect = 1 + 0.3 * windSpeed * Math.cos(windAngle) / 10; // Wind speed in m/s
+    
+    // Base distance calculation (API 521 method)
+    const baseDistance = Math.sqrt(radiantIntensity * transmissivity / (4 * Math.PI * level));
+    
+    // Apply wind effect and flame geometry
+    const flameEffect = 1 + 0.1 * Math.sin(windAngle) * (flameGeometry.tilt / 45); // Flame tilt effect
+    
+    const adjustedDistance = baseDistance * windEffect * flameEffect;
+    
+    // Ensure minimum distance for stability
+    radii.push(Math.max(adjustedDistance, baseDistance * 0.5));
+  }
+  
+  return radii;
 };
 
 const calculateMaxRadiationDistance = (level: number, flameGeometry: any, emissiveFraction: number, transmissivity: number, gasProps: any): number => {
@@ -837,24 +888,34 @@ const calculateNoiseFootprint = (
   
   const contours = inputs.noiseContours.map(level => {
     const points: Array<{x: number; y: number; z: number}> = [];
-    const maxDistance = calculateMaxNoiseDistance(level, soundPowerLevel, airAbsorption);
     
-    // Generate contour points (simplified circular approximation)
-    const numPoints = 36;
+    // Calculate polar radii for wind-affected noise contours
+    const polarRadii = calculateNoisePolarRadii(level, soundPowerLevel, airAbsorption, inputs);
+    
+    // Generate contour points using polar coordinates
+    const numPoints = 72; // Higher resolution for better accuracy
     for (let i = 0; i < numPoints; i++) {
       const angle = (i * 2 * Math.PI) / numPoints;
-      const distance = maxDistance * (0.5 + 0.5 * Math.cos(angle));
+      const distance = polarRadii[i];
+      
+      // Convert polar to Cartesian coordinates
+      const x = distance * Math.cos(angle);
+      const y = distance * Math.sin(angle);
+      
       points.push({
-        x: distance * Math.cos(angle),
-        y: distance * Math.sin(angle),
+        x,
+        y,
         z: 0 // Ground level
       });
     }
     
+    const maxDistance = Math.max(...polarRadii);
+    
     return {
       level,
       points,
-      maxDistance
+      maxDistance,
+      polarRadii
     };
   });
   
@@ -866,6 +927,40 @@ const calculateNoiseFootprint = (
     maxNoise,
     maxDistance
   };
+};
+
+const calculateNoisePolarRadii = (
+  level: number, 
+  soundPowerLevel: number, 
+  airAbsorption: number,
+  inputs: FlareRadiationInputs
+): number[] => {
+  const numPoints = 72;
+  const radii: number[] = [];
+  
+  // Wind parameters
+  const windSpeed = inputs.windSpeed;
+  const windDirection = inputs.windDirection * Math.PI / 180; // Convert to radians
+  
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i * 2 * Math.PI) / numPoints;
+    
+    // Calculate wind effect on noise propagation
+    // Wind carries sound downwind and reduces it upwind
+    const windAngle = angle - windDirection;
+    const windEffect = 1 + 0.2 * windSpeed * Math.cos(windAngle) / 10; // Wind speed in m/s
+    
+    // Base distance calculation (spherical spreading with air absorption)
+    const baseDistance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20);
+    
+    // Apply wind effect
+    const adjustedDistance = baseDistance * windEffect;
+    
+    // Ensure minimum distance for stability
+    radii.push(Math.max(adjustedDistance, baseDistance * 0.3));
+  }
+  
+  return radii;
 };
 
 const calculateMaxNoiseDistance = (level: number, soundPowerLevel: number, airAbsorption: number): number => {

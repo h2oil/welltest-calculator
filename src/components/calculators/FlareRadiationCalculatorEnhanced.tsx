@@ -22,8 +22,7 @@ import {
   exportScenarioToJSON, importScenarioFromJSON, exportContoursToCSV,
   type FlareScenario, validateScenario, formatValueWithUnit
 } from '@/lib/unit-conversions-enhanced';
-import Flare3DViewerCanvas from '@/components/ui/Flare3DViewerCanvas';
-import Flare3DViewerFallback from '@/components/ui/Flare3DViewerFallback';
+import Flare2DViewer from '@/components/ui/Flare2DViewer';
 import InputWithUnit from '@/components/ui/InputWithUnit';
 import type { FlareRadiationInputs, FlareRadiationOutputs, UnitSystem, FlareGasComposition } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
@@ -105,7 +104,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   const [outputs, setOutputs] = useState<FlareRadiationOutputs | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('inputs');
-  const [show3D, setShow3D] = useState(true);
+  const [show2D, setShow2D] = useState(true);
   const [viewMode, setViewMode] = useState<'radiation' | 'noise' | 'both'>('both');
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -472,7 +471,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5 bg-secondary/50">
               <TabsTrigger value="inputs">Inputs</TabsTrigger>
-              <TabsTrigger value="3d">3D Model</TabsTrigger>
+              <TabsTrigger value="3d">Diagrams</TabsTrigger>
               <TabsTrigger value="results">Results</TabsTrigger>
               <TabsTrigger value="export">Export</TabsTrigger>
               <TabsTrigger value="import">Import</TabsTrigger>
@@ -726,17 +725,17 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
                 <div className="space-y-4">
                   <div className="flex gap-2">
                     <Button 
-                      onClick={() => setShow3D(!show3D)} 
+                      onClick={() => setShow2D(!show2D)} 
                       variant="outline" 
                       size="sm"
                     >
-                      {show3D ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-                      {show3D ? 'Hide 3D' : 'Show 3D'}
+                      {show2D ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                      {show2D ? 'Hide Diagrams' : 'Show Diagrams'}
                     </Button>
                   </div>
                   
-                  {show3D ? (
-                    <Flare3DViewerCanvas
+                  {show2D && (
+                    <Flare2DViewer
                       flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
                       tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
                       flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
@@ -747,22 +746,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
                       noiseContours={outputs.noiseFootprint.contours}
                       emissiveFraction={outputs.emissiveFraction}
                       exitVelocity={outputs.exitVelocity}
-                      onExportPNG={handleExportPNG}
-                      onExportCSV={handleExportCSV}
-                      onExportJSON={handleExportJSON}
-                    />
-                  ) : (
-                    <Flare3DViewerFallback
-                      flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
-                      tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
-                      flameLength={convertFromSI(outputs.flameLength, perFieldUnits.flareHeight)}
-                      flameTilt={outputs.flameTilt}
-                      windSpeed={convertFromSI(inputs.windSpeed, perFieldUnits.windSpeed)}
-                      windDirection={inputs.windDirection}
-                      radiationContours={outputs.radiationFootprint.contours}
-                      noiseContours={outputs.noiseFootprint.contours}
-                      emissiveFraction={outputs.emissiveFraction}
-                      exitVelocity={outputs.exitVelocity}
+                      unitSystem={unitSystem}
                       onExportPNG={handleExportPNG}
                       onExportCSV={handleExportCSV}
                       onExportJSON={handleExportJSON}
@@ -772,7 +756,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Flame className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Enter parameters to generate 3D visualization</p>
+                  <p>Enter parameters to generate engineering diagrams</p>
                 </div>
               )}
             </TabsContent>
