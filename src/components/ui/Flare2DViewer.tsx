@@ -119,10 +119,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       ctx.fillStyle = '#666';
       ctx.textAlign = 'center';
       
-      // Calculate grid spacing based on zoom level
-      const baseGridSize = 50; // 50m base grid
+      // Calculate grid spacing based on zoom level - 10m divisions, max 200m
+      const baseGridSize = 10; // 10m base grid
       const gridSize = baseGridSize * scale;
-      const gridSpacing = Math.max(20, Math.min(100, gridSize)); // Min 20px, max 100px
+      const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
       
       // Draw vertical grid lines
       for (let x = centerX % gridSpacing; x < canvas.width; x += gridSpacing) {
@@ -134,7 +134,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         // Add distance labels on x-axis
         if (showLabels && x !== centerX) {
           const distance = Math.abs((x - centerX) / scale);
-          if (distance > 0 && distance % 50 === 0) { // Every 50m
+          if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
             ctx.fillText(
               `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
               x, canvas.height - 5
@@ -153,7 +153,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         // Add distance labels on y-axis
         if (showLabels && y !== centerY) {
           const distance = Math.abs((y - centerY) / scale);
-          if (distance > 0 && distance % 50 === 0) { // Every 50m
+          if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
             ctx.save();
             ctx.translate(10, y);
             ctx.rotate(-Math.PI / 2);
@@ -342,6 +342,12 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.moveTo(centerX - 50, centerY);
     ctx.lineTo(centerX + 50, centerY);
     ctx.stroke();
+    
+    // Add max range indicator
+    ctx.fillStyle = '#666';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Max Range: 200${getLengthUnit()}`, centerX, canvas.height - 5);
   }, [processContours, pan, zoom, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Draw Side View (Elevation)
@@ -364,10 +370,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       ctx.fillStyle = '#666';
       ctx.textAlign = 'center';
       
-      // Calculate grid spacing based on zoom level
-      const baseGridSize = 50; // 50m base grid
+      // Calculate grid spacing based on zoom level - 10m divisions, max 200m
+      const baseGridSize = 10; // 10m base grid
       const gridSize = baseGridSize * scale;
-      const gridSpacing = Math.max(20, Math.min(100, gridSize)); // Min 20px, max 100px
+      const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
       
       // Draw vertical grid lines
       for (let x = centerX % gridSpacing; x < canvas.width; x += gridSpacing) {
@@ -379,7 +385,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         // Add distance labels on x-axis
         if (showLabels && x !== centerX) {
           const distance = Math.abs((x - centerX) / scale);
-          if (distance > 0 && distance % 50 === 0) { // Every 50m
+          if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
             ctx.fillText(
               `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
               x, canvas.height - 5
@@ -398,7 +404,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         // Add height labels on y-axis
         if (showLabels) {
           const height = Math.abs((groundY - y) / scale);
-          if (height > 0 && height % 25 === 0) { // Every 25m height
+          if (height > 0 && height % 10 === 0 && height <= 200) { // Every 10m height, max 200m
             ctx.save();
             ctx.translate(10, y);
             ctx.rotate(-Math.PI / 2);
@@ -525,6 +531,12 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.font = '12px Arial';
     ctx.textAlign = 'left';
     ctx.fillText(`${50 * getLengthFactor()} ${getLengthUnit()}`, 20, groundY - 25);
+    
+    // Add max range indicator
+    ctx.fillStyle = '#666';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Max Range: 200${getLengthUnit()}`, canvas.width / 2, groundY - 5);
   }, [processContours, pan, zoom, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Handle mouse events for interactivity
