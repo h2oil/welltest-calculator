@@ -279,6 +279,11 @@ export function solveNetwork(
     );
     const mdot = q_actual * density;
     
+    // Calculate initial velocity (assume 4" pipe for initial estimate)
+    const area = Math.PI * Math.pow(0.1023 / 2, 2); // 4" pipe
+    const velocity = q_actual / area;
+    const erosional_velocity = EROSIONAL_C / Math.sqrt(density);
+    
     return {
       id: node.id,
       kind: node.kind,
@@ -288,9 +293,13 @@ export function solveNetwork(
       q_actual_m3_s: q_actual,
       mdot_kg_s: mdot,
       density_kg_m3: density,
+      velocity_m_s: velocity,
+      mach: 0, // Will be calculated during iteration
+      reynolds: 0, // Will be calculated during iteration
+      friction_factor: 0, // Will be calculated during iteration
       erosional_check: {
-        velocity_limit_m_s: 0,
-        is_erosional: false,
+        velocity_limit_m_s: erosional_velocity,
+        is_erosional: velocity > erosional_velocity,
         mach_limit_exceeded: false
       },
       warnings: []
@@ -345,6 +354,12 @@ export function solveNetwork(
       const area = Math.PI * Math.pow(segment.id_inner_m / 2, 2);
       const velocity = toNode.q_actual_m3_s / area;
       const erosional_velocity = EROSIONAL_C / Math.sqrt(toNode.density_kg_m3);
+      
+      // Update node velocity
+      toNode.velocity_m_s = velocity;
+      toNode.mach = segmentResult.mach;
+      toNode.reynolds = segmentResult.reynolds;
+      toNode.friction_factor = segmentResult.friction_factor;
       
       toNode.erosional_check = {
         velocity_limit_m_s: erosional_velocity,

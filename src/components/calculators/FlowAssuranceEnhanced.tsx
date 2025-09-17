@@ -38,6 +38,14 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
   const [segments, setSegments] = useState<SegmentSpec[]>([]);
   const [fluidSpec, setFluidSpec] = useState<FluidSpec>(createDefaultFluidSpec());
   
+  // Choke settings
+  const [chokeSettings, setChokeSettings] = useState({
+    size64ths: 32, // 32/64 inch = 0.5 inch
+    mode: 'fixed-bean' as 'fixed-bean' | 'percent-open',
+    percentOpen: 50,
+    cd: 0.82
+  });
+  
   // Results
   const [networkResult, setNetworkResult] = useState<NetworkResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -56,12 +64,28 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
     if (nodes.length > 0 && segments.length > 0) {
       calculateNetwork();
     }
-  }, [nodes, segments, fluidSpec, unitSystem]);
+  }, [nodes, segments, fluidSpec, chokeSettings, unitSystem]);
 
   const calculateNetwork = async () => {
     setIsCalculating(true);
     try {
-      const result = solveNetwork(nodes, segments, fluidSpec);
+      // Update choke node with current settings
+      const updatedNodes = nodes.map(node => {
+        if (node.kind === 'choke') {
+          return {
+            ...node,
+            choke: {
+              mode: chokeSettings.mode,
+              bean_d_in: chokeSettings.mode === 'fixed-bean' ? chokeSettings.size64ths / 64 : undefined,
+              percent_open: chokeSettings.mode === 'percent-open' ? chokeSettings.percentOpen : undefined,
+              Cd: chokeSettings.cd
+            }
+          };
+        }
+        return node;
+      });
+      
+      const result = solveNetwork(updatedNodes, segments, fluidSpec);
       setNetworkResult(result);
     } catch (error) {
       console.error('Network calculation error:', error);
@@ -134,6 +158,12 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
     setNodes(defaultNetwork.nodes);
     setSegments(defaultNetwork.segments);
     setFluidSpec(createDefaultFluidSpec());
+    setChokeSettings({
+      size64ths: 32,
+      mode: 'fixed-bean',
+      percentOpen: 50,
+      cd: 0.82
+    });
     setNetworkResult(null);
   };
 
@@ -625,6 +655,122 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Choke Settings */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      Choke Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Choke Mode</Label>
+                      <Select
+                        value={chokeSettings.mode}
+                        onValueChange={(value: 'fixed-bean' | 'percent-open') => 
+                          setChokeSettings(prev => ({ ...prev, mode: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed-bean">Fixed Bean Size</SelectItem>
+                          <SelectItem value="percent-open">Percent Open</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {chokeSettings.mode === 'fixed-bean' ? (
+                      <div className="space-y-2">
+                        <Label>Choke Size ({unitSystem === 'metric' ? 'mm' : '64ths inch'})</Label>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            max={unitSystem === 'metric' ? 100 : 64}
+                            step="0.1"
+                            value={unitSystem === 'metric' ? 
+                              (chokeSettings.size64ths / 64 * 25.4) : 
+                              chokeSettings.size64ths
+                            }
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 1;
+                              const size64ths = unitSystem === 'metric' ? 
+                                (value / 25.4 * 64) : 
+                                value;
+                              setChokeSettings(prev => ({ ...prev, size64ths }));
+                            }}
+                            className="w-20"
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {unitSystem === 'metric'
+                              ? `= ${(chokeSettings.size64ths / 64).toFixed(3)} inch`
+                              : `= ${(chokeSettings.size64ths / 64).toFixed(3)} inch`
+                            }
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {unitSystem === 'metric'
+                            ? 'Range: 1-100 mm'
+                            : 'Range: 1/64" to 64/64" (1 inch)'
+                          }
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label>Percent Open (%)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={chokeSettings.percentOpen}
+                          onChange={(e) => setChokeSettings(prev => ({ 
+                            ...prev, 
+                            percentOpen: parseFloat(e.target.value) || 0 
+                          }))}
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>Discharge Coefficient (Cd)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        max="1.0"
+                        value={chokeSettings.cd}
+                        onChange={(e) => setChokeSettings(prev => ({ 
+                          ...prev, 
+                          cd: parseFloat(e.target.value) || 0.82 
+                        }))}
+                      />
+                    </div>
+
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-sm font-medium mb-1">Flow Control Effect</div>
+                      <div className="text-xs text-muted-foreground">
+                        {chokeSettings.mode === 'fixed-bean' ? (
+                          <>
+                            Smaller choke size = Higher pressure drop = Lower flow rate
+                            <br />
+                            Current: {chokeSettings.size64ths}/64" = {(chokeSettings.size64ths / 64).toFixed(3)}"
+                          </>
+                        ) : (
+                          <>
+                            Lower % open = Higher pressure drop = Lower flow rate
+                            <br />
+                            Current: {chokeSettings.percentOpen}% open
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
 

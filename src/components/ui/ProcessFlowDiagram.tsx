@@ -7,10 +7,10 @@ import {
   Droplets, Thermometer, Gauge, Zap, Filter, Flame, 
   ChevronRight, ChevronDown, AlertTriangle, Info
 } from 'lucide-react';
-import type { FlowAssuranceOutputs, NodeState } from '@/types/well-testing';
+import type { NetworkResult, NodeState } from '@/types/well-testing';
 
 interface ProcessFlowDiagramProps {
-  outputs: FlowAssuranceOutputs | null;
+  outputs: NetworkResult | null;
   isCalculating: boolean;
   onNodeClick?: (nodeId: string) => void;
   selectedNode?: string;
@@ -85,8 +85,8 @@ const ProcessFlowDiagram = ({
     return `${(temperature - 273.15).toFixed(0)}°C`;
   };
 
-  const formatVelocity = (velocity: number) => {
-    return `${velocity.toFixed(1)} m/s`;
+  const formatVelocity = (velocity: number | undefined) => {
+    return velocity ? `${velocity.toFixed(1)} m/s` : 'N/A';
   };
 
   return (
@@ -198,7 +198,7 @@ const ProcessFlowDiagram = ({
                       fill="#495057"
                       className="pointer-events-none"
                     >
-                      P: {formatPressure(nodeData.pressure)}
+                      P: {formatPressure(nodeData.pressure_kPa * 1000)}
                     </text>
                     <text
                       x={node.x + node.width / 2}
@@ -208,7 +208,17 @@ const ProcessFlowDiagram = ({
                       fill="#495057"
                       className="pointer-events-none"
                     >
-                      T: {formatTemperature(nodeData.temperature)}
+                      T: {formatTemperature(nodeData.temperature_K)}
+                    </text>
+                    <text
+                      x={node.x + node.width / 2}
+                      y={node.y - 2}
+                      textAnchor="middle"
+                      fontSize="8"
+                      fill="#495057"
+                      className="pointer-events-none"
+                    >
+                      V: {formatVelocity(nodeData.velocity_m_s)}
                     </text>
                   </g>
                 )}
@@ -302,19 +312,19 @@ const ProcessFlowDiagram = ({
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Pressure</p>
-                      <p className="text-lg font-semibold">{formatPressure(nodeData.pressure)}</p>
+                      <p className="text-lg font-semibold">{formatPressure(nodeData.pressure_kPa * 1000)}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Temperature</p>
-                      <p className="text-lg font-semibold">{formatTemperature(nodeData.temperature)}</p>
+                      <p className="text-lg font-semibold">{formatTemperature(nodeData.temperature_K)}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Velocity</p>
-                      <p className="text-lg font-semibold">{formatVelocity(nodeData.velocity)}</p>
+                      <p className="text-lg font-semibold">{formatVelocity(nodeData.velocity_m_s)}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Pressure Drop</p>
-                      <p className="text-lg font-semibold">{formatPressure(nodeData.pressureDrop)}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Density</p>
+                      <p className="text-lg font-semibold">{nodeData.density_kg_m3.toFixed(1)} kg/m³</p>
                     </div>
                   </div>
 
@@ -332,19 +342,14 @@ const ProcessFlowDiagram = ({
                     </div>
                   )}
 
-                  {nodeData.notes.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Notes:</p>
-                      <ul className="space-y-1">
-                        {nodeData.notes.map((note, index) => (
-                          <li key={index} className="text-sm text-muted-foreground flex items-center gap-2">
-                            <Info className="h-3 w-3" />
-                            {note}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Flow Rate:</p>
+                    <p className="text-sm">{nodeData.q_actual_m3_s.toFixed(3)} m³/s</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Mass Flow:</p>
+                    <p className="text-sm">{nodeData.mdot_kg_s.toFixed(2)} kg/s</p>
+                  </div>
                 </div>
               );
             })()}
