@@ -228,6 +228,154 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
     }
   };
 
+  const handleExportPNG = () => {
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create a canvas to capture the schematic
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    canvas.width = 800;
+    canvas.height = 400;
+    
+    // Draw a simple schematic representation
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.strokeStyle = '#0066cc';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(50, 200);
+    ctx.lineTo(750, 200);
+    ctx.stroke();
+    
+    // Draw equipment blocks
+    const equipment = ['Wellhead', 'ESD/SSV', 'Filter', 'Choke', 'Heater', 'Separator', 'Flare'];
+    equipment.forEach((name, index) => {
+      const x = 50 + index * 100;
+      const y = 150;
+      
+      // Draw block
+      ctx.fillStyle = '#e9ecef';
+      ctx.fillRect(x, y, 80, 100);
+      ctx.strokeStyle = '#dee2e6';
+      ctx.strokeRect(x, y, 80, 100);
+      
+      // Draw text
+      ctx.fillStyle = '#495057';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(name, x + 40, y + 60);
+    });
+    
+    // Convert to PNG and download
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'flow-assurance-schematic.png';
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PNG Export",
+          description: "Schematic exported as PNG",
+        });
+      }
+    });
+  };
+
+  const handleExportCSV = () => {
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const csvData = [
+      ['Node ID', 'Pressure (kPa)', 'Temperature (°C)', 'Velocity (m/s)', 'Pressure Drop (kPa)', 'Warnings'],
+      ...outputs.nodes.map(node => [
+        node.nodeId,
+        (node.pressure / 1000).toFixed(2),
+        (node.temperature - 273.15).toFixed(2),
+        node.velocity.toFixed(2),
+        (node.pressureDrop / 1000).toFixed(2),
+        node.warnings.join('; ')
+      ])
+    ];
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'flow-assurance-results.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "CSV Export",
+      description: "Results exported as CSV",
+    });
+  };
+
+  const handleExportJSON = () => {
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const exportData = {
+      version: 'flowassurance-1.0',
+      timestamp: new Date().toISOString(),
+      inputs: {
+        wellheadPressure: inputs.wellheadPressure,
+        wellheadTemperature: inputs.wellheadTemperature,
+        gasRate: inputs.gasRate,
+        oilRate: inputs.oilRate,
+        waterRate: inputs.waterRate,
+        gasSpecificGravity: inputs.gasSpecificGravity,
+        oilSpecificGravity: inputs.oilSpecificGravity,
+        waterSpecificGravity: inputs.waterSpecificGravity,
+        equipmentSelections: inputs.equipmentSelections,
+        separatorSetPressure: inputs.separatorSetPressure,
+        chokeOpening: inputs.chokeOpening
+      },
+      outputs: outputs,
+      unitSystem: unitSystem
+    };
+    
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'flow-assurance-scenario.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "JSON Export",
+      description: "Scenario exported as JSON",
+    });
+  };
+
   const handleNodeClick = (nodeId: string) => {
     setSelectedNode(selectedNode === nodeId ? null : nodeId);
   };
@@ -715,15 +863,15 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
                   Export calculation results and schematic data
                 </p>
                 <div className="flex gap-2 justify-center">
-                  <Button variant="outline">
+                  <Button onClick={handleExportPNG} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Export PNG
                   </Button>
-                  <Button variant="outline">
+                  <Button onClick={handleExportCSV} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Export CSV
                   </Button>
-                  <Button variant="outline">
+                  <Button onClick={handleExportJSON} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Export JSON
                   </Button>

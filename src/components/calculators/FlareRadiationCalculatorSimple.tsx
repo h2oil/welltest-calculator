@@ -160,6 +160,150 @@ const FlareRadiationCalculatorSimple = ({ unitSystem }: Props) => {
     }
   };
 
+  const handleExportPNG = () => {
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create a simple chart representation
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    canvas.width = 800;
+    canvas.height = 600;
+    
+    // Draw background
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw title
+    ctx.fillStyle = '#212529';
+    ctx.font = 'bold 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Flare Radiation Analysis', canvas.width / 2, 40);
+    
+    // Draw flare stack
+    ctx.fillStyle = '#6c757d';
+    ctx.fillRect(350, 100, 100, 200);
+    
+    // Draw flame
+    ctx.fillStyle = '#ff6b35';
+    ctx.beginPath();
+    ctx.arc(400, 100, 50, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw radiation contours
+    const colors = ['#ff0000', '#ff8800', '#ffff00'];
+    outputs.radiationFootprint.contours.forEach((contour, index) => {
+      ctx.strokeStyle = colors[index] || '#ff0000';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(400, 300, 50 + index * 30, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+    
+    // Add labels
+    ctx.fillStyle = '#495057';
+    ctx.font = '16px Arial';
+    ctx.fillText(`Max Radiation: ${outputs.radiationFootprint.maxRadiation.toFixed(1)} kW/m²`, canvas.width / 2, 500);
+    ctx.fillText(`Flame Length: ${outputs.flameLength.toFixed(1)} m`, canvas.width / 2, 530);
+    ctx.fillText(`Emissive Fraction: ${outputs.emissiveFraction.toFixed(3)}`, canvas.width / 2, 560);
+    
+    // Convert to PNG and download
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'flare-radiation-analysis.png';
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PNG Export",
+          description: "Analysis chart exported as PNG",
+        });
+      }
+    });
+  };
+
+  const handleExportCSV = () => {
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const csvData = [
+      ['Parameter', 'Value', 'Unit'],
+      ['Emissive Fraction', outputs.emissiveFraction.toFixed(3), ''],
+      ['Exit Velocity', outputs.exitVelocity.toFixed(2), 'm/s'],
+      ['Flame Length', outputs.flameLength.toFixed(2), 'm'],
+      ['Flame Tilt', outputs.flameTilt.toFixed(1), 'degrees'],
+      ['Max Radiation', outputs.radiationFootprint.maxRadiation.toFixed(1), 'kW/m²'],
+      ['Max Noise', outputs.noiseFootprint.maxNoise.toFixed(1), 'dB(A)'],
+      ['Molecular Weight', outputs.molecularWeight.toFixed(1), 'kg/kmol'],
+      ['LHV', outputs.lhv.toFixed(1), 'MJ/kg'],
+      ['Density', outputs.density.toFixed(2), 'kg/m³']
+    ];
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'flare-radiation-results.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "CSV Export",
+      description: "Results exported as CSV",
+    });
+  };
+
+  const handleExportJSON = () => {
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const exportData = {
+      version: 'flarecalc-simple-1.0',
+      timestamp: new Date().toISOString(),
+      inputs: inputs,
+      outputs: outputs,
+      unitSystem: unitSystem
+    };
+    
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'flare-radiation-scenario.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "JSON Export",
+      description: "Scenario exported as JSON",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -475,15 +619,15 @@ const FlareRadiationCalculatorSimple = ({ unitSystem }: Props) => {
                   Export calculation results and data
                 </p>
                 <div className="flex gap-2 justify-center">
-                  <Button variant="outline">
+                  <Button onClick={handleExportPNG} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Export PNG
                   </Button>
-                  <Button variant="outline">
+                  <Button onClick={handleExportCSV} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Export CSV
                   </Button>
-                  <Button variant="outline">
+                  <Button onClick={handleExportJSON} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Export JSON
                   </Button>

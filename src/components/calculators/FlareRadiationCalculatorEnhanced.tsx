@@ -232,6 +232,15 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   };
 
   const handleExportPNG = () => {
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "PNG Export",
       description: "3D view exported as PNG",
@@ -239,7 +248,14 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   };
 
   const handleExportCSV = () => {
-    if (!outputs) return;
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const contours = [
       ...outputs.radiationFootprint.contours.map(c => ({ ...c, type: 'radiation' as const })),
@@ -262,7 +278,14 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   };
 
   const handleExportJSON = () => {
-    if (!outputs) return;
+    if (!outputs) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run calculations first to export data",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const scenario: FlareScenario = {
       version: 'flarecalc-1.1',
