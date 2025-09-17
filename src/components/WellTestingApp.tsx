@@ -13,6 +13,7 @@ import ChokeRateCalculator from './calculators/ChokeRateCalculator';
 import CriticalFlowCalculator from './calculators/CriticalFlowCalculator';
 import GORCalculator from './calculators/GORCalculator';
 import GasVelocityCalculatorV2 from './calculators/GasVelocityCalculatorV2';
+import APIGravityCalculator from './calculators/APIGravityCalculator';
 import UnitConverter from './calculators/UnitConverter';
 
 import { getStoredUnitSystem, storeUnitSystem, getStoredSession, storeSession, exportSessionToJSON, importSessionFromJSON, clearAllStoredData } from '@/lib/storage';
@@ -241,7 +242,7 @@ const WellTestingApp = () => {
       <div className="container mx-auto px-6 py-8">
         <Card className="bg-gradient-card shadow-card">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 bg-secondary/50">
+            <TabsList className="grid w-full grid-cols-7 bg-secondary/50">
               <TabsTrigger value="daniel-orifice" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Daniel Orifice
               </TabsTrigger>
@@ -256,6 +257,9 @@ const WellTestingApp = () => {
               </TabsTrigger>
               <TabsTrigger value="gas-velocity" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Gas Velocity
+              </TabsTrigger>
+              <TabsTrigger value="api-gravity" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+                API Gravity
               </TabsTrigger>
               <TabsTrigger value="unit-converter" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Unit Converter
@@ -281,6 +285,10 @@ const WellTestingApp = () => {
 
               <TabsContent value="gas-velocity" className="space-y-6">
                 <GasVelocityCalculatorV2 />
+              </TabsContent>
+
+              <TabsContent value="api-gravity" className="space-y-6">
+                <APIGravityCalculator unitSystem={unitSystem} />
               </TabsContent>
 
               <TabsContent value="unit-converter" className="space-y-6">

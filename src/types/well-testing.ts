@@ -128,6 +128,23 @@ export interface VelocityOutputs {
   };
 }
 
+export interface APIGravityInputs {
+  specificGravity: number; // SG at 60°F
+  temperature: number; // °F
+  referenceTemp?: number; // °F, default 60°F
+}
+
+export interface APIGravityOutputs {
+  apiGravity: number; // °API at 60°F
+  apiGravityCorrected: number; // °API at given temperature
+  specificGravityCorrected: number; // SG at given temperature
+  density: number; // lb/ft³
+  densityCorrected: number; // lb/ft³ at given temperature
+  temperatureCorrection: number; // °API correction factor
+  warnings: string[];
+  notes: string[];
+}
+
 export interface CalculationSession {
   unitSystem: UnitSystem;
   standardConditions: StandardConditions;
@@ -136,5 +153,6 @@ export interface CalculationSession {
   criticalFlow: CriticalFlowInputs;
   gor: GORInputs;
   velocity: VelocityInputs;
+  apiGravity: APIGravityInputs;
   notes: Record<string, string>;
 }

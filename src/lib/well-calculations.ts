@@ -18,6 +18,8 @@ import type {
   GOROutputs,
   VelocityInputs,
   VelocityOutputs,
+  APIGravityInputs,
+  APIGravityOutputs,
 } from '@/types/well-testing';
 
 // Daniel Orifice Calculations
@@ -428,4 +430,74 @@ export const calculateGasVelocity = (inputs: VelocityInputs): VelocityOutputs =>
     pressure: 'kPa',
     temperature: 'degC'
   });
+};
+
+// API Gravity Calculations
+export const calculateAPIGravity = (inputs: APIGravityInputs): APIGravityOutputs => {
+  const {
+    specificGravity,
+    temperature,
+    referenceTemp = 60
+  } = inputs;
+
+  const warnings: string[] = [];
+  const notes: string[] = [];
+
+  // Validate inputs
+  if (specificGravity <= 0) {
+    throw new Error('Specific gravity must be greater than 0');
+  }
+  
+  if (specificGravity > 2.0) {
+    warnings.push('Specific gravity > 2.0 is unusual for petroleum liquids');
+  }
+  
+  if (specificGravity < 0.5) {
+    warnings.push('Specific gravity < 0.5 is unusual for petroleum liquids');
+  }
+
+  // Calculate API gravity at reference temperature (60°F)
+  const apiGravity = (141.5 / specificGravity) - 131.5;
+
+  // Temperature correction factor for API gravity
+  // ASTM D1250-08 Table 5A - Temperature Correction for API Gravity
+  const tempDiff = temperature - referenceTemp;
+  const temperatureCorrection = tempDiff * 0.00035; // °API per °F
+
+  // Apply temperature correction
+  const apiGravityCorrected = apiGravity + temperatureCorrection;
+
+  // Calculate corrected specific gravity
+  const specificGravityCorrected = 141.5 / (apiGravityCorrected + 131.5);
+
+  // Calculate density at reference temperature (water = 62.4 lb/ft³ at 60°F)
+  const waterDensity = 62.4; // lb/ft³ at 60°F
+  const density = specificGravity * waterDensity;
+  const densityCorrected = specificGravityCorrected * waterDensity;
+
+  // Add notes and warnings
+  if (apiGravity < 10) {
+    warnings.push('API gravity < 10°API indicates very heavy crude oil');
+  } else if (apiGravity > 50) {
+    warnings.push('API gravity > 50°API indicates very light crude oil or condensate');
+  }
+
+  if (Math.abs(temperatureCorrection) > 5) {
+    warnings.push('Large temperature correction applied - verify temperature range validity');
+  }
+
+  notes.push(`Temperature correction: ${temperatureCorrection.toFixed(4)} °API`);
+  notes.push(`Reference temperature: ${referenceTemp}°F`);
+  notes.push(`API gravity range: ${apiGravity < 10 ? 'Heavy' : apiGravity > 50 ? 'Light' : 'Medium'} crude`);
+
+  return {
+    apiGravity,
+    apiGravityCorrected,
+    specificGravityCorrected,
+    density,
+    densityCorrected,
+    temperatureCorrection,
+    warnings,
+    notes
+  };
 };
