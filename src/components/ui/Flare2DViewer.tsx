@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download, RotateCcw, Flame, Zap, Volume2, Wind, Compass, Ruler, Eye, EyeOff } from 'lucide-react';
+import { Download, RotateCcw, Flame, Zap, Volume2, Wind, Compass, Ruler, Eye, EyeOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Flare2DViewerProps {
@@ -56,10 +56,12 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const [hoveredContour, setHoveredContour] = useState<{type: 'radiation' | 'noise', level: number, distance: number} | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
-  const [topZoom, setTopZoom] = useState(1);
-  const [sideZoom, setSideZoom] = useState(1);
+  const [topZoom, setTopZoom] = useState(0.5); // Default to 100m view (200m / 0.5 = 100m visible)
+  const [sideZoom, setSideZoom] = useState(0.5); // Default to 100m view
   const [topPan, setTopPan] = useState({ x: 0, y: 0 });
   const [sidePan, setSidePan] = useState({ x: 0, y: 0 });
+  const [topViewMode, setTopViewMode] = useState<'heat' | 'noise'>('heat');
+  const [sideViewMode, setSideViewMode] = useState<'heat' | 'noise'>('heat');
   const { toast } = useToast();
 
   // Convert units based on system
@@ -153,7 +155,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         // Add distance labels on x-axis
         if (showLabels && x !== centerX) {
           const distance = Math.abs((x - centerX) / scale);
-          if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
+          if (distance > 0 && distance % 10 === 0 && distance <= 200) { // Every 10m, max 200m
             ctx.fillText(
               `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
               x, displayHeight - 5
@@ -172,7 +174,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         // Add distance labels on y-axis
         if (showLabels && y !== centerY) {
           const distance = Math.abs((y - centerY) / scale);
-          if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
+          if (distance > 0 && distance % 10 === 0 && distance <= 200) { // Every 10m, max 200m
             ctx.save();
             ctx.translate(10, y);
             ctx.rotate(-Math.PI / 2);
@@ -196,115 +198,118 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       ctx.stroke();
     }
 
-    // Draw radiation contours
-    radiationData.forEach((contour, index) => {
-      const color = index === 0 ? 'rgba(255, 0, 0, 0.3)' : 
-                   index === 1 ? 'rgba(255, 136, 0, 0.3)' : 
-                   'rgba(255, 255, 0, 0.3)';
-      
-      ctx.fillStyle = color;
-      ctx.strokeStyle = color.replace('0.3', '0.8');
-      ctx.lineWidth = 2;
-      
-      // Draw contour using polar radii for wind effects
-      if (contour.polarRadii && contour.polarRadii.length > 0) {
-        ctx.beginPath();
-        const numPoints = contour.polarRadii.length;
-        for (let i = 0; i < numPoints; i++) {
-          const angle = (i * 2 * Math.PI) / numPoints;
-          const distance = contour.polarRadii[i] * scale;
-          const x = centerX + distance * Math.cos(angle);
-          const y = centerY + distance * Math.sin(angle);
-          
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
+    // Draw contours based on selected mode
+    if (topViewMode === 'heat') {
+      // Draw radiation contours
+      radiationData.forEach((contour, index) => {
+        const color = index === 0 ? 'rgba(255, 0, 0, 0.3)' : 
+                     index === 1 ? 'rgba(255, 136, 0, 0.3)' : 
+                     'rgba(255, 255, 0, 0.3)';
+        
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color.replace('0.3', '0.8');
+        ctx.lineWidth = 2;
+        
+        // Draw contour using polar radii for wind effects
+        if (contour.polarRadii && contour.polarRadii.length > 0) {
+          ctx.beginPath();
+          const numPoints = contour.polarRadii.length;
+          for (let i = 0; i < numPoints; i++) {
+            const angle = (i * 2 * Math.PI) / numPoints;
+            const distance = contour.polarRadii[i] * scale;
+            const x = centerX + distance * Math.cos(angle);
+            const y = centerY + distance * Math.sin(angle);
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
           }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          // Fallback to circular contour
+          const radius = contour.maxDistance * scale;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
         }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      } else {
-        // Fallback to circular contour
-        const radius = contour.maxDistance * scale;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
 
-      // Draw distance labels
-      if (showLabels) {
-        ctx.fillStyle = '#000';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        const radius = contour.maxDistance * scale;
-        ctx.fillText(
-          `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-          centerX, centerY - radius - 10
-        );
-        ctx.fillText(
-          `${contour.level.toFixed(1)} ${getPowerUnit()}`,
-          centerX, centerY - radius - 25
-        );
-      }
-    });
-
-    // Draw noise contours
-    noiseData.forEach((contour, index) => {
-      const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
-                   index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
-                   'rgba(0, 255, 255, 0.2)';
-      
-      ctx.fillStyle = color;
-      ctx.strokeStyle = color.replace('0.2', '0.6');
-      ctx.lineWidth = 1;
-      
-      // Draw contour using polar radii for wind effects
-      if (contour.polarRadii && contour.polarRadii.length > 0) {
-        ctx.beginPath();
-        const numPoints = contour.polarRadii.length;
-        for (let i = 0; i < numPoints; i++) {
-          const angle = (i * 2 * Math.PI) / numPoints;
-          const distance = contour.polarRadii[i] * scale;
-          const x = centerX + distance * Math.cos(angle);
-          const y = centerY + distance * Math.sin(angle);
-          
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
+        // Draw distance labels
+        if (showLabels) {
+          ctx.fillStyle = '#000';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          const radius = contour.maxDistance * scale;
+          ctx.fillText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            centerX, centerY - radius - 10
+          );
+          ctx.fillText(
+            `${contour.level.toFixed(1)} ${getPowerUnit()}`,
+            centerX, centerY - radius - 25
+          );
+        }
+      });
+    } else {
+      // Draw noise contours
+      noiseData.forEach((contour, index) => {
+        const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
+                     index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
+                     'rgba(0, 255, 255, 0.2)';
+        
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color.replace('0.2', '0.6');
+        ctx.lineWidth = 1;
+        
+        // Draw contour using polar radii for wind effects
+        if (contour.polarRadii && contour.polarRadii.length > 0) {
+          ctx.beginPath();
+          const numPoints = contour.polarRadii.length;
+          for (let i = 0; i < numPoints; i++) {
+            const angle = (i * 2 * Math.PI) / numPoints;
+            const distance = contour.polarRadii[i] * scale;
+            const x = centerX + distance * Math.cos(angle);
+            const y = centerY + distance * Math.sin(angle);
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
           }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          // Fallback to circular contour
+          const radius = contour.maxDistance * scale;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
         }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      } else {
-        // Fallback to circular contour
-        const radius = contour.maxDistance * scale;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
 
-      // Draw distance labels
-      if (showLabels) {
-        ctx.fillStyle = '#000';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        const radius = contour.maxDistance * scale;
-        ctx.fillText(
-          `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-          centerX, centerY + radius + 20
-        );
-        ctx.fillText(
-          `${contour.level.toFixed(0)} ${getSoundUnit()}`,
-          centerX, centerY + radius + 35
-        );
-      }
-    });
+        // Draw distance labels
+        if (showLabels) {
+          ctx.fillStyle = '#000';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          const radius = contour.maxDistance * scale;
+          ctx.fillText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            centerX, centerY + radius + 20
+          );
+          ctx.fillText(
+            `${contour.level.toFixed(0)} ${getSoundUnit()}`,
+            centerX, centerY + radius + 35
+          );
+        }
+      });
+    }
 
     // Draw flare stack center
     ctx.fillStyle = '#666';
@@ -367,7 +372,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(`Max Range: 200${getLengthUnit()}`, centerX, displayHeight - 5);
-  }, [processContours, topPan, topZoom, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processContours, topPan, topZoom, topViewMode, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Draw Side View (Elevation)
   const drawSideView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
@@ -421,7 +426,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         // Add distance labels on x-axis
         if (showLabels && x !== centerX) {
           const distance = Math.abs((x - centerX) / scale);
-          if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
+          if (distance > 0 && distance % 10 === 0 && distance <= 200) { // Every 10m, max 200m
             ctx.fillText(
               `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
               x, displayHeight - 5
@@ -488,71 +493,74 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.closePath();
     ctx.fill();
 
-    // Draw radiation contours (vertical cross-section)
-    radiationData.forEach((contour, index) => {
-      const color = index === 0 ? 'rgba(255, 0, 0, 0.3)' : 
-                   index === 1 ? 'rgba(255, 136, 0, 0.3)' : 
-                   'rgba(255, 255, 0, 0.3)';
-      
-      ctx.fillStyle = color;
-      ctx.strokeStyle = color.replace('0.3', '0.8');
-      ctx.lineWidth = 2;
-      
-      // Draw contour as vertical curve
-      const maxDist = contour.maxDistance * scale;
-      ctx.beginPath();
-      ctx.arc(centerX, groundY, maxDist, 0, Math.PI);
-      ctx.fill();
-      ctx.stroke();
+    // Draw contours based on selected mode
+    if (sideViewMode === 'heat') {
+      // Draw radiation contours (vertical cross-section)
+      radiationData.forEach((contour, index) => {
+        const color = index === 0 ? 'rgba(255, 0, 0, 0.3)' : 
+                     index === 1 ? 'rgba(255, 136, 0, 0.3)' : 
+                     'rgba(255, 255, 0, 0.3)';
+        
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color.replace('0.3', '0.8');
+        ctx.lineWidth = 2;
+        
+        // Draw contour as vertical curve
+        const maxDist = contour.maxDistance * scale;
+        ctx.beginPath();
+        ctx.arc(centerX, groundY, maxDist, 0, Math.PI);
+        ctx.fill();
+        ctx.stroke();
 
-      // Draw distance labels
-      if (showLabels) {
-        ctx.fillStyle = '#000';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(
-          `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-          centerX + maxDist / 2, groundY - 20
-        );
-        ctx.fillText(
-          `${contour.level.toFixed(1)} ${getPowerUnit()}`,
-          centerX + maxDist / 2, groundY - 35
-        );
-      }
-    });
+        // Draw distance labels
+        if (showLabels) {
+          ctx.fillStyle = '#000';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            centerX + maxDist / 2, groundY - 20
+          );
+          ctx.fillText(
+            `${contour.level.toFixed(1)} ${getPowerUnit()}`,
+            centerX + maxDist / 2, groundY - 35
+          );
+        }
+      });
+    } else {
+      // Draw noise contours (vertical cross-section)
+      noiseData.forEach((contour, index) => {
+        const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
+                     index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
+                     'rgba(0, 255, 255, 0.2)';
+        
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color.replace('0.2', '0.6');
+        ctx.lineWidth = 1;
+        
+        // Draw contour as vertical curve
+        const maxDist = contour.maxDistance * scale;
+        ctx.beginPath();
+        ctx.arc(centerX, groundY, maxDist, 0, Math.PI);
+        ctx.fill();
+        ctx.stroke();
 
-    // Draw noise contours (vertical cross-section)
-    noiseData.forEach((contour, index) => {
-      const color = index === 0 ? 'rgba(0, 102, 255, 0.2)' : 
-                   index === 1 ? 'rgba(0, 170, 255, 0.2)' : 
-                   'rgba(0, 255, 255, 0.2)';
-      
-      ctx.fillStyle = color;
-      ctx.strokeStyle = color.replace('0.2', '0.6');
-      ctx.lineWidth = 1;
-      
-      // Draw contour as vertical curve
-      const maxDist = contour.maxDistance * scale;
-      ctx.beginPath();
-      ctx.arc(centerX, groundY, maxDist, 0, Math.PI);
-      ctx.fill();
-      ctx.stroke();
-
-      // Draw distance labels
-      if (showLabels) {
-        ctx.fillStyle = '#000';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(
-          `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-          centerX + maxDist / 2, groundY + 20
-        );
-        ctx.fillText(
-          `${contour.level.toFixed(0)} ${getSoundUnit()}`,
-          centerX + maxDist / 2, groundY + 35
-        );
-      }
-    });
+        // Draw distance labels
+        if (showLabels) {
+          ctx.fillStyle = '#000';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            centerX + maxDist / 2, groundY + 20
+          );
+          ctx.fillText(
+            `${contour.level.toFixed(0)} ${getSoundUnit()}`,
+            centerX + maxDist / 2, groundY + 35
+          );
+        }
+      });
+    }
 
     // Draw scale reference
     const scaleLength = 50 * scale;
@@ -573,7 +581,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(`Max Range: 200${getLengthUnit()}`, displayWidth / 2, groundY - 5);
-  }, [processContours, sidePan, sideZoom, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processContours, sidePan, sideZoom, sideViewMode, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Handle mouse events for interactivity
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>, viewType: 'top' | 'side') => {
@@ -731,45 +739,44 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           <div className="flex gap-2 items-center">
             <span className="text-sm text-muted-foreground">Top View:</span>
             <Button
-              onClick={() => setTopZoom(prev => Math.max(0.1, prev * 0.8))}
-              variant="outline"
+              onClick={() => setTopViewMode('heat')}
+              variant={topViewMode === 'heat' ? 'default' : 'outline'}
               size="sm"
             >
-              -
+              <Zap className="h-4 w-4 mr-2" />
+              Heat
             </Button>
-            <span className="text-sm font-mono w-16 text-center">
-              {(topZoom * 100).toFixed(0)}%
-            </span>
             <Button
-              onClick={() => setTopZoom(prev => Math.min(5, prev * 1.25))}
-              variant="outline"
+              onClick={() => setTopViewMode('noise')}
+              variant={topViewMode === 'noise' ? 'default' : 'outline'}
               size="sm"
             >
-              +
+              <Volume2 className="h-4 w-4 mr-2" />
+              Noise
             </Button>
           </div>
           
           <div className="flex gap-2 items-center">
             <span className="text-sm text-muted-foreground">Side View:</span>
             <Button
-              onClick={() => setSideZoom(prev => Math.max(0.1, prev * 0.8))}
-              variant="outline"
+              onClick={() => setSideViewMode('heat')}
+              variant={sideViewMode === 'heat' ? 'default' : 'outline'}
               size="sm"
             >
-              -
+              <Zap className="h-4 w-4 mr-2" />
+              Heat
             </Button>
-            <span className="text-sm font-mono w-16 text-center">
-              {(sideZoom * 100).toFixed(0)}%
-            </span>
             <Button
-              onClick={() => setSideZoom(prev => Math.min(5, prev * 1.25))}
-              variant="outline"
+              onClick={() => setSideViewMode('noise')}
+              variant={sideViewMode === 'noise' ? 'default' : 'outline'}
               size="sm"
             >
-              +
+              <Volume2 className="h-4 w-4 mr-2" />
+              Noise
             </Button>
           </div>
         </div>
+        
         
         <div className="flex gap-2">
           <Button onClick={onExportPNG} variant="outline" size="sm">
@@ -823,7 +830,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-4">
           <div className="text-sm text-blue-800">
-            <strong>Navigation:</strong> Mouse wheel to zoom • Click and drag to pan • Hover over contours for details
+            <strong>Navigation:</strong> Use zoom buttons on each graph • Click and drag to pan • Hover over contours for details • Toggle between Heat/Noise views
           </div>
         </CardContent>
       </Card>
@@ -844,9 +851,38 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                 ref={topViewRef}
                 className="w-full h-full cursor-move"
                 onMouseMove={(e) => handleMouseMove(e, 'top')}
-                onWheel={handleTopWheel}
                 onMouseDown={handleTopMouseDown}
               />
+              {/* Top View Controls */}
+              <div className="absolute top-2 right-2 flex flex-col gap-1">
+                <Button
+                  onClick={() => setTopZoom(prev => Math.min(5, prev * 1.25))}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setTopZoom(prev => Math.max(0.1, prev * 0.8))}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setTopPan({ x: 0, y: 0 })}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 rounded text-sm font-mono">
+                {(topZoom * 100).toFixed(0)}% | {((200 / topZoom) * getLengthFactor()).toFixed(0)}{getLengthUnit()}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -865,9 +901,38 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                 ref={sideViewRef}
                 className="w-full h-full cursor-move"
                 onMouseMove={(e) => handleMouseMove(e, 'side')}
-                onWheel={handleSideWheel}
                 onMouseDown={handleSideMouseDown}
               />
+              {/* Side View Controls */}
+              <div className="absolute top-2 right-2 flex flex-col gap-1">
+                <Button
+                  onClick={() => setSideZoom(prev => Math.min(5, prev * 1.25))}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setSideZoom(prev => Math.max(0.1, prev * 0.8))}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setSidePan({ x: 0, y: 0 })}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 rounded text-sm font-mono">
+                {(sideZoom * 100).toFixed(0)}% | {((200 / sideZoom) * getLengthFactor()).toFixed(0)}{getLengthUnit()}
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -849,18 +849,32 @@ const calculatePolarRadii = (
   for (let i = 0; i < numPoints; i++) {
     const angle = (i * 2 * Math.PI) / numPoints;
     
-    // Calculate wind effect on radiation pattern
+    // Calculate wind effect on radiation pattern per API 521
     // Wind stretches the contour downwind and compresses it upwind
     const windAngle = angle - windDirection;
-    const windEffect = 1 + 0.3 * windSpeed * Math.cos(windAngle) / 10; // Wind speed in m/s
+    
+    // API 521 wind effect calculation
+    const windFactor = Math.cos(windAngle); // -1 to 1, where 1 is downwind
+    const windStretchFactor = 1 + (windSpeed / 10) * windFactor; // Wind speed effect
+    const windCompressionFactor = 1 - (windSpeed / 20) * Math.abs(windFactor); // Upwind compression
     
     // Base distance calculation (API 521 method)
     const baseDistance = Math.sqrt(radiantIntensity * transmissivity / (4 * Math.PI * level));
     
-    // Apply wind effect and flame geometry
-    const flameEffect = 1 + 0.1 * Math.sin(windAngle) * (flameGeometry.tilt / 45); // Flame tilt effect
+    // Apply wind effects
+    let adjustedDistance = baseDistance;
     
-    const adjustedDistance = baseDistance * windEffect * flameEffect;
+    if (windFactor > 0) {
+      // Downwind: stretch the contour
+      adjustedDistance = baseDistance * windStretchFactor;
+    } else {
+      // Upwind: compress the contour
+      adjustedDistance = baseDistance * Math.max(0.3, windCompressionFactor);
+    }
+    
+    // Apply flame tilt effect
+    const flameTiltEffect = 1 + 0.2 * Math.sin(windAngle) * (flameGeometry.tilt / 45);
+    adjustedDistance *= flameTiltEffect;
     
     // Ensure minimum distance for stability
     radii.push(Math.max(adjustedDistance, baseDistance * 0.5));
@@ -945,16 +959,27 @@ const calculateNoisePolarRadii = (
   for (let i = 0; i < numPoints; i++) {
     const angle = (i * 2 * Math.PI) / numPoints;
     
-    // Calculate wind effect on noise propagation
+    // Calculate wind effect on noise propagation per API 521
     // Wind carries sound downwind and reduces it upwind
     const windAngle = angle - windDirection;
-    const windEffect = 1 + 0.2 * windSpeed * Math.cos(windAngle) / 10; // Wind speed in m/s
+    
+    // API 521 noise wind effect calculation
+    const windFactor = Math.cos(windAngle); // -1 to 1, where 1 is downwind
+    const windNoiseFactor = 1 + (windSpeed / 15) * windFactor; // Wind speed effect on noise
     
     // Base distance calculation (spherical spreading with air absorption)
     const baseDistance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20);
     
     // Apply wind effect
-    const adjustedDistance = baseDistance * windEffect;
+    let adjustedDistance = baseDistance;
+    
+    if (windFactor > 0) {
+      // Downwind: noise travels further
+      adjustedDistance = baseDistance * windNoiseFactor;
+    } else {
+      // Upwind: noise is reduced
+      adjustedDistance = baseDistance * Math.max(0.4, 1 - (windSpeed / 25) * Math.abs(windFactor));
+    }
     
     // Ensure minimum distance for stability
     radii.push(Math.max(adjustedDistance, baseDistance * 0.3));
