@@ -238,19 +238,38 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           ctx.stroke();
         }
 
-        // Draw distance labels
+        // Draw distance labels right next to the contour ring
         if (showLabels) {
           ctx.fillStyle = '#000';
-          ctx.font = '12px Arial';
-          ctx.textAlign = 'center';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'left';
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 3;
+          
+          // Position label at the edge of the contour ring (right side)
           const radius = contour.maxDistance * scale;
+          const labelX = centerX + radius + 10;
+          const labelY = centerY - 10;
+          
+          // Draw text with white outline for visibility
+          ctx.strokeText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            labelX, labelY
+          );
           ctx.fillText(
             `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-            centerX, centerY - radius - 10
+            labelX, labelY
+          );
+          
+          // Draw level label below
+          ctx.font = 'bold 10px Arial';
+          ctx.strokeText(
+            `${contour.level.toFixed(1)} ${getPowerUnit()}`,
+            labelX, labelY + 15
           );
           ctx.fillText(
             `${contour.level.toFixed(1)} ${getPowerUnit()}`,
-            centerX, centerY - radius - 25
+            labelX, labelY + 15
           );
         }
       });
@@ -293,19 +312,38 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           ctx.stroke();
         }
 
-        // Draw distance labels
+        // Draw distance labels right next to the contour ring
         if (showLabels) {
           ctx.fillStyle = '#000';
-          ctx.font = '12px Arial';
-          ctx.textAlign = 'center';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'left';
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 3;
+          
+          // Position label at the edge of the contour ring (right side)
           const radius = contour.maxDistance * scale;
+          const labelX = centerX + radius + 10;
+          const labelY = centerY + 10;
+          
+          // Draw text with white outline for visibility
+          ctx.strokeText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            labelX, labelY
+          );
           ctx.fillText(
             `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-            centerX, centerY + radius + 20
+            labelX, labelY
+          );
+          
+          // Draw level label below
+          ctx.font = 'bold 10px Arial';
+          ctx.strokeText(
+            `${contour.level.toFixed(0)} ${getSoundUnit()}`,
+            labelX, labelY + 15
           );
           ctx.fillText(
             `${contour.level.toFixed(0)} ${getSoundUnit()}`,
-            centerX, centerY + radius + 35
+            labelX, labelY + 15
           );
         }
       });
@@ -458,6 +496,25 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         }
       }
       
+      // Draw vertical grid lines for radius reference
+      for (let x = centerX; x < displayWidth; x += gridSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, displayHeight);
+        ctx.stroke();
+        
+        // Add radius labels on x-axis
+        if (showLabels && x !== centerX) {
+          const radius = Math.abs((x - centerX) / scale);
+          if (radius > 0 && radius % 10 === 0 && radius <= 200) { // Every 10m, max 200m
+            ctx.fillText(
+              `${(radius * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
+              x, displayHeight - 5
+            );
+          }
+        }
+      }
+      
       // Draw center crosshairs
       ctx.strokeStyle = '#999';
       ctx.lineWidth = 1;
@@ -512,18 +569,37 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.fill();
         ctx.stroke();
 
-        // Draw distance labels
+        // Draw distance labels right next to the contour ring
         if (showLabels) {
           ctx.fillStyle = '#000';
-          ctx.font = '12px Arial';
-          ctx.textAlign = 'center';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'left';
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 3;
+          
+          // Position label at the edge of the contour ring
+          const labelX = centerX + maxDist + 10;
+          const labelY = groundY - 10;
+          
+          // Draw text with white outline for visibility
+          ctx.strokeText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            labelX, labelY
+          );
           ctx.fillText(
             `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-            centerX + maxDist / 2, groundY - 20
+            labelX, labelY
+          );
+          
+          // Draw level label below
+          ctx.font = 'bold 10px Arial';
+          ctx.strokeText(
+            `${contour.level.toFixed(1)} ${getPowerUnit()}`,
+            labelX, labelY + 15
           );
           ctx.fillText(
             `${contour.level.toFixed(1)} ${getPowerUnit()}`,
-            centerX + maxDist / 2, groundY - 35
+            labelX, labelY + 15
           );
         }
       });
@@ -545,18 +621,37 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
         ctx.fill();
         ctx.stroke();
 
-        // Draw distance labels
+        // Draw distance labels right next to the contour ring
         if (showLabels) {
           ctx.fillStyle = '#000';
-          ctx.font = '12px Arial';
-          ctx.textAlign = 'center';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'left';
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 3;
+          
+          // Position label at the edge of the contour ring
+          const labelX = centerX + maxDist + 10;
+          const labelY = groundY + 10;
+          
+          // Draw text with white outline for visibility
+          ctx.strokeText(
+            `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
+            labelX, labelY
+          );
           ctx.fillText(
             `${(contour.maxDistance * getLengthFactor()).toFixed(0)} ${getLengthUnit()}`,
-            centerX + maxDist / 2, groundY + 20
+            labelX, labelY
+          );
+          
+          // Draw level label below
+          ctx.font = 'bold 10px Arial';
+          ctx.strokeText(
+            `${contour.level.toFixed(0)} ${getSoundUnit()}`,
+            labelX, labelY + 15
           );
           ctx.fillText(
             `${contour.level.toFixed(0)} ${getSoundUnit()}`,
-            centerX + maxDist / 2, groundY + 35
+            labelX, labelY + 15
           );
         }
       });
