@@ -533,6 +533,11 @@ export const calculateFlareRadiation = (inputs: FlareRadiationInputs): FlareRadi
   // Calculate derived gas properties
   const gasProps = calculateGasProperties(inputs.gasComposition);
   
+  // Calculate density at tip conditions
+  const R = 8314.47; // Universal gas constant J/(kmol·K)
+  gasProps.density = (inputs.tipPressure * 1000 * gasProps.molecularWeight) / 
+    (R * inputs.tipTemperature * gasProps.compressibilityFactor);
+  
   // Calculate emissive fraction
   const emissiveFraction = inputs.emissiveFraction || calculateEmissiveFraction(inputs.gasComposition);
   
@@ -678,8 +683,8 @@ const calculateGasProperties = (composition: FlareGasComposition) => {
     hhv: hhvMix,
     gamma,
     compressibilityFactor: z,
-    density: 0, // Will be calculated with pressure/temperature
-    viscosity: 0, // Will be calculated with pressure/temperature
+    density: 1.0, // Will be calculated with pressure/temperature
+    viscosity: 1.8e-5, // Will be calculated with pressure/temperature
     chRatio,
     sootIndex
   };
@@ -709,8 +714,8 @@ const calculateExitVelocity = (inputs: FlareRadiationInputs, gasProps: any): num
   // Calculate tip area
   const tipArea = Math.PI * Math.pow(inputs.tipDiameter / 2, 2);
   
-  // Calculate exit velocity
-  const exitVelocity = actualFlow / (tipArea * 3600); // Convert to m/s
+  // Calculate exit velocity (convert SCFD to m/s)
+  const exitVelocity = (actualFlow * 0.0283168) / (tipArea * 86400); // Convert SCFD to m³/s, then to m/s
   
   return exitVelocity;
 };
