@@ -90,6 +90,13 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
 
   // Process contour data for 2D views
   const processContours = useCallback(() => {
+    console.log('Processing contours:', {
+      radiationContours: radiationContours?.length,
+      noiseContours: noiseContours?.length,
+      selectedRadiationContours,
+      selectedNoiseContours
+    });
+
     const radiationData: ContourData[] = radiationContours.map(contour => {
       // Use polarRadii if available, otherwise calculate from points
       const maxDistance = (contour as any).polarRadii 
@@ -118,8 +125,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       };
     });
 
+    console.log('Processed data:', { radiationData: radiationData.length, noiseData: noiseData.length });
     return { radiationData, noiseData };
-  }, [radiationContours, noiseContours]);
+  }, [radiationContours, noiseContours, selectedRadiationContours, selectedNoiseContours]);
 
   // Draw Top View (Plan)
   const drawTopView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
@@ -539,7 +547,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       }
       
       // Draw horizontal grid lines at actual 10ft/10m intervals
-      for (let height = 0; height <= maxVisibleDistance; height += baseGridSize) {
+      const heightStep = unitSystem === 'metric' ? 10 : 30; // 10m or 10ft steps
+      for (let height = 0; height <= maxVisibleDistance; height += heightStep) {
         const y = groundY - (height * scale);
         if (y >= 0 && y <= displayHeight) {
           ctx.beginPath();
