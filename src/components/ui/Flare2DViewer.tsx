@@ -153,7 +153,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     // Draw grid with meter measurements
     if (showGrid) {
       ctx.strokeStyle = '#e9ecef';
-      ctx.lineWidth = 0.5;
+      ctx.lineWidth = 1.0;
       ctx.font = '10px Arial';
       ctx.fillStyle = '#666';
       ctx.textAlign = 'center';
@@ -203,7 +203,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           const y = centerY - (distance * scale);
           if (y >= 0 && y <= displayHeight) {
             ctx.save();
-            ctx.translate(10, y);
+            ctx.translate(centerX, y);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText(
               `${(Math.abs(distance) * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
@@ -509,7 +509,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     // Draw grid with meter measurements
     if (showGrid) {
       ctx.strokeStyle = '#e9ecef';
-      ctx.lineWidth = 0.5;
+      ctx.lineWidth = 1.0;
       ctx.font = '10px Arial';
       ctx.fillStyle = '#666';
       ctx.textAlign = 'center';
@@ -559,7 +559,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           const y = groundY - (height * scale);
           if (y >= 0 && y <= displayHeight) {
             ctx.save();
-            ctx.translate(10, y);
+            ctx.translate(centerX, y);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText(
               `${(height * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
