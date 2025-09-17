@@ -341,7 +341,7 @@ export interface FlowAssuranceInputs {
   separatorOperatingMode: 'atmospheric' | 'pressured';
   
   // Choke settings
-  chokeOpening: number; // % or bean size
+  chokeSize64ths: number; // Choke size in 64ths of an inch (e.g., 32 = 0.5 inch)
   chokeType: 'fixed-bean' | 'adjustable';
   
   // Line segments
