@@ -12,7 +12,8 @@ import DanielOrificeCalculator from './calculators/DanielOrificeCalculator';
 import ChokeRateCalculator from './calculators/ChokeRateCalculator';
 import CriticalFlowCalculator from './calculators/CriticalFlowCalculator';
 import GORCalculator from './calculators/GORCalculator';
-import GasVelocityCalculator from './calculators/GasVelocityCalculator';
+import GasVelocityCalculatorV2 from './calculators/GasVelocityCalculatorV2';
+import UnitConverter from './calculators/UnitConverter';
 
 import { getStoredUnitSystem, storeUnitSystem, getStoredSession, storeSession, exportSessionToJSON, importSessionFromJSON, clearAllStoredData } from '@/lib/storage';
 import type { UnitSystem, CalculationSession } from '@/types/well-testing';
@@ -240,21 +241,24 @@ const WellTestingApp = () => {
       <div className="container mx-auto px-6 py-8">
         <Card className="bg-gradient-card shadow-card">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-secondary/50">
-              <TabsTrigger value="daniel-orifice" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                Daniel Orifice Calc
+            <TabsList className="grid w-full grid-cols-6 bg-secondary/50">
+              <TabsTrigger value="daniel-orifice" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+                Daniel Orifice
               </TabsTrigger>
-              <TabsTrigger value="choke-rate" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                Choke Rate Estimates
+              <TabsTrigger value="choke-rate" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+                Choke Rate
               </TabsTrigger>
-              <TabsTrigger value="critical-flow" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="critical-flow" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Critical Flow
               </TabsTrigger>
-              <TabsTrigger value="gor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">  
-                GOR² Calcs
+              <TabsTrigger value="gor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">  
+                GOR Calcs
               </TabsTrigger>
-              <TabsTrigger value="gas-velocity" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="gas-velocity" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Gas Velocity
+              </TabsTrigger>
+              <TabsTrigger value="unit-converter" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+                Unit Converter
               </TabsTrigger>
             </TabsList>
 
@@ -276,7 +280,11 @@ const WellTestingApp = () => {
               </TabsContent>
 
               <TabsContent value="gas-velocity" className="space-y-6">
-                <GasVelocityCalculator unitSystem={unitSystem} />
+                <GasVelocityCalculatorV2 />
+              </TabsContent>
+
+              <TabsContent value="unit-converter" className="space-y-6">
+                <UnitConverter />
               </TabsContent>
             </div>
           </Tabs>

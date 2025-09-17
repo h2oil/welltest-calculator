@@ -321,8 +321,17 @@ export const calculateGOR = (inputs: GORInputs): GOROutputs => {
   };
 };
 
-// Gas Velocity Calculations
-export const calculateGasVelocity = (inputs: VelocityInputs): VelocityOutputs => {
+// Gas Velocity Calculations with proper unit handling
+export const calculateGasVelocityWithUnits = (
+  inputs: VelocityInputs,
+  units: {
+    pipeID: string;
+    gasRate: string;
+    pressure: string;
+    temperature: string;
+    density?: string;
+  }
+): VelocityOutputs => {
   const {
     pipeID,
     gasRateStd,
@@ -335,28 +344,55 @@ export const calculateGasVelocity = (inputs: VelocityInputs): VelocityOutputs =>
     fluidDensity
   } = inputs;
 
-  const tempK = temperature + 273.15;
-  const pressurePa = pressure * 6895;
-  
+  // Convert all inputs to SI units for calculations
+  let pipeID_m = pipeID;
+  if (units.pipeID === 'in') pipeID_m = pipeID * 0.0254;
+  if (units.pipeID === 'mm') pipeID_m = pipeID / 1000;
+
+  let gasRate_m3s = gasRateStd;
+  if (units.gasRate === 'MSCFD') gasRate_m3s = gasRateStd * 28.3168 / 86400;
+  if (units.gasRate === 'MMSCFD') gasRate_m3s = gasRateStd * 28316.8 / 86400;
+  if (units.gasRate === 'Sm3d') gasRate_m3s = gasRateStd / 86400;
+  if (units.gasRate === 'Sm3h') gasRate_m3s = gasRateStd / 3600;
+  if (units.gasRate === 'SCFM') gasRate_m3s = gasRateStd * 0.02832 / 60;
+
+  let pressure_Pa = pressure;
+  if (units.pressure === 'psia') pressure_Pa = pressure * 6895;
+  if (units.pressure === 'psig') pressure_Pa = (pressure + 14.7) * 6895;
+  if (units.pressure === 'bar') pressure_Pa = pressure * 100000;
+  if (units.pressure === 'kPa') pressure_Pa = pressure * 1000;
+  if (units.pressure === 'atm') pressure_Pa = pressure * 101325;
+  if (units.pressure === 'inwg') pressure_Pa = pressure * 248.84;
+
+  let temperature_K = temperature;
+  if (units.temperature === 'degC') temperature_K = temperature + 273.15;
+  if (units.temperature === 'degF') temperature_K = (temperature - 32) * 5/9 + 273.15;
+
   // Convert standard to actual flow
   const actualFlow = standardToActualFlow(
-    gasRateStd / 86400, // Convert daily rate to per second
-    pressurePa,
-    tempK,
+    gasRate_m3s,
+    pressure_Pa,
+    temperature_K,
     Z,
     { pressure: STANDARD_CONDITIONS.pressure_kPa * 1000, temperature: STANDARD_CONDITIONS.temperature_C + 273.15 }
   );
 
   // Calculate velocity
-  const pipeArea = calculatePipeArea(pipeID);
+  const pipeArea = calculatePipeArea(pipeID_m);
   const velocity = actualFlow / pipeArea;
 
   // Speed of sound and Mach number
-  const speedOfSound = Math.sqrt(k * GAS_CONSTANT.SI * tempK / MW);
+  const speedOfSound = Math.sqrt(k * GAS_CONSTANT.SI * temperature_K / MW);
   const machNumber = velocity / speedOfSound;
 
   // Calculate erosional velocity
-  const density = fluidDensity || calculateGasDensity(pressurePa, tempK, MW, Z);
+  let density = fluidDensity;
+  if (!density) {
+    density = calculateGasDensity(pressure_Pa, temperature_K, MW, Z);
+  } else if (units.density === 'lbmft3') {
+    density = density * 16.0185; // Convert to kg/m³
+  }
+  
   const erosionalVelocity = erosionalConstant / Math.sqrt(density);
 
   // Warnings and pass/fail flags
@@ -382,4 +418,14 @@ export const calculateGasVelocity = (inputs: VelocityInputs): VelocityOutputs =>
     warnings,
     passFailFlags
   };
+};
+
+// Backward compatibility
+export const calculateGasVelocity = (inputs: VelocityInputs): VelocityOutputs => {
+  return calculateGasVelocityWithUnits(inputs, {
+    pipeID: 'm',
+    gasRate: 'm3s',
+    pressure: 'kPa',
+    temperature: 'degC'
+  });
 };

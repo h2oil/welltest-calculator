@@ -82,6 +82,54 @@ export const kPaToInwg = (kPa: number): number =>
 export const inwgToKPa = (inwg: number): number => 
   inwg / 4.01865;
 
+// Atmospheric pressure conversions
+export const atmToPsia = (atm: number): number => 
+  atm * 14.696;
+
+export const psiaToAtm = (psia: number): number => 
+  psia / 14.696;
+
+export const atmToBar = (atm: number): number => 
+  atm * 1.01325;
+
+export const barToAtm = (bar: number): number => 
+  bar / 1.01325;
+
+export const atmToKPa = (atm: number): number => 
+  atm * 101.325;
+
+export const kPaToAtm = (kPa: number): number => 
+  kPa / 101.325;
+
+// Additional volume flow conversions
+export const m3sToSm3d = (m3s: number): number => 
+  m3s * 86400;
+
+export const sm3dToM3s = (sm3d: number): number => 
+  sm3d / 86400;
+
+export const cfsToCfm = (cfs: number): number => 
+  cfs * 60;
+
+export const cfmToCfs = (cfm: number): number => 
+  cfm / 60;
+
+export const m3hToSm3h = (m3h: number): number => 
+  m3h; // No conversion needed for same standard conditions
+
+export const scfhToScfm = (scfh: number): number => 
+  scfh / 60;
+
+export const scfmToScfh = (scfm: number): number => 
+  scfm * 60;
+
+// Mass flow conversions  
+export const kgsTolbmh = (kgs: number): number => 
+  kgs * 7936.64;
+
+export const lbmhToKgs = (lbmh: number): number => 
+  lbmh / 7936.64;
+
 // Length Conversions
 export const inchesToMm = (inches: number): number => 
   inches * 25.4;
@@ -191,6 +239,12 @@ export const convertValue = (
       'inwg_to_bar': inwgToBar,
       'kPa_to_inwg': kPaToInwg,
       'inwg_to_kPa': inwgToKPa,
+      'atm_to_psia': atmToPsia,
+      'psia_to_atm': psiaToAtm,
+      'atm_to_bar': atmToBar,
+      'bar_to_atm': barToAtm,
+      'atm_to_kPa': atmToKPa,
+      'kPa_to_atm': kPaToAtm,
     },
     length: {
       'in_to_mm': inchesToMm,
@@ -203,6 +257,16 @@ export const convertValue = (
       'Sm3d_to_MSCFD': sm3dToMscfd,
       'MMSCFD_to_Sm3d': mmscfdToSm3d,
       'Sm3d_to_MMSCFD': sm3dToMmscfd,
+      'SCFM_to_Sm3h': scfmToSm3h,
+      'Sm3h_to_SCFM': sm3hToScfm,
+      'm3s_to_Sm3d': m3sToSm3d,
+      'Sm3d_to_m3s': sm3dToM3s,
+      'cfs_to_cfm': cfsToCfm,
+      'cfm_to_cfs': cfmToCfs,
+    },
+    mass_flow: {
+      'kgs_to_lbmh': kgsTolbmh,
+      'lbmh_to_kgs': lbmhToKgs,
     },
     velocity: {
       'ms_to_fts': msToFtS,
