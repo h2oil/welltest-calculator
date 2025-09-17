@@ -35,10 +35,10 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
     wellheadPressure: 5000000, // 50 bar
     wellheadTemperature: 333, // 60°C
     
-    // Flow rates
-    gasRate: 0.1, // m³/s
-    oilRate: 0.05, // m³/s
-    waterRate: 0.02, // m³/s
+    // Flow rates (will be converted based on unit system)
+    gasRate: unitSystem === 'metric' ? 0.1 : 10, // m³/s or MMSCFD
+    oilRate: unitSystem === 'metric' ? 0.05 : 1000, // m³/s or bbl/day
+    waterRate: unitSystem === 'metric' ? 0.02 : 100, // m³/s or bbl/day
     
     // Phase properties
     gasSpecificGravity: 0.7,
@@ -103,7 +103,14 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
     if (validateInputs()) {
       setIsCalculating(true);
       try {
-        const result = calculateFlowAssurance(inputs);
+        // Convert flow rates to SI units for calculation
+        const siInputs = {
+          ...inputs,
+          gasRate: convertGasRateToSI(inputs.gasRate),
+          oilRate: convertOilWaterRateToSI(inputs.oilRate),
+          waterRate: convertOilWaterRateToSI(inputs.waterRate)
+        };
+        const result = calculateFlowAssurance(siInputs);
         setOutputs(result);
       } catch (error) {
         setOutputs(null);
@@ -111,7 +118,7 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
         setIsCalculating(false);
       }
     }
-  }, [inputs]);
+  }, [inputs, unitSystem]);
 
   const validateInputs = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -158,9 +165,9 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
     setInputs({
       wellheadPressure: 5000000,
       wellheadTemperature: 333,
-      gasRate: 0.1,
-      oilRate: 0.05,
-      waterRate: 0.02,
+      gasRate: unitSystem === 'metric' ? 0.1 : 10, // m³/s or MMSCFD
+      oilRate: unitSystem === 'metric' ? 0.05 : 1000, // m³/s or bbl/day
+      waterRate: unitSystem === 'metric' ? 0.02 : 100, // m³/s or bbl/day
       gasSpecificGravity: 0.7,
       oilSpecificGravity: 0.85,
       waterSpecificGravity: 1.0,
@@ -234,8 +241,46 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
 
   const getPressureUnit = () => unitSystem === 'metric' ? 'kPa' : 'psia';
   const getTemperatureUnit = () => unitSystem === 'metric' ? '°C' : '°F';
-  const getFlowUnit = () => unitSystem === 'metric' ? 'm³/s' : 'ft³/s';
+  const getGasFlowUnit = () => unitSystem === 'metric' ? 'm³/s' : 'MMSCFD';
+  const getOilWaterFlowUnit = () => unitSystem === 'metric' ? 'm³/s' : 'bbl/day';
   const getVelocityUnit = () => unitSystem === 'metric' ? 'm/s' : 'ft/s';
+
+  // Unit conversion functions
+  const convertGasRateToSI = (value: number): number => {
+    if (unitSystem === 'metric') {
+      return value; // Already in m³/s
+    } else {
+      // Convert MMSCFD to m³/s
+      return value * 28316.8 / 86400; // MMSCFD to m³/s
+    }
+  };
+
+  const convertOilWaterRateToSI = (value: number): number => {
+    if (unitSystem === 'metric') {
+      return value; // Already in m³/s
+    } else {
+      // Convert bbl/day to m³/s
+      return value * 0.158987 / 86400; // bbl/day to m³/s
+    }
+  };
+
+  const convertGasRateFromSI = (value: number): number => {
+    if (unitSystem === 'metric') {
+      return value; // Already in m³/s
+    } else {
+      // Convert m³/s to MMSCFD
+      return value * 86400 / 28316.8; // m³/s to MMSCFD
+    }
+  };
+
+  const convertOilWaterRateFromSI = (value: number): number => {
+    if (unitSystem === 'metric') {
+      return value; // Already in m³/s
+    } else {
+      // Convert m³/s to bbl/day
+      return value * 86400 / 0.158987; // m³/s to bbl/day
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -316,7 +361,7 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="gasRate">Gas Rate ({getFlowUnit()})</Label>
+                      <Label htmlFor="gasRate">Gas Rate ({getGasFlowUnit()})</Label>
                       <Input
                         id="gasRate"
                         type="number"
@@ -329,7 +374,7 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="oilRate">Oil Rate ({getFlowUnit()})</Label>
+                      <Label htmlFor="oilRate">Oil Rate ({getOilWaterFlowUnit()})</Label>
                       <Input
                         id="oilRate"
                         type="number"
@@ -342,7 +387,7 @@ const FlowAssuranceCalculator = ({ unitSystem }: Props) => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="waterRate">Water Rate ({getFlowUnit()})</Label>
+                      <Label htmlFor="waterRate">Water Rate ({getOilWaterFlowUnit()})</Label>
                       <Input
                         id="waterRate"
                         type="number"
