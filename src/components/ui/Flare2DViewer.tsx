@@ -56,8 +56,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const [hoveredContour, setHoveredContour] = useState<{type: 'radiation' | 'noise', level: number, distance: number} | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [topZoom, setTopZoom] = useState(1);
+  const [sideZoom, setSideZoom] = useState(1);
+  const [topPan, setTopPan] = useState({ x: 0, y: 0 });
+  const [sidePan, setSidePan] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
 
   // Convert units based on system
@@ -102,14 +104,31 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   // Draw Top View (Plan)
   const drawTopView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
     const { radiationData, noiseData } = processContours();
-    const centerX = canvas.width / 2 + pan.x;
-    const centerY = canvas.height / 2 + pan.y;
-    const scale = Math.min(canvas.width, canvas.height) / 200 * zoom; // 200m base scale
+    
+    // Set high DPI for crisp rendering
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    
+    const centerX = displayWidth / 2 + topPan.x;
+    const centerY = displayHeight / 2 + topPan.y;
+    const scale = Math.min(displayWidth, displayHeight) / 200 * topZoom; // 200m base scale
+    
+    // Set actual size in memory (scaled to account for extra pixel density)
+    canvas.width = displayWidth * devicePixelRatio;
+    canvas.height = displayHeight * devicePixelRatio;
+    
+    // Scale the drawing context so everything will work at the higher ratio
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    
+    // Set the display size (CSS pixels)
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
 
     // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
     ctx.fillStyle = '#f8f9fa';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
 
     // Draw grid with meter measurements
     if (showGrid) {
@@ -125,10 +144,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
       
       // Draw vertical grid lines
-      for (let x = centerX % gridSpacing; x < canvas.width; x += gridSpacing) {
+      for (let x = centerX % gridSpacing; x < displayWidth; x += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.lineTo(x, displayHeight);
         ctx.stroke();
         
         // Add distance labels on x-axis
@@ -137,17 +156,17 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
             ctx.fillText(
               `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
-              x, canvas.height - 5
+              x, displayHeight - 5
             );
           }
         }
       }
       
       // Draw horizontal grid lines
-      for (let y = centerY % gridSpacing; y < canvas.height; y += gridSpacing) {
+      for (let y = centerY % gridSpacing; y < displayHeight; y += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
+        ctx.lineTo(displayWidth, y);
         ctx.stroke();
         
         // Add distance labels on y-axis
@@ -171,9 +190,9 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(centerX, 0);
-      ctx.lineTo(centerX, canvas.height);
+      ctx.lineTo(centerX, displayHeight);
       ctx.moveTo(0, centerY);
-      ctx.lineTo(canvas.width, centerY);
+      ctx.lineTo(displayWidth, centerY);
       ctx.stroke();
     }
 
@@ -347,20 +366,37 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.fillStyle = '#666';
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(`Max Range: 200${getLengthUnit()}`, centerX, canvas.height - 5);
-  }, [processContours, pan, zoom, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+    ctx.fillText(`Max Range: 200${getLengthUnit()}`, centerX, displayHeight - 5);
+  }, [processContours, topPan, topZoom, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Draw Side View (Elevation)
   const drawSideView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
     const { radiationData, noiseData } = processContours();
-    const centerX = canvas.width / 2 + pan.x;
-    const groundY = canvas.height - 50 + pan.y;
-    const scale = Math.min(canvas.width, canvas.height) / 200 * zoom;
+    
+    // Set high DPI for crisp rendering
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    
+    const centerX = displayWidth / 2 + sidePan.x;
+    const groundY = displayHeight - 50 + sidePan.y;
+    const scale = Math.min(displayWidth, displayHeight) / 200 * sideZoom;
+    
+    // Set actual size in memory (scaled to account for extra pixel density)
+    canvas.width = displayWidth * devicePixelRatio;
+    canvas.height = displayHeight * devicePixelRatio;
+    
+    // Scale the drawing context so everything will work at the higher ratio
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    
+    // Set the display size (CSS pixels)
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
 
     // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
     ctx.fillStyle = '#f8f9fa';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
 
     // Draw grid with meter measurements
     if (showGrid) {
@@ -376,10 +412,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
       
       // Draw vertical grid lines
-      for (let x = centerX % gridSpacing; x < canvas.width; x += gridSpacing) {
+      for (let x = centerX % gridSpacing; x < displayWidth; x += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.lineTo(x, displayHeight);
         ctx.stroke();
         
         // Add distance labels on x-axis
@@ -388,17 +424,17 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
           if (distance > 0 && distance % 20 === 0 && distance <= 200) { // Every 20m, max 200m
             ctx.fillText(
               `${(distance * getLengthFactor()).toFixed(0)}${getLengthUnit()}`,
-              x, canvas.height - 5
+              x, displayHeight - 5
             );
           }
         }
       }
       
       // Draw horizontal grid lines
-      for (let y = 0; y < canvas.height; y += gridSpacing) {
+      for (let y = 0; y < displayHeight; y += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
+        ctx.lineTo(displayWidth, y);
         ctx.stroke();
         
         // Add height labels on y-axis
@@ -422,15 +458,15 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(centerX, 0);
-      ctx.lineTo(centerX, canvas.height);
+      ctx.lineTo(centerX, displayHeight);
       ctx.moveTo(0, groundY);
-      ctx.lineTo(canvas.width, groundY);
+      ctx.lineTo(displayWidth, groundY);
       ctx.stroke();
     }
 
     // Draw ground
     ctx.fillStyle = '#90ee90';
-    ctx.fillRect(0, groundY, canvas.width, 50);
+    ctx.fillRect(0, groundY, displayWidth, 50);
 
     // Draw flare stack
     const stackHeight = flareHeight * scale;
@@ -536,8 +572,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.fillStyle = '#666';
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(`Max Range: 200${getLengthUnit()}`, canvas.width / 2, groundY - 5);
-  }, [processContours, pan, zoom, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+    ctx.fillText(`Max Range: 200${getLengthUnit()}`, displayWidth / 2, groundY - 5);
+  }, [processContours, sidePan, sideZoom, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Handle mouse events for interactivity
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>, viewType: 'top' | 'side') => {
@@ -553,7 +589,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     
     // Check if hovering over a contour
     const { radiationData, noiseData } = processContours();
-    const scale = Math.min(canvas.width, canvas.height) / 200 * zoom;
+    const currentZoom = viewType === 'top' ? topZoom : sideZoom;
+    const scale = Math.min(canvas.clientWidth, canvas.clientHeight) / 200 * currentZoom;
     
     // Check radiation contours
     for (const contour of radiationData) {
@@ -582,7 +619,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     }
     
     setHoveredContour(null);
-  }, [processContours, zoom, getLengthFactor]);
+  }, [processContours, topZoom, sideZoom, getLengthFactor]);
 
   // Redraw canvases when data changes
   useEffect(() => {
@@ -600,20 +637,20 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     }
   }, [drawTopView, drawSideView]);
 
-  // Handle zoom and pan
-  const handleWheel = useCallback((event: React.WheelEvent<HTMLCanvasElement>) => {
+  // Handle zoom and pan for Top View
+  const handleTopWheel = useCallback((event: React.WheelEvent<HTMLCanvasElement>) => {
     event.preventDefault();
     const delta = event.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(prev => Math.max(0.1, Math.min(5, prev * delta)));
+    setTopZoom(prev => Math.max(0.1, Math.min(5, prev * delta)));
   }, []);
 
-  const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleTopMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const startX = event.clientX;
     const startY = event.clientY;
-    const startPan = { ...pan };
+    const startPan = { ...topPan };
 
     const handleMouseMove = (e: MouseEvent) => {
-      setPan({
+      setTopPan({
         x: startPan.x + (e.clientX - startX),
         y: startPan.y + (e.clientY - startY)
       });
@@ -626,7 +663,35 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [pan]);
+  }, [topPan]);
+
+  // Handle zoom and pan for Side View
+  const handleSideWheel = useCallback((event: React.WheelEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? 0.9 : 1.1;
+    setSideZoom(prev => Math.max(0.1, Math.min(5, prev * delta)));
+  }, []);
+
+  const handleSideMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startPan = { ...sidePan };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setSidePan({
+        x: startPan.x + (e.clientX - startX),
+        y: startPan.y + (e.clientY - startY)
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [sidePan]);
 
   return (
     <div className="space-y-6">
@@ -650,34 +715,60 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
             Labels
           </Button>
           <Button
-            onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+            onClick={() => { 
+              setTopZoom(1); setTopPan({ x: 0, y: 0 });
+              setSideZoom(1); setSidePan({ x: 0, y: 0 });
+            }}
             variant="outline"
             size="sm"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
-            Reset View
+            Reset Both Views
           </Button>
         </div>
         
-        <div className="flex gap-2 items-center">
-          <span className="text-sm text-muted-foreground">Zoom:</span>
-          <Button
-            onClick={() => setZoom(prev => Math.max(0.1, prev * 0.8))}
-            variant="outline"
-            size="sm"
-          >
-            -
-          </Button>
-          <span className="text-sm font-mono w-16 text-center">
-            {(zoom * 100).toFixed(0)}%
-          </span>
-          <Button
-            onClick={() => setZoom(prev => Math.min(5, prev * 1.25))}
-            variant="outline"
-            size="sm"
-          >
-            +
-          </Button>
+        <div className="flex gap-4 items-center">
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-muted-foreground">Top View:</span>
+            <Button
+              onClick={() => setTopZoom(prev => Math.max(0.1, prev * 0.8))}
+              variant="outline"
+              size="sm"
+            >
+              -
+            </Button>
+            <span className="text-sm font-mono w-16 text-center">
+              {(topZoom * 100).toFixed(0)}%
+            </span>
+            <Button
+              onClick={() => setTopZoom(prev => Math.min(5, prev * 1.25))}
+              variant="outline"
+              size="sm"
+            >
+              +
+            </Button>
+          </div>
+          
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-muted-foreground">Side View:</span>
+            <Button
+              onClick={() => setSideZoom(prev => Math.max(0.1, prev * 0.8))}
+              variant="outline"
+              size="sm"
+            >
+              -
+            </Button>
+            <span className="text-sm font-mono w-16 text-center">
+              {(sideZoom * 100).toFixed(0)}%
+            </span>
+            <Button
+              onClick={() => setSideZoom(prev => Math.min(5, prev * 1.25))}
+              variant="outline"
+              size="sm"
+            >
+              +
+            </Button>
+          </div>
         </div>
         
         <div className="flex gap-2">
@@ -753,8 +844,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                 ref={topViewRef}
                 className="w-full h-full cursor-move"
                 onMouseMove={(e) => handleMouseMove(e, 'top')}
-                onWheel={handleWheel}
-                onMouseDown={handleMouseDown}
+                onWheel={handleTopWheel}
+                onMouseDown={handleTopMouseDown}
               />
             </div>
           </CardContent>
@@ -774,8 +865,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
                 ref={sideViewRef}
                 className="w-full h-full cursor-move"
                 onMouseMove={(e) => handleMouseMove(e, 'side')}
-                onWheel={handleWheel}
-                onMouseDown={handleMouseDown}
+                onWheel={handleSideWheel}
+                onMouseDown={handleSideMouseDown}
               />
             </div>
           </CardContent>
