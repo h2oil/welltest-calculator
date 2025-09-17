@@ -161,22 +161,29 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       // Calculate grid spacing based on zoom level and unit system
       const baseGridSize = unitSystem === 'metric' ? 10 : 30; // 10m or 10ft (30ft in meters)
       const gridSize = baseGridSize * scale;
-      const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
+      const gridSpacing = Math.max(20, Math.min(100, gridSize)); // Min 20px, max 100px
       
-      // Draw vertical grid lines
-      for (let x = centerX % gridSpacing; x < displayWidth; x += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, displayHeight);
-        ctx.stroke();
+      // Draw vertical grid lines at actual 10ft/10m intervals
+      const maxVisibleDistance = Math.max(displayWidth, displayHeight) / (2 * scale);
+      for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += baseGridSize) {
+        const x = centerX + (distance * scale);
+        if (x >= 0 && x <= displayWidth) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, displayHeight);
+          ctx.stroke();
+        }
       }
       
-      // Draw horizontal grid lines
-      for (let y = centerY % gridSpacing; y < displayHeight; y += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(displayWidth, y);
-        ctx.stroke();
+      // Draw horizontal grid lines at actual 10ft/10m intervals
+      for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += baseGridSize) {
+        const y = centerY - (distance * scale);
+        if (y >= 0 && y <= displayHeight) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(displayWidth, y);
+          ctx.stroke();
+        }
       }
       
       // Draw grid labels every 10m
@@ -517,22 +524,29 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       // Calculate grid spacing based on zoom level and unit system
       const baseGridSize = unitSystem === 'metric' ? 10 : 30; // 10m or 10ft (30ft in meters)
       const gridSize = baseGridSize * scale;
-      const gridSpacing = Math.max(15, Math.min(60, gridSize)); // Min 15px, max 60px
+      const gridSpacing = Math.max(20, Math.min(100, gridSize)); // Min 20px, max 100px
       
-      // Draw vertical grid lines
-      for (let x = centerX % gridSpacing; x < displayWidth; x += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, displayHeight);
-        ctx.stroke();
+      // Draw vertical grid lines at actual 10ft/10m intervals
+      const maxVisibleDistance = Math.max(displayWidth, displayHeight) / (2 * scale);
+      for (let distance = -maxVisibleDistance; distance <= maxVisibleDistance; distance += baseGridSize) {
+        const x = centerX + (distance * scale);
+        if (x >= 0 && x <= displayWidth) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, displayHeight);
+          ctx.stroke();
+        }
       }
       
-      // Draw horizontal grid lines
-      for (let y = 0; y < displayHeight; y += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(displayWidth, y);
-        ctx.stroke();
+      // Draw horizontal grid lines at actual 10ft/10m intervals
+      for (let height = 0; height <= maxVisibleDistance; height += baseGridSize) {
+        const y = groundY - (height * scale);
+        if (y >= 0 && y <= displayHeight) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(displayWidth, y);
+          ctx.stroke();
+        }
       }
       
       // Draw grid labels every 10m
