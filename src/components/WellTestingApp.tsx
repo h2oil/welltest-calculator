@@ -1,11 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Download, Upload, Trash2, LogOut, User } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 // Lazy load calculator components for code splitting
@@ -258,24 +259,9 @@ const WellTestingApp = () => {
       <div className="container mx-auto px-6 py-8">
         <Card className="bg-gradient-card shadow-card">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-10 bg-secondary/50">
+            <TabsList className="grid w-full grid-cols-6 bg-secondary/50">
               <TabsTrigger value="daniel-orifice" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Daniel Orifice
-              </TabsTrigger>
-              <TabsTrigger value="choke-rate" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Choke Rate
-              </TabsTrigger>
-              <TabsTrigger value="critical-flow" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Critical Flow
-              </TabsTrigger>
-              <TabsTrigger value="gor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">  
-                GOR Calcs
-              </TabsTrigger>
-              <TabsTrigger value="gas-velocity" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Gas Velocity
-              </TabsTrigger>
-              <TabsTrigger value="api-gravity" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                API Gravity
+                Daniel Orifice (AGA-3)
               </TabsTrigger>
               <TabsTrigger value="flare-radiation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Flare Radiation
@@ -286,45 +272,46 @@ const WellTestingApp = () => {
               <TabsTrigger value="h2oil-complete" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 H2Oil COMPLETE
               </TabsTrigger>
-              <TabsTrigger value="unit-converter" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Unit Converter
-              </TabsTrigger>
+              
+              {/* Miscellaneous Calculators Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant={activeTab.startsWith('misc-') ? 'default' : 'outline'} 
+                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs h-10"
+                  >
+                    Misc Calculators
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuItem onClick={() => setActiveTab('misc-choke-rate')}>
+                    Choke Rate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('misc-critical-flow')}>
+                    Critical Flow
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('misc-gor')}>
+                    GOR Calcs
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('misc-gas-velocity')}>
+                    Gas Velocity
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('misc-api-gravity')}>
+                    API Gravity
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('misc-unit-converter')}>
+                    Unit Converter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </TabsList>
 
             <div className="mt-6">
+              {/* Main Calculators */}
               <TabsContent value="daniel-orifice" className="space-y-6">
                 <Suspense fallback={<CalculatorSkeleton />}>
                   <DanielOrificeCalculator unitSystem={unitSystem} />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="choke-rate" className="space-y-6">
-                <Suspense fallback={<CalculatorSkeleton />}>
-                  <ChokeRateCalculator unitSystem={unitSystem} />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="critical-flow" className="space-y-6">
-                <Suspense fallback={<CalculatorSkeleton />}>
-                  <CriticalFlowCalculator unitSystem={unitSystem} />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="gor" className="space-y-6">
-                <Suspense fallback={<CalculatorSkeleton />}>
-                  <GORCalculator unitSystem={unitSystem} />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="gas-velocity" className="space-y-6">
-                <Suspense fallback={<CalculatorSkeleton />}>
-                  <GasVelocityCalculatorV2 />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="api-gravity" className="space-y-6">
-                <Suspense fallback={<CalculatorSkeleton />}>
-                  <APIGravityCalculator unitSystem={unitSystem} />
                 </Suspense>
               </TabsContent>
 
@@ -346,7 +333,38 @@ const WellTestingApp = () => {
                 </Suspense>
               </TabsContent>
 
-              <TabsContent value="unit-converter" className="space-y-6">
+              {/* Miscellaneous Calculators */}
+              <TabsContent value="misc-choke-rate" className="space-y-6">
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <ChokeRateCalculator unitSystem={unitSystem} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="misc-critical-flow" className="space-y-6">
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <CriticalFlowCalculator unitSystem={unitSystem} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="misc-gor" className="space-y-6">
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <GORCalculator unitSystem={unitSystem} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="misc-gas-velocity" className="space-y-6">
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <GasVelocityCalculatorV2 />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="misc-api-gravity" className="space-y-6">
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <APIGravityCalculator unitSystem={unitSystem} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="misc-unit-converter" className="space-y-6">
                 <Suspense fallback={<CalculatorSkeleton />}>
                   <UnitConverter />
                 </Suspense>

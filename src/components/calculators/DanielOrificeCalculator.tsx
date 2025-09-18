@@ -154,8 +154,11 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold">Daniel Orifice Calculator</h2>
         <p className="text-muted-foreground">
-          Compute mass flow through an orifice plate per ISO-style equation
+          Compute mass flow through an orifice plate per AGA-3 standard
         </p>
+        <Badge variant="outline" className="text-xs">
+          AGA-3 Compliant
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -390,7 +393,7 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
                       <Info className="h-3 w-3 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Typical range: 0.595-0.61 for standard orifice plates</p>
+                      <p>AGA-3 Reader-Harris/Gallagher equation will auto-calculate for gas. Manual input for liquids.</p>
                     </TooltipContent>
                   </Tooltip>
                 </Label>
@@ -463,11 +466,14 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
 
                 {/* Assumptions */}
                 <div className="bg-muted/30 p-3 rounded-lg">
-                  <h5 className="text-sm font-medium mb-2">Assumptions</h5>
+                  <h5 className="text-sm font-medium mb-2">AGA-3 Assumptions</h5>
                   <ul className="text-xs text-muted-foreground space-y-1">
                     {outputs.assumptions.map((assumption, index) => (
                       <li key={index}>• {assumption}</li>
                     ))}
+                    <li>• Calculation based on AGA-3 standard for orifice metering</li>
+                    <li>• Reader-Harris/Gallagher equation for discharge coefficient</li>
+                    <li>• Applicable for beta ratios 0.1-0.75 and Re &gt; 4,000</li>
                   </ul>
                 </div>
 

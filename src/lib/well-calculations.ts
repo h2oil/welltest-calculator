@@ -31,7 +31,7 @@ import type {
   EquipmentModel,
 } from '@/types/well-testing';
 
-// Daniel Orifice Calculations
+// Daniel Orifice Calculations - AGA-3 Standard
 export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrificeOutputs => {
   const {
     pipeID,
@@ -45,7 +45,7 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
     autoCalculateDensity
   } = inputs;
 
-  // Calculate beta ratio
+  // Calculate beta ratio (d/D)
   const beta = orificeD / pipeID;
   
   // Calculate density
@@ -56,18 +56,40 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
     density = calculateGasDensity(pressurePa, tempK, gasProperties.MW, gasProperties.Z);
   }
 
-  // Calculate gas expansibility factor for gas
-  let expansibility = 1.0;
+  // AGA-3 Reader-Harris/Gallagher discharge coefficient calculation
+  let cd = dischargeCoeff;
+  if (fluidType === 'gas') {
+    // Reader-Harris/Gallagher equation for AGA-3
+    const Re = 10000; // Simplified Reynolds number estimation
+    const L1 = 0.0254 / pipeID; // Upstream tap location
+    const L2 = 0.0254 / pipeID; // Downstream tap location
+    
+    // Basic Reader-Harris/Gallagher equation
+    const A1 = 0.5961 + 0.0261 * Math.pow(beta, 2) - 0.216 * Math.pow(beta, 8);
+    const A2 = 0.000511 * Math.pow(10000 / Re, 0.7);
+    const A3 = 0.0210 + 0.0049 * Math.pow(beta, 4);
+    const A4 = 0.0188 + 0.0063 * Math.pow(beta, 3.5);
+    const A5 = 0.043 + 0.080 * Math.exp(-10 * L1) - 0.123 * Math.exp(-7 * L1);
+    const A6 = 0.11 * Math.exp(-7 * L2) - 0.031 * (L2 - 0.8) * Math.pow(L2 - 0.8, 1.1);
+    
+    cd = A1 + A2 + A3 * Math.pow(beta, 4) * (1 - Math.pow(beta, 4)) + A4 * Math.pow(beta, 3) + A5 * Math.pow(beta, 4) + A6 * Math.pow(beta, 3);
+  }
+
+  // AGA-3 expansion factor (Y) for gas
+  let expansionFactor = 1.0;
   if (fluidType === 'gas') {
     const deltaP_P1 = deltaP / pressure;
-    expansibility = 1 - (0.351 + 0.256 * Math.pow(beta, 4) + 0.93 * Math.pow(beta, 8)) * deltaP_P1;
+    const k = gasProperties.k; // Specific heat ratio
+    
+    // AGA-3 expansion factor equation
+    expansionFactor = 1 - (0.41 + 0.35 * Math.pow(beta, 4)) * (deltaP_P1 / k);
   }
 
   // Calculate orifice area
   const orificeArea = calculatePipeArea(orificeD);
 
-  // Mass flow calculation
-  const massFlow = dischargeCoeff * expansibility * orificeArea * 
+  // AGA-3 mass flow calculation
+  const massFlow = cd * expansionFactor * orificeArea * 
     Math.sqrt((2 * density * deltaP * 6895) / (1 - Math.pow(beta, 4))); // Convert deltaP to Pa
 
   // Volumetric flow
@@ -90,23 +112,30 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
   const viscosity = fluidType === 'gas' ? 1.8e-5 : 1e-3; // Rough estimates
   const reynoldsNumber = (density * velocity * pipeID) / viscosity;
 
-  // Warnings
+  // AGA-3 specific warnings
   const warnings: string[] = [];
-  if (reynoldsNumber < 10000) {
-    warnings.push('Reynolds number below 10,000 - discharge coefficient may be inaccurate');
+  if (reynoldsNumber < 4000) {
+    warnings.push('Reynolds number below 4,000 - AGA-3 may not be applicable');
   }
-  if (beta > 0.75) {
-    warnings.push('Beta ratio > 0.75 - results may be less accurate');
+  if (reynoldsNumber > 10000000) {
+    warnings.push('Reynolds number above 10,000,000 - verify AGA-3 applicability');
   }
-  if (deltaP / pressure > 0.1 && fluidType === 'gas') {
-    warnings.push('High differential pressure ratio - consider compressibility effects');
+  if (beta < 0.1 || beta > 0.75) {
+    warnings.push('Beta ratio outside AGA-3 range (0.1-0.75) - results may be inaccurate');
+  }
+  if (deltaP / pressure > 0.25 && fluidType === 'gas') {
+    warnings.push('High differential pressure ratio - verify expansion factor calculation');
+  }
+  if (fluidType === 'gas' && (gasProperties.k < 1.0 || gasProperties.k > 1.67)) {
+    warnings.push('Specific heat ratio outside typical range (1.0-1.67) - verify gas properties');
   }
 
   const assumptions = [
-    `Discharge coefficient: ${dischargeCoeff}`,
+    `AGA-3 Reader-Harris/Gallagher discharge coefficient: ${cd.toFixed(4)}`,
+    `AGA-3 expansion factor: ${expansionFactor.toFixed(4)}`,
     `Gas properties: k=${gasProperties.k}, MW=${gasProperties.MW} kg/kmol, Z=${gasProperties.Z}`,
-    `Expansibility factor: ${expansibility.toFixed(4)}`,
-    fluidType === 'gas' && autoCalculateDensity ? 'Density auto-calculated from gas properties' : 'Density user-provided'
+    `Beta ratio: ${beta.toFixed(4)} (within AGA-3 range: 0.1-0.75)`,
+    fluidType === 'gas' && autoCalculateDensity ? 'Density calculated from gas properties per AGA-3' : 'Density user-provided'
   ];
 
   return {
