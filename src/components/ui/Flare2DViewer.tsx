@@ -245,10 +245,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
     // Draw contours based on selected mode
     if (topViewMode === 'heat') {
       // Draw radiation contours (filter by selected contours)
-      // Sort contours by level (highest to lowest) for proper color assignment
+      // Sort contours by level (lowest to highest) so highest values are drawn on top
       const sortedRadiationData = radiationData
         .map((contour, index) => ({ contour, originalIndex: index }))
-        .sort((a, b) => b.contour.level - a.contour.level);
+        .sort((a, b) => a.contour.level - b.contour.level);
       
       sortedRadiationData.forEach(({ contour, originalIndex }) => {
         if (!selectedRadiationContours.includes(originalIndex)) return;
@@ -267,8 +267,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
           'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
         ];
         
-        // Find the color index based on sorted position
-        const colorIndex = sortedRadiationData.findIndex(item => item.originalIndex === originalIndex);
+        // Find the color index based on sorted position (reverse order for proper color assignment)
+        const colorIndex = sortedRadiationData.length - 1 - sortedRadiationData.findIndex(item => item.originalIndex === originalIndex);
         const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
@@ -340,10 +340,11 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
       });
     } else {
       // Draw noise contours (filter by selected contours)
-      // Sort contours by level (highest to lowest) for proper color assignment
+      
+      // Sort contours by level (lowest to highest) so highest values are drawn on top
       const sortedNoiseData = noiseData
         .map((contour, index) => ({ contour, originalIndex: index }))
-        .sort((a, b) => b.contour.level - a.contour.level);
+        .sort((a, b) => a.contour.level - b.contour.level);
       
       sortedNoiseData.forEach(({ contour, originalIndex }) => {
         if (!selectedNoiseContours.includes(originalIndex)) return;
@@ -362,8 +363,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
           'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
         ];
         
-        // Find the color index based on sorted position
-        const colorIndex = sortedNoiseData.findIndex(item => item.originalIndex === originalIndex);
+        // Find the color index based on sorted position (reverse order for proper color assignment)
+        const colorIndex = sortedNoiseData.length - 1 - sortedNoiseData.findIndex(item => item.originalIndex === originalIndex);
         const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
@@ -661,10 +662,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
     // Draw contours based on selected mode
     if (sideViewMode === 'heat') {
       // Draw radiation contours (vertical cross-section) - filter by selected contours
-      // Sort contours by level (highest to lowest) for proper color assignment
+      // Sort contours by level (lowest to highest) so highest values are drawn on top
       const sortedRadiationData = radiationData
         .map((contour, index) => ({ contour, originalIndex: index }))
-        .sort((a, b) => b.contour.level - a.contour.level);
+        .sort((a, b) => a.contour.level - b.contour.level);
       
       sortedRadiationData.forEach(({ contour, originalIndex }) => {
         if (!selectedRadiationContours.includes(originalIndex)) return;
@@ -683,8 +684,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
           'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
         ];
         
-        // Find the color index based on sorted position
-        const colorIndex = sortedRadiationData.findIndex(item => item.originalIndex === originalIndex);
+        // Find the color index based on sorted position (reverse order for proper color assignment)
+        const colorIndex = sortedRadiationData.length - 1 - sortedRadiationData.findIndex(item => item.originalIndex === originalIndex);
         const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
@@ -768,10 +769,11 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
       });
     } else {
       // Draw noise contours (vertical cross-section) - filter by selected contours
-      // Sort contours by level (highest to lowest) for proper color assignment
+      
+      // Sort contours by level (lowest to highest) so highest values are drawn on top
       const sortedNoiseData = noiseData
         .map((contour, index) => ({ contour, originalIndex: index }))
-        .sort((a, b) => b.contour.level - a.contour.level);
+        .sort((a, b) => a.contour.level - b.contour.level);
       
       sortedNoiseData.forEach(({ contour, originalIndex }) => {
         if (!selectedNoiseContours.includes(originalIndex)) return;
@@ -790,8 +792,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
           'rgba(100, 50, 255, 0.4)'   // Purple-blue (lowest level)
         ];
         
-        // Find the color index based on sorted position
-        const colorIndex = sortedNoiseData.findIndex(item => item.originalIndex === originalIndex);
+        // Find the color index based on sorted position (reverse order for proper color assignment)
+        const colorIndex = sortedNoiseData.length - 1 - sortedNoiseData.findIndex(item => item.originalIndex === originalIndex);
         const color = colors[colorIndex] || 'rgba(100, 100, 100, 0.3)';
         
         ctx.fillStyle = color;
