@@ -338,19 +338,26 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                 {/* Wellbore line */}
                 <div className="absolute left-8 top-0 w-1 bg-gray-400 dark:bg-gray-600 rounded-full" style={{ height: '1000px' }}></div>
                 
-                {completionSchematic.map((item, index) => {
+                {completionSchematic
+                  .sort((a, b) => (a.depth || 0) - (b.depth || 0)) // Sort by depth first
+                  .map((item, index) => {
                   const IconComponent = item.icon;
                   
-                  // Calculate max depth and auto-scale to nearest 1000ft below lowest device
+                  // Calculate max depth and add 1000ft below lowest device
                   const deviceDepths = completionSchematic.map(i => (i.depth || 0) + (i.length || 0));
                   const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
                   
-                  // Round up to nearest 1000ft below the lowest device
-                  const schematicMaxDepth = Math.ceil(maxDeviceDepth / 1000) * 1000;
+                  // Add 1000ft below the lowest device (not round up to nearest 1000ft)
+                  const schematicMaxDepth = maxDeviceDepth + 1000;
                   
-                  // Position based on actual depth - pure depth-based positioning
+                  // Position based on actual depth
                   const depthPixels = schematicMaxDepth > 0 ? ((item.depth || 0) / schematicMaxDepth) * 1000 : 0;
                   const lengthPixels = schematicMaxDepth > 0 ? ((item.length || 0) / schematicMaxDepth) * 1000 : 40;
+                  
+                  // Calculate text box position to prevent overlapping
+                  // Use alternating left/right positioning for text boxes
+                  const textBoxSide = index % 2 === 0 ? 'right' : 'left';
+                  const textBoxOffset = textBoxSide === 'right' ? 120 : -320; // Position to right or left of wellbore
                   
                   return (
                     <div
@@ -379,15 +386,29 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                       
                       {/* Arrow from device to info box */}
                       <div 
-                        className="absolute left-[-60px] top-[20px] w-12 h-0.5 bg-gray-400 dark:bg-gray-500"
-                        style={{ transform: 'rotate(0deg)' }}
+                        className="absolute top-[20px] w-12 h-0.5 bg-gray-400 dark:bg-gray-500"
+                        style={{ 
+                          left: textBoxSide === 'right' ? '-60px' : '60px',
+                          transform: textBoxSide === 'right' ? 'rotate(0deg)' : 'rotate(180deg)'
+                        }}
                       ></div>
                       <div 
-                        className="absolute left-[-12px] top-[16px] w-0 h-0 border-l-4 border-l-gray-400 dark:border-l-gray-500 border-t-2 border-t-transparent border-b-2 border-b-transparent"
+                        className="absolute top-[16px] w-0 h-0 border-l-4 border-l-gray-400 dark:border-l-gray-500 border-t-2 border-t-transparent border-b-2 border-b-transparent"
+                        style={{ 
+                          left: textBoxSide === 'right' ? '-12px' : '48px',
+                          transform: textBoxSide === 'right' ? 'rotate(0deg)' : 'rotate(180deg)'
+                        }}
                       ></div>
                       
                       {/* Information box */}
-                      <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700 max-w-xs">
+                      <div 
+                        className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700 max-w-xs"
+                        style={{ 
+                          position: 'absolute',
+                          left: `${textBoxOffset}px`,
+                          top: '0px'
+                        }}
+                      >
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{item.name}</span>
                           {item.status && (
@@ -440,7 +461,7 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                     // Use the same auto-scaled depth as the schematic
                     const deviceDepths = completionSchematic.map(item => (item.depth || 0) + (item.length || 0));
                     const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
-                    const schematicMaxDepth = Math.ceil(maxDeviceDepth / 1000) * 1000;
+                    const schematicMaxDepth = maxDeviceDepth + 1000; // Add 1000ft below lowest device
                     
                     const depth = (i / 10) * schematicMaxDepth;
                     const topPosition = (i / 10) * 1000;
