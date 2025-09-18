@@ -470,49 +470,63 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
       )}
 
       {/* Main Content */}
-      <Tabs 
-        value={uiState.active_tab} 
-        onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-9">
-          <TabsTrigger value="fluids" className="flex items-center gap-2">
-            {getTabIcon('fluids')}
-            <span className="hidden sm:inline">Fluids</span>
-          </TabsTrigger>
-          <TabsTrigger value="well" className="flex items-center gap-2">
-            {getTabIcon('well')}
-            <span className="hidden sm:inline">Well</span>
-          </TabsTrigger>
-          <TabsTrigger value="completion" className="flex items-center gap-2">
-            {getTabIcon('completion')}
-            <span className="hidden sm:inline">Completion</span>
-          </TabsTrigger>
-          <TabsTrigger value="ipr" className="flex items-center gap-2">
-            {getTabIcon('ipr')}
-            <span className="hidden sm:inline">IPR</span>
-          </TabsTrigger>
-          <TabsTrigger value="vlp" className="flex items-center gap-2">
-            {getTabIcon('vlp')}
-            <span className="hidden sm:inline">VLP</span>
-          </TabsTrigger>
-          <TabsTrigger value="nodal" className="flex items-center gap-2">
-            {getTabIcon('nodal')}
-            <span className="hidden sm:inline">Nodal</span>
-          </TabsTrigger>
-          <TabsTrigger value="matching" className="flex items-center gap-2">
-            {getTabIcon('matching')}
-            <span className="hidden sm:inline">Matching</span>
-          </TabsTrigger>
-          <TabsTrigger value="sensitivity" className="flex items-center gap-2">
-            {getTabIcon('sensitivity')}
-            <span className="hidden sm:inline">Sensitivity</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            {getTabIcon('reports')}
-            <span className="hidden sm:inline">Reports</span>
-          </TabsTrigger>
-        </TabsList>
+      <div className="flex h-full">
+        {/* Left Sidebar Navigation */}
+        <div className="w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <Tabs 
+            value={uiState.active_tab} 
+            onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
+            className="h-full"
+            orientation="vertical"
+          >
+            <TabsList className="flex flex-col h-full w-full bg-transparent p-2 space-y-1">
+              <TabsTrigger value="fluids" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('fluids')}
+                <span>Fluids</span>
+              </TabsTrigger>
+              <TabsTrigger value="well" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('well')}
+                <span>Well</span>
+              </TabsTrigger>
+              <TabsTrigger value="completion" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('completion')}
+                <span>Completion</span>
+              </TabsTrigger>
+              <TabsTrigger value="ipr" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('ipr')}
+                <span>IPR</span>
+              </TabsTrigger>
+              <TabsTrigger value="vlp" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('vlp')}
+                <span>VLP</span>
+              </TabsTrigger>
+              <TabsTrigger value="nodal" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('nodal')}
+                <span>Nodal</span>
+              </TabsTrigger>
+              <TabsTrigger value="matching" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('matching')}
+                <span>Matching</span>
+              </TabsTrigger>
+              <TabsTrigger value="sensitivity" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('sensitivity')}
+                <span>Sensitivity</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex items-center gap-3 justify-start w-full h-12 px-4">
+                {getTabIcon('reports')}
+                <span>Reports</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-auto">
+          <Tabs 
+            value={uiState.active_tab} 
+            onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
+            className="h-full"
+          >
 
         {/* Tab Contents */}
         <TabsContent value="fluids" className="space-y-4">
@@ -596,7 +610,9 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
             unitSystem={uiState.unit_system}
           />
         </TabsContent>
-      </Tabs>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };

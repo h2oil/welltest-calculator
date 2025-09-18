@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,11 @@ import {
   AlertTriangle,
   CheckCircle,
   Wrench,
-  Target
+  Target,
+  Layers,
+  Circle,
+  Square,
+  Triangle
 } from 'lucide-react';
 
 import type { Completion, Device, PerforationInterval, DeviceType, UnitSystem } from '@/types/open-prosper';
@@ -138,6 +142,109 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
   const getDensityUnit = () => 'shots/ft';
   const getAngleUnit = () => '°';
 
+  // Calculate completion schematic data
+  const completionSchematic = useMemo(() => {
+    const items = [];
+    
+    // Add tubing
+    if (localCompletion.tubing_id > 0) {
+      items.push({
+        id: 'tubing',
+        type: 'tubing',
+        name: 'Tubing',
+        depth: 0,
+        length: 10000, // Assume full length for now
+        diameter: localCompletion.tubing_id,
+        color: '#3b82f6',
+        icon: Circle
+      });
+    }
+
+    // Add devices
+    localCompletion.devices.forEach(device => {
+      const deviceInfo = {
+        id: device.id,
+        type: device.type,
+        name: getDeviceName(device.type),
+        depth: device.md_start,
+        length: device.md_end - device.md_start,
+        diameter: device.id_inner || device.id_outer || 0.1,
+        color: getDeviceColor(device.type),
+        icon: getDeviceIcon(device.type),
+        status: device.status || 'active'
+      };
+      items.push(deviceInfo);
+    });
+
+    // Add perforations
+    localCompletion.perforations.forEach(perf => {
+      const perfInfo = {
+        id: perf.id,
+        type: 'perforation',
+        name: `Perforation ${perf.id}`,
+        depth: perf.md_start,
+        length: perf.md_end - perf.md_start,
+        diameter: perf.diameter,
+        color: '#ef4444',
+        icon: Target,
+        density: perf.density,
+        phasing: perf.phasing
+      };
+      items.push(perfInfo);
+    });
+
+    // Sort by depth
+    return items.sort((a, b) => a.depth - b.depth);
+  }, [localCompletion]);
+
+  const getDeviceName = (type: DeviceType): string => {
+    const names = {
+      'tubing': 'Tubing',
+      'casing': 'Casing',
+      'liner': 'Liner',
+      'sssv': 'SSSV',
+      'packer': 'Packer',
+      'ssd': 'SSD',
+      'icd': 'ICD',
+      'icv': 'ICV',
+      'gravel_pack': 'Gravel Pack',
+      'screen': 'Screen'
+    };
+    return names[type] || type;
+  };
+
+  const getDeviceColor = (type: DeviceType): string => {
+    const colors = {
+      'tubing': '#3b82f6',
+      'casing': '#6b7280',
+      'liner': '#9ca3af',
+      'sssv': '#f59e0b',
+      'packer': '#8b5cf6',
+      'ssd': '#10b981',
+      'icd': '#06b6d4',
+      'icv': '#84cc16',
+      'gravel_pack': '#f97316',
+      'screen': '#ec4899'
+    };
+    return colors[type] || '#6b7280';
+  };
+
+  const getDeviceIcon = (type: DeviceType) => {
+    const icons = {
+      'tubing': Circle,
+      'casing': Circle,
+      'liner': Circle,
+      'sssv': Square,
+      'packer': Square,
+      'ssd': Triangle,
+      'icd': Triangle,
+      'icv': Triangle,
+      'gravel_pack': Layers,
+      'screen': Layers
+    };
+    return icons[type] || Circle;
+  };
+
   const calculateCompletionStats = () => {
     const totalPerforations = localCompletion.perforations.reduce(
       (sum, perf) => sum + (perf.md_end - perf.md_start) * perf.density,
@@ -204,6 +311,94 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Completion Schematic */}
+      {completionSchematic.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5" />
+              Completion Schematic
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-96 w-full overflow-auto border rounded-lg bg-gray-50 dark:bg-gray-900 p-4">
+              <div className="relative min-h-full">
+                {completionSchematic.map((item, index) => {
+                  const IconComponent = item.icon;
+                  const maxDepth = Math.max(...completionSchematic.map(i => i.depth + i.length));
+                  const depthPercent = maxDepth > 0 ? (item.depth / maxDepth) * 100 : 0;
+                  const lengthPercent = maxDepth > 0 ? (item.length / maxDepth) * 100 : 2;
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      className="absolute left-4 flex items-center gap-3 group"
+                      style={{
+                        top: `${depthPercent}%`,
+                        height: `${Math.max(lengthPercent, 2)}%`
+                      }}
+                    >
+                      <div 
+                        className="flex items-center justify-center w-8 h-8 rounded-full border-2"
+                        style={{ 
+                          backgroundColor: item.color + '20',
+                          borderColor: item.color,
+                          color: item.color
+                        }}
+                      >
+                        <IconComponent className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{item.name}</span>
+                          {item.status && (
+                            <Badge 
+                              variant={item.status === 'active' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {item.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Depth: {item.depth.toFixed(1)} {getLengthUnit()}
+                          {item.length > 0 && ` • Length: ${item.length.toFixed(1)} ${getLengthUnit()}`}
+                          {item.diameter > 0 && ` • ID: ${item.diameter.toFixed(3)} ${getDiameterUnit()}`}
+                          {item.density && ` • ${item.density} shots/ft`}
+                          {item.phasing && ` • ${item.phasing}° phasing`}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Depth scale */}
+                <div className="absolute left-0 top-0 bottom-0 w-2 bg-gray-300 dark:bg-gray-700 rounded">
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const maxDepth = Math.max(...completionSchematic.map(item => item.depth + item.length));
+                    const depth = (i / 9) * maxDepth;
+                    return (
+                      <div
+                        key={i}
+                        className="absolute text-xs text-muted-foreground"
+                        style={{ top: `${(i / 9) * 100}%`, transform: 'translateY(-50%)' }}
+                      >
+                        <div className="w-1 h-1 bg-gray-600 dark:bg-gray-400 rounded-full -ml-0.5"></div>
+                        <div className="ml-2 -mt-1">{depth.toFixed(0)} {getLengthUnit()}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This schematic shows the completion design with devices and perforations positioned by depth.</p>
+              <p>Items are sorted by depth from shallowest (top) to deepest (bottom).</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="tubing" className="w-full">
         <TabsList className="grid w-full grid-cols-4">

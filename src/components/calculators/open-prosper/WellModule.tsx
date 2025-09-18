@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,8 +13,19 @@ import {
   Download, 
   Upload,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  TrendingUp
 } from 'lucide-react';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 
 import type { DeviationSurvey, DeviationPoint, UnitSystem } from '@/types/open-prosper';
 
@@ -89,6 +100,62 @@ export const WellModule: React.FC<WellModuleProps> = ({
       onUpdate(newDeviation);
     }
   };
+
+  // Calculate deviation profile for visualization
+  const deviationProfile = useMemo(() => {
+    if (!localDeviation || localDeviation.length < 2) return [];
+
+    const profile = [];
+    let x = 0;
+    let y = 0;
+
+    for (let i = 0; i < localDeviation.length; i++) {
+      const point = localDeviation[i];
+      
+      if (i === 0) {
+        // First point starts at origin
+        profile.push({
+          md: point.md,
+          tvd: point.tvd,
+          x: 0,
+          y: 0,
+          inc: point.inc,
+          azi: point.azi
+        });
+      } else {
+        const prevPoint = localDeviation[i - 1];
+        const deltaMD = point.md - prevPoint.md;
+        const avgInc = (point.inc + prevPoint.inc) / 2;
+        const avgAzi = (point.azi + prevPoint.azi) / 2;
+        
+        // Convert to radians
+        const incRad = (avgInc * Math.PI) / 180;
+        const aziRad = (avgAzi * Math.PI) / 180;
+        
+        // Calculate horizontal displacement
+        const deltaX = deltaMD * Math.sin(incRad) * Math.cos(aziRad);
+        const deltaY = deltaMD * Math.sin(incRad) * Math.sin(aziRad);
+        
+        x += deltaX;
+        y += deltaY;
+        
+        profile.push({
+          md: point.md,
+          tvd: point.tvd,
+          x: x,
+          y: y,
+          inc: point.inc,
+          azi: point.azi
+        });
+      }
+    }
+
+    return profile;
+  }, [localDeviation]);
+
+  // Get unit labels
+  const getDepthUnit = () => unitSystem === 'metric' ? 'm' : 'ft';
+  const getDistanceUnit = () => unitSystem === 'metric' ? 'm' : 'ft';
 
   const addPoint = () => {
     const lastPoint = localDeviation[localDeviation.length - 1];
@@ -276,6 +343,71 @@ export const WellModule: React.FC<WellModuleProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Deviation Profile Chart */}
+      {deviationProfile.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Well Deviation Profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-96 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={deviationProfile}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="x" 
+                    name="East-West Displacement"
+                    label={{ value: `East-West Displacement (${getDistanceUnit()})`, position: 'insideBottom', offset: -5 }}
+                  />
+                  <YAxis 
+                    dataKey="y" 
+                    name="North-South Displacement"
+                    label={{ value: `North-South Displacement (${getDistanceUnit()})`, angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => [value.toFixed(2), name === 'x' ? 'East-West' : 'North-South']}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload[0]) {
+                        const data = payload[0].payload;
+                        return `MD: ${data.md.toFixed(1)} ${getDepthUnit()}, TVD: ${data.tvd.toFixed(1)} ${getDepthUnit()}`;
+                      }
+                      return '';
+                    }}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="x" 
+                    stroke="#8884d8" 
+                    strokeWidth={2}
+                    name="East-West Displacement"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="y" 
+                    stroke="#82ca9d" 
+                    strokeWidth={2}
+                    name="North-South Displacement"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This chart shows the horizontal displacement of the wellbore from the surface location.</p>
+              <p>• <span className="text-blue-600">Blue line</span>: East-West displacement (positive = East)</p>
+              <p>• <span className="text-green-600">Green line</span>: North-South displacement (positive = North)</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Deviation Table */}
       <Card>
