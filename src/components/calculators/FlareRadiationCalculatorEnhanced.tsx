@@ -167,9 +167,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
       setIsCalculating(true);
       try {
         const siInputs = getSIInputs();
-        console.log('Calculating flare radiation with inputs:', siInputs);
         const result = calculateFlareRadiation(siInputs);
-        console.log('Flare radiation calculation result:', result);
         setOutputs(result);
       } catch (error) {
         console.error('Flare radiation calculation error:', error);
@@ -183,7 +181,6 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
         setIsCalculating(false);
       }
     } else {
-      console.log('Input validation failed');
       setOutputs(null);
     }
   }, [inputs, perFieldUnits]);

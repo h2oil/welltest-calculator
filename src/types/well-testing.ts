@@ -271,24 +271,7 @@ export interface PhaseProperties {
   heatCapacity?: number; // J/(kg·K)
 }
 
-export interface NodeState {
-  nodeId: string;
-  pressure: number; // Pa
-  temperature: number; // K
-  gasRate: number; // m³/s
-  oilRate: number; // m³/s
-  waterRate: number; // m³/s
-  velocity: number; // m/s
-  reynoldsNumber: number;
-  pressureDrop: number; // Pa
-  phaseProperties: {
-    gas: PhaseProperties;
-    oil: PhaseProperties;
-    water: PhaseProperties;
-  };
-  warnings: string[];
-  notes: string[];
-}
+// Legacy NodeState interface - replaced by the more comprehensive one below
 
 export interface Segment {
   id: string;

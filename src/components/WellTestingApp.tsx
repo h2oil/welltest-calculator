@@ -24,6 +24,7 @@ const UnitConverter = lazy(() => import('./calculators/UnitConverter'));
 import { getStoredUnitSystem, storeUnitSystem, getStoredSession, storeSession, exportSessionToJSON, importSessionFromJSON, clearAllStoredData } from '@/lib/storage';
 import type { UnitSystem, CalculationSession } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
+import ErrorBoundary from './ErrorBoundary';
 
 // Loading component for calculator tabs
 const CalculatorSkeleton = () => (
@@ -175,7 +176,8 @@ const WellTestingApp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="border-b border-border bg-gradient-card">
         <div className="container mx-auto px-4 sm:px-6 py-4">
@@ -455,6 +457,7 @@ const WellTestingApp = () => {
         </Card>
       </div>
     </div>
+    </ErrorBoundary>
   );
 };
 

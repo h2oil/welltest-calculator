@@ -34,15 +34,31 @@ export default defineConfig(() => ({
           if (id.includes('recharts')) {
             return 'charts';
           }
-          // UI components
+          // PDF and export utilities
+          if (id.includes('jspdf') || id.includes('html2canvas')) {
+            return 'export-utils';
+          }
+          // Large UI components
           if (id.includes('Flare2DViewer') || id.includes('ProcessFlowDiagram')) {
             return 'ui-components';
+          }
+          // OpenProsper calculator modules
+          if (id.includes('open-prosper') || id.includes('OpenProsperCalculator')) {
+            return 'open-prosper';
           }
           // Default chunk for other modules
           return undefined;
         }
       }
     },
-    chunkSizeWarningLimit: 500
+    chunkSizeWarningLimit: 600,
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   }
 }));

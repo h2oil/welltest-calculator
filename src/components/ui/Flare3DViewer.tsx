@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-// Temporarily disable Three.js to fix blank page issue
-// import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

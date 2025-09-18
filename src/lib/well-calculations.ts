@@ -1232,18 +1232,27 @@ export const calculateFlowAssurance = (inputs: FlowAssuranceInputs): FlowAssuran
   
   // Calculate initial node (wellhead)
   const wellheadNode: NodeState = {
-    nodeId: 'wellhead',
-    pressure: inputs.wellheadPressure,
-    temperature: inputs.wellheadTemperature,
-    gasRate: inputs.gasRate,
-    oilRate: inputs.oilRate,
-    waterRate: inputs.waterRate,
-    velocity: 0,
-    reynoldsNumber: 0,
-    pressureDrop: 0,
-    phaseProperties,
-    warnings: [],
-    notes: ['Wellhead conditions']
+    id: 'wellhead',
+    kind: 'wellhead',
+    label: 'Wellhead',
+    pressure_kPa: inputs.wellheadPressure / 1000, // Convert Pa to kPa
+    temperature_K: inputs.wellheadTemperature,
+    q_actual_m3_s: inputs.gasRate + inputs.oilRate + inputs.waterRate,
+    mdot_kg_s: (inputs.gasRate * phaseProperties.gas.density + 
+                inputs.oilRate * phaseProperties.oil.density + 
+                inputs.waterRate * phaseProperties.water.density),
+    density_kg_m3: (inputs.gasRate * phaseProperties.gas.density + 
+                   inputs.oilRate * phaseProperties.oil.density + 
+                   inputs.waterRate * phaseProperties.water.density) / 
+                   (inputs.gasRate + inputs.oilRate + inputs.waterRate),
+    velocity_m_s: 0,
+    reynolds: 0,
+    erosional_check: {
+      velocity_limit_m_s: 50, // Default limit
+      is_erosional: false,
+      mach_limit_exceeded: false
+    },
+    warnings: []
   };
   nodes.push(wellheadNode);
   
@@ -1276,18 +1285,27 @@ export const calculateFlowAssurance = (inputs: FlowAssuranceInputs): FlowAssuran
     
     // Create node state
     const node: NodeState = {
-      nodeId: `${equipmentType}_outlet`,
-      pressure: currentPressure,
-      temperature: currentTemperature,
-      gasRate: inputs.gasRate,
-      oilRate: inputs.oilRate,
-      waterRate: inputs.waterRate,
-      velocity: equipmentResult.velocity,
-      reynoldsNumber: equipmentResult.reynoldsNumber,
-      pressureDrop: equipmentResult.pressureDrop,
-      phaseProperties: calculatePhasePropertiesAtConditions(phaseProperties, currentPressure, currentTemperature),
-      warnings: equipmentResult.warnings,
-      notes: equipmentResult.notes
+      id: `${equipmentType}_outlet`,
+      kind: equipmentType as any, // Cast to NodeKind
+      label: `${equipmentType.charAt(0).toUpperCase() + equipmentType.slice(1)} Outlet`,
+      pressure_kPa: currentPressure / 1000, // Convert Pa to kPa
+      temperature_K: currentTemperature,
+      q_actual_m3_s: inputs.gasRate + inputs.oilRate + inputs.waterRate,
+      mdot_kg_s: (inputs.gasRate * phaseProperties.gas.density + 
+                  inputs.oilRate * phaseProperties.oil.density + 
+                  inputs.waterRate * phaseProperties.water.density),
+      density_kg_m3: (inputs.gasRate * phaseProperties.gas.density + 
+                     inputs.oilRate * phaseProperties.oil.density + 
+                     inputs.waterRate * phaseProperties.water.density) / 
+                     (inputs.gasRate + inputs.oilRate + inputs.waterRate),
+      velocity_m_s: equipmentResult.velocity,
+      reynolds: equipmentResult.reynoldsNumber,
+      erosional_check: {
+        velocity_limit_m_s: 50, // Default limit
+        is_erosional: equipmentResult.velocity > 50,
+        mach_limit_exceeded: false // Would need Mach calculation
+      },
+      warnings: equipmentResult.warnings
     };
     nodes.push(node);
     
@@ -1482,8 +1500,10 @@ const calculateChokePressureDrop = (equipmentId: string, inletPressure: number, 
   let isCritical = false;
   
   if (inputs.chokeType === 'fixed-bean') {
-    const beanSize = inputs.chokeOpening; // mm
-    const area = Math.PI * Math.pow(beanSize / 2000, 2); // m²
+    // Convert choke size from 64ths of an inch to meters
+    const beanSizeInches = inputs.chokeSize64ths / 64;
+    const beanSizeMeters = beanSizeInches * 0.0254; // Convert inches to meters
+    const area = Math.PI * Math.pow(beanSizeMeters / 2, 2); // m²
     const velocity = flowRate / area;
     
     // Check for critical flow
@@ -1494,13 +1514,14 @@ const calculateChokePressureDrop = (equipmentId: string, inletPressure: number, 
     } else {
       pressureDrop = inletPressure - downstreamPressure;
     }
-  } else {
-    // Adjustable choke
-    const opening = inputs.chokeOpening / 100; // Convert % to fraction
+  } else if (inputs.chokeType === 'adjustable') {
+    // Adjustable choke - use chokeSize64ths as opening percentage
+    // Convert 64ths to a percentage (assuming max opening is 64/64 = 100%)
+    const opening = Math.min(1, inputs.chokeSize64ths / 64);
     const cv = 50 * opening; // Flow coefficient
     pressureDrop = Math.pow(flowRate / cv, 2) * density / 2;
-    
-    if (pressureDrop / inletPressure > (1 - criticalRatio)) {
+
+    if (inletPressure > 0 && pressureDrop / inletPressure > (1 - criticalRatio)) {
       isCritical = true;
       pressureDrop = inletPressure * (1 - criticalRatio);
     }
@@ -1537,7 +1558,7 @@ const calculateFlarePressureDrop = (equipmentId: string, flowRate: number, densi
 };
 
 const calculateSystemPerformance = (inputs: FlowAssuranceInputs, nodes: NodeState[], totalPressureDrop: number) => {
-  const requiredBackPressure = Math.max(0, inputs.separatorSetPressure - nodes[nodes.length - 1].pressure);
+  const requiredBackPressure = Math.max(0, inputs.separatorSetPressure - nodes[nodes.length - 1].pressure_kPa * 1000);
   const backPressureValveOpening = Math.min(100, (requiredBackPressure / inputs.separatorSetPressure) * 100);
   
   // Find limiting element (highest pressure drop)
@@ -1546,7 +1567,7 @@ const calculateSystemPerformance = (inputs: FlowAssuranceInputs, nodes: NodeStat
   // Calculate efficiency metrics
   const overallEfficiency = Math.max(0, 100 - (totalPressureDrop / inputs.wellheadPressure) * 100);
   const energyConsumption = totalPressureDrop * (inputs.gasRate + inputs.oilRate + inputs.waterRate) / 1000; // kW
-  const pressureRecovery = Math.max(0, (inputs.wellheadPressure - nodes[nodes.length - 1].pressure) / inputs.wellheadPressure * 100);
+  const pressureRecovery = Math.max(0, (inputs.wellheadPressure - nodes[nodes.length - 1].pressure_kPa * 1000) / inputs.wellheadPressure * 100);
   
   return {
     requiredBackPressure,

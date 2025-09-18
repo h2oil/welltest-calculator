@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Download, RotateCcw, Flame, Zap, Volume2, Wind, Compass, Ruler, Eye, EyeOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 
 interface Flare2DViewerProps {
   flareHeight: number; // m
@@ -66,21 +67,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
   const [selectedNoiseContours, setSelectedNoiseContours] = useState<number[]>([0, 1, 2]); // Default to first 3 noise contours
   const [customContourValues, setCustomContourValues] = useState<number[]>([]);
   const { toast } = useToast();
+  
+  // Performance monitoring
+  usePerformanceMonitor('Flare2DViewer');
 
-  // Debug logging for prop changes (removed for performance)
-  // useEffect(() => {
-  //   console.log('Flare2DViewer props updated:', {
-  //     flareHeight,
-  //     tipDiameter,
-  //     flameLength,
-  //     flameTilt,
-  //     windSpeed,
-  //     windDirection,
-  //     radiationContours: radiationContours?.length,
-  //     noiseContours: noiseContours?.length,
-  //     unitSystem
-  //   });
-  // }, [flareHeight, tipDiameter, flameLength, flameTilt, windSpeed, windDirection, radiationContours, noiseContours, unitSystem]);
 
   // Convert units based on system
   const getLengthUnit = () => unitSystem === 'metric' ? 'm' : 'ft';
@@ -119,8 +109,6 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
       };
     });
 
-    // Debug logging removed for performance
-    // console.log('Processed data:', { radiationData: radiationData.length, noiseData: noiseData.length });
     return { radiationData, noiseData };
   }, [radiationContours, noiseContours, selectedRadiationContours, selectedNoiseContours]);
 
