@@ -425,7 +425,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-screen flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -488,12 +488,12 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
       <Tabs 
         value={uiState.active_tab} 
         onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
-        className="flex h-full"
+        className="flex flex-1 min-h-0"
         orientation="vertical"
       >
         {/* Left Sidebar Navigation */}
-        <div className="w-64 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0">
-          <TabsList className="flex flex-col h-full w-full bg-gray-900 dark:bg-gray-800 p-2 space-y-1">
+        <div className="w-64 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
+          <TabsList className="flex flex-col w-full bg-gray-900 dark:bg-gray-800 p-2 space-y-1">
             <TabsTrigger 
               value="fluids" 
               className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
