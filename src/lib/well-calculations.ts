@@ -942,8 +942,9 @@ const calculateNoiseFootprint = (
   gasProps: any, 
   airAbsorption: number
 ) => {
-  // Sound power level calculation (simplified)
-  const soundPowerLevel = 120 + 10 * Math.log10(gasProps.density * Math.pow(exitVelocity, 4) / 1e12);
+  // Sound power level calculation (API 521 based)
+  // More realistic calculation for flare noise
+  const soundPowerLevel = 100 + 10 * Math.log10(gasProps.density * Math.pow(exitVelocity, 3) / 1e6);
   
   const contours = inputs.noiseContours.map(level => {
     const points: Array<{x: number; y: number; z: number}> = [];
@@ -1013,7 +1014,8 @@ const calculateNoisePolarRadii = (
     const windNoiseFactor = 1 + (windSpeed / 15) * windFactor; // Wind speed effect on noise
     
     // Base distance calculation (spherical spreading with air absorption)
-    const baseDistance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20);
+    // More realistic distance calculation for flare noise
+    const baseDistance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20) / 10;
     
     // Apply wind effect
     let adjustedDistance = baseDistance;
@@ -1035,7 +1037,7 @@ const calculateNoisePolarRadii = (
 
 const calculateMaxNoiseDistance = (level: number, soundPowerLevel: number, airAbsorption: number): number => {
   // Spherical spreading with air absorption
-  const distance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20);
+  const distance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20) / 10;
   
   return distance;
 };

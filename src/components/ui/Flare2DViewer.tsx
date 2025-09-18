@@ -90,13 +90,6 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
 
   // Process contour data for 2D views - memoized for performance
   const processedContours = useMemo(() => {
-    // Debug logging removed for performance
-    // console.log('Processing contours:', {
-    //   radiationContours: radiationContours?.length,
-    //   noiseContours: noiseContours?.length,
-    //   selectedRadiationContours,
-    //   selectedNoiseContours
-    // });
 
     const radiationData: ContourData[] = radiationContours.map(contour => {
       // Use polarRadii if available, otherwise calculate from points
