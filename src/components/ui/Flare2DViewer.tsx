@@ -36,6 +36,12 @@ interface ContourData {
   polarRadii?: number[];
 }
 
+interface ContourWithPolarRadii {
+  level: number;
+  points: Array<{x: number; y: number; z: number}>;
+  polarRadii?: number[];
+}
+
 const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
   flareHeight,
   tipDiameter,
@@ -83,29 +89,31 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
 
     const radiationData: ContourData[] = radiationContours.map(contour => {
       // Use polarRadii if available, otherwise calculate from points
-      const maxDistance = (contour as any).polarRadii 
-        ? Math.max(...(contour as any).polarRadii)
+      const contourWithPolar = contour as ContourWithPolarRadii;
+      const maxDistance = contourWithPolar.polarRadii 
+        ? Math.max(...contourWithPolar.polarRadii)
         : Math.max(...contour.points.map(p => Math.sqrt(p.x*p.x + p.y*p.y)));
       
       return {
         level: contour.level,
         maxDistance,
         points: contour.points,
-        polarRadii: (contour as any).polarRadii
+        polarRadii: contourWithPolar.polarRadii
       };
     });
 
     const noiseData: ContourData[] = noiseContours.map(contour => {
       // Use polarRadii if available, otherwise calculate from points
-      const maxDistance = (contour as any).polarRadii 
-        ? Math.max(...(contour as any).polarRadii)
+      const contourWithPolar = contour as ContourWithPolarRadii;
+      const maxDistance = contourWithPolar.polarRadii 
+        ? Math.max(...contourWithPolar.polarRadii)
         : Math.max(...contour.points.map(p => Math.sqrt(p.x*p.x + p.y*p.y)));
       
       return {
         level: contour.level,
         maxDistance,
         points: contour.points,
-        polarRadii: (contour as any).polarRadii
+        polarRadii: contourWithPolar.polarRadii
       };
     });
 

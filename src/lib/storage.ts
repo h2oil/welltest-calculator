@@ -23,7 +23,7 @@ export const storeUnitSystem = (unitSystem: UnitSystem): void => {
   try {
     localStorage.setItem(STORAGE_KEYS.UNIT_SYSTEM, unitSystem);
   } catch (error) {
-    console.warn('Failed to store unit system:', error);
+    // Failed to store unit system
   }
 };
 
@@ -41,7 +41,7 @@ export const storeSession = (session: Partial<CalculationSession>): void => {
   try {
     localStorage.setItem(STORAGE_KEYS.SESSION_DATA, JSON.stringify(session));
   } catch (error) {
-    console.warn('Failed to store session:', error);
+    // Failed to store session
   }
 };
 
@@ -59,7 +59,7 @@ export const storeNotes = (notes: Record<string, string>): void => {
   try {
     localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
   } catch (error) {
-    console.warn('Failed to store notes:', error);
+    // Failed to store notes
   }
 };
 
@@ -157,6 +157,6 @@ export const clearAllStoredData = (): void => {
       localStorage.removeItem(key);
     });
   } catch (error) {
-    console.warn('Failed to clear stored data:', error);
+    // Failed to clear stored data
   }
 };

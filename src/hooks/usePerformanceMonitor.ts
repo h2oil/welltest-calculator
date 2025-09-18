@@ -21,7 +21,7 @@ export const usePerformanceMonitor = (componentName: string, enabled: boolean = 
       
       // Log performance metrics in development
       if (renderTime > 16) { // More than one frame (16ms at 60fps)
-        console.warn(`[Performance] ${componentName} render took ${renderTime.toFixed(2)}ms (render #${renderCount.current})`);
+        // Performance monitoring - render time exceeded threshold
       }
 
       // Check memory usage if available
@@ -30,7 +30,7 @@ export const usePerformanceMonitor = (componentName: string, enabled: boolean = 
         const memoryUsage = memory.usedJSHeapSize / 1024 / 1024; // MB
         
         if (memoryUsage > 100) { // More than 100MB
-          console.warn(`[Performance] High memory usage: ${memoryUsage.toFixed(2)}MB`);
+          // Performance monitoring - high memory usage detected
         }
       }
     };

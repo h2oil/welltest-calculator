@@ -81,7 +81,7 @@ export const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       
       setSavedConfigurations(configurations);
     } catch (err) {
-      console.error('Error loading configurations:', err);
+      // Error loading configurations
       setError('Failed to load saved configurations');
     } finally {
       setLoading(false);
@@ -129,7 +129,7 @@ export const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       setSuccess('Configuration saved successfully');
       
     } catch (err) {
-      console.error('Error saving configuration:', err);
+      // Error saving configuration
       setError('Failed to save configuration');
     } finally {
       setSaving(false);
@@ -142,7 +142,7 @@ export const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       onLoadConfiguration(config.configurationData);
       setSuccess(`Configuration "${config.configurationName}" loaded successfully`);
     } catch (err) {
-      console.error('Error loading configuration:', err);
+      // Error loading configuration
       setError('Failed to load configuration');
     }
   };
@@ -182,7 +182,7 @@ export const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       setSuccess('Configuration duplicated successfully');
       
     } catch (err) {
-      console.error('Error duplicating configuration:', err);
+      // Error duplicating configuration
       setError('Failed to duplicate configuration');
     }
   };
@@ -208,7 +208,7 @@ export const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       setSuccess('Configuration deleted successfully');
       
     } catch (err) {
-      console.error('Error deleting configuration:', err);
+      // Error deleting configuration
       setError('Failed to delete configuration');
     }
   };
@@ -246,7 +246,7 @@ export const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
           setError('Invalid configuration file format');
         }
       } catch (err) {
-        console.error('Error importing configuration:', err);
+        // Error importing configuration
         setError('Failed to import configuration file');
       }
     };

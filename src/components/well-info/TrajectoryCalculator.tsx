@@ -117,7 +117,7 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
       setSuccess('Trajectory generated successfully using well_profile library');
       
     } catch (err) {
-      console.error('Error generating trajectory:', err);
+      // Error generating trajectory
       if (err instanceof Error && err.message.includes('Failed to fetch')) {
         setError('Backend server not available. Please start the Python backend server.');
       } else {
@@ -153,7 +153,7 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
       );
       setSuccess('Trajectory exported to Excel successfully');
     } catch (err) {
-      console.error('Error exporting trajectory:', err);
+      // Error exporting trajectory
       setError(err instanceof Error ? err.message : 'Failed to export trajectory');
     }
   };
@@ -187,14 +187,14 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
             if (data.startPoint) setStartPoint(data.startPoint);
             if (data.calculationParams) setCalculationParams(data.calculationParams);
           } catch (err) {
-            console.error('Error importing trajectory:', err);
+            // Error importing trajectory
             setError('Failed to import trajectory file');
           }
         };
         reader.readAsText(file);
       }
     } catch (err) {
-      console.error('Error importing trajectory:', err);
+      // Error importing trajectory
       setError(err instanceof Error ? err.message : 'Failed to import trajectory');
     } finally {
       setLoading(false);

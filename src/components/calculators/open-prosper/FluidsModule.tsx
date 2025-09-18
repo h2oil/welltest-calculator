@@ -41,7 +41,7 @@ export const FluidsModule: React.FC<FluidsModuleProps> = ({
     }
   });
 
-  const [calculatedProperties, setCalculatedProperties] = useState<any>(null);
+  const [calculatedProperties, setCalculatedProperties] = useState<Record<string, number> | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export const FluidsModule: React.FC<FluidsModuleProps> = ({
         }));
       }
     } catch (error) {
-      console.error('PVT calculation error:', error);
+      // PVT calculation error occurred
     } finally {
       setIsCalculating(false);
     }

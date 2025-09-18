@@ -115,7 +115,7 @@ export const WellInfoForm: React.FC<WellInfoFormProps> = ({
       
       setSavedProjects(projects);
     } catch (err) {
-      console.error('Error loading projects:', err);
+      // Error loading projects
       setError('Failed to load saved projects');
     }
   };
@@ -146,7 +146,7 @@ export const WellInfoForm: React.FC<WellInfoFormProps> = ({
       
       setSavedConfigurations(configurations);
     } catch (err) {
-      console.error('Error loading configurations:', err);
+      // Error loading configurations
       setError('Failed to load saved configurations');
     }
   };
@@ -229,7 +229,7 @@ export const WellInfoForm: React.FC<WellInfoFormProps> = ({
       loadSavedProjects();
       
     } catch (err) {
-      console.error('Error saving project:', err);
+      // Error saving project
       setError('Failed to save project');
     } finally {
       setSaving(false);

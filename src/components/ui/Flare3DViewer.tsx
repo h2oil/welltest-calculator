@@ -54,12 +54,12 @@ const Flare3DViewer = ({
 
   const handleResetView = () => {
     // Placeholder for reset functionality
-    console.log('Reset view clicked');
+    // Reset view
   };
 
   const handleExportPNG = () => {
     // Placeholder for PNG export
-    console.log('Export PNG clicked');
+    // Export PNG functionality
     onExportPNG?.();
   };
 

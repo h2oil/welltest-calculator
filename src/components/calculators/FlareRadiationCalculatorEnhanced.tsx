@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Copy, RotateCcw, Info, AlertTriangle, Flame, Volume2, Thermometer, 
-  Wind, Settings, Download, Upload, Eye, EyeOff, Camera, Layers
+  Wind, Settings, Download, Upload, Eye, EyeOff
 } from 'lucide-react';
 
 import { calculateFlareRadiation } from '@/lib/well-calculations';
@@ -44,7 +44,7 @@ interface PerFieldUnits {
   noiseReferenceDistance: string;
 }
 
-const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
+const FlareRadiationCalculatorEnhanced = memo(({ unitSystem }: Props) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -52,7 +52,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   const getDefaultUnits = (system: UnitSystem) => {
     const units = DEFAULT_UNITS[system];
     if (!units) {
-      console.warn(`Unknown unit system: ${system}, falling back to metric`);
+      // Fallback to metric for unknown unit systems
       return DEFAULT_UNITS.metric;
     }
     return units;
@@ -170,7 +170,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
         const result = calculateFlareRadiation(siInputs);
         setOutputs(result);
       } catch (error) {
-        console.error('Flare radiation calculation error:', error);
+        // Handle calculation error silently
         setOutputs(null);
         toast({
           title: "Calculation Error",
@@ -188,7 +188,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
   const validateInputs = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    console.log('Validating inputs:', inputs);
+    // Validate inputs
 
     if (!inputs.gasRate || inputs.gasRate <= 0) {
       newErrors.gasRate = 'Gas rate must be greater than 0';
@@ -216,20 +216,20 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
       newErrors.gasComposition = 'Gas composition must sum to 100%';
     }
 
-    console.log('Validation errors:', newErrors);
+    // Set validation errors
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FlareRadiationInputs, value: string | number) => {
+  const handleInputChange = useCallback((field: keyof FlareRadiationInputs, value: string | number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const handleUnitChange = (field: keyof PerFieldUnits, unit: string) => {
+  const handleUnitChange = useCallback((field: keyof PerFieldUnits, unit: string) => {
     setPerFieldUnits(prev => ({ ...prev, [field]: unit }));
-  };
+  }, []);
 
-  const handleGasCompositionChange = (component: keyof FlareGasComposition, value: number) => {
+  const handleGasCompositionChange = useCallback((component: keyof FlareGasComposition, value: number) => {
     setInputs(prev => ({
       ...prev,
       gasComposition: {
@@ -237,9 +237,9 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
         [component]: value
       }
     }));
-  };
+  }, []);
 
-  const handleContourChange = (type: 'radiation' | 'noise', index: number, value: number) => {
+  const handleContourChange = useCallback((type: 'radiation' | 'noise', index: number, value: number) => {
     setInputs(prev => ({
       ...prev,
       [type === 'radiation' ? 'radiationContours' : 'noiseContours']: 
@@ -247,9 +247,9 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
           i === index ? value : val
         )
     }));
-  };
+  }, []);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setInputs({
       gasRate: 5,
       flareTipHeight: 30,
@@ -270,7 +270,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
     });
     setOutputs(null);
     setErrors({});
-  };
+  }, []);
 
   const handleCopyResults = async () => {
     if (outputs) {
@@ -751,13 +751,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
                     </Button>
                   </div>
                   
-                  {show2D && outputs && (() => {
-                    console.log('Flare2DViewer props:', {
-                      radiationContours: outputs.radiationFootprint?.contours?.length || 0,
-                      noiseContours: outputs.noiseFootprint?.contours?.length || 0,
-                      outputs: outputs
-                    });
-                    return (
+                  {show2D && outputs && (
                       <Flare2DViewer
                         flareHeight={convertFromSI(inputs.flareTipHeight, perFieldUnits.flareHeight)}
                         tipDiameter={convertFromSI(inputs.tipDiameter, perFieldUnits.tipDiameter)}
@@ -774,8 +768,7 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
                         onExportCSV={handleExportCSV}
                         onExportJSON={handleExportJSON}
                       />
-                    );
-                  })()}
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -968,6 +961,6 @@ const FlareRadiationCalculatorEnhanced = ({ unitSystem }: Props) => {
       </Card>
     </div>
   );
-};
+});
 
 export default FlareRadiationCalculatorEnhanced;

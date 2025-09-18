@@ -68,7 +68,7 @@ export const TrajectoryVisualizer: React.FC<TrajectoryVisualizerProps> = ({
       const analysisResult = await wellProfileService.analyzeTrajectory(trajectory);
       setAnalysis(analysisResult);
     } catch (err) {
-      console.error('Error loading analysis:', err);
+      // Error loading analysis
     }
   };
 
@@ -85,7 +85,7 @@ export const TrajectoryVisualizer: React.FC<TrajectoryVisualizerProps> = ({
       const plotResult = await wellProfileService.create3DPlot(trajectory, style);
       setPlotData(plotResult.plot_data);
     } catch (err) {
-      console.error('Error loading 3D plot:', err);
+      // Error loading 3D plot
     }
   };
 
@@ -312,7 +312,7 @@ export const TrajectoryVisualizer: React.FC<TrajectoryVisualizerProps> = ({
           onTrajectoryChange(data.trajectory);
         }
       } catch (err) {
-        console.error('Error importing trajectory:', err);
+        // Error importing trajectory
       }
     };
     reader.readAsText(file);

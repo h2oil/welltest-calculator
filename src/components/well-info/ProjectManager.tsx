@@ -73,12 +73,12 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
 
   const handleSaveConfiguration = (configData: Record<string, any>) => {
     // This will be implemented to save current calculation state
-    console.log('Saving configuration data:', configData);
+    // Saving configuration data
   };
 
   const handleLoadConfiguration = (configData: Record<string, any>) => {
     // This will be implemented to load calculation state
-    console.log('Loading configuration data:', configData);
+    // Loading configuration data
   };
 
   const exportProject = () => {
@@ -116,7 +116,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
           handleProjectChange(data.project);
         }
       } catch (err) {
-        console.error('Error importing project:', err);
+        // Error importing project
       }
     };
     reader.readAsText(file);

@@ -256,7 +256,7 @@ const Flare3DViewerAdvanced = ({
 
   const handleResetView = () => {
     // Reset camera position - this will be handled by OrbitControls
-    console.log('Reset view clicked');
+    // Reset view functionality
   };
 
   const handleExportPNG = () => {

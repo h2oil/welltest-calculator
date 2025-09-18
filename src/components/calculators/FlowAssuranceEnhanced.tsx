@@ -144,7 +144,7 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
       const result = solveNetwork(updatedNodes, segments, fluidSpec);
       setNetworkResult(result);
     } catch (error) {
-      console.error('Network calculation error:', error);
+      // Network calculation error occurred
       toast({
         title: "Calculation Error",
         description: "Failed to calculate network. Check your inputs.",

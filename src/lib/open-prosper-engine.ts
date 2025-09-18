@@ -321,7 +321,7 @@ export class VLPCalculator {
     
     // Check for invalid values
     if (isNaN(pressure) || isNaN(temperature) || isNaN(holdup)) {
-      console.warn('Invalid VLP calculation result:', { pressure, temperature, holdup, rate });
+      // Invalid VLP calculation result - using fallback values
       return { pressure: initialWHP, holdup: 0.5, temperature: fluid.temperature };
     }
     
@@ -391,15 +391,7 @@ export class VLPCalculator {
     
     // Check for invalid values
     if (isNaN(clampedDeltaP) || !isFinite(clampedDeltaP)) {
-      console.warn('Invalid pressure drop calculated:', { 
-        deltaP_hydrostatic, 
-        deltaP_friction, 
-        deltaP_acceleration, 
-        totalDeltaP,
-        segment: segment.length,
-        rate,
-        pressure
-      });
+      // Invalid pressure drop calculated - using fallback
       return 0; // Return zero pressure drop if calculation fails
     }
     
@@ -619,7 +611,7 @@ export class NodalAnalyzer {
     
     // Validate the results
     if (isNaN(pwf) || isNaN(whp) || pwf < 0 || whp < 0) {
-      console.warn('Invalid operating point calculated:', { rate: bestRate, pwf, whp });
+      // Invalid operating point calculated - using fallback values
       return { rate: bestRate, pwf: 0, whp: 0 };
     }
     

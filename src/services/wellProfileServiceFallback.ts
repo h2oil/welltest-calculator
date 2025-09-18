@@ -35,7 +35,7 @@ export interface PlotStyle {
 class WellProfileServiceFallback {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // Simulate backend response for development
-    console.log(`[Fallback] Simulating API call to ${endpoint}`);
+    // Simulating API call using fallback service
     
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -267,7 +267,7 @@ class WellProfileServiceFallback {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading trajectory:', error);
+      // Error downloading trajectory
       throw error;
     }
   }

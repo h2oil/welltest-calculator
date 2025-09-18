@@ -56,7 +56,7 @@ export const ReportsModule: React.FC<ReportsModuleProps> = ({
         downloadReport(reportContent, format);
       }
     } catch (error) {
-      console.error('Report generation error:', error);
+      // Report generation error occurred
     } finally {
       setIsGenerating(false);
     }

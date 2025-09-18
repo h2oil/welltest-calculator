@@ -171,7 +171,7 @@ export const VLPModule: React.FC<VLPModuleProps> = ({
                 <Label htmlFor="correlation">Correlation Type</Label>
                 <Select
                   value={localVLP.correlation}
-                  onValueChange={(value: any) => handleVLPUpdate({ correlation: value })}
+                  onValueChange={(value: string) => handleVLPUpdate({ correlation: value as 'hagedorn_brown' | 'beggs_brill' | 'duns_ros' })}
                 >
                   <SelectTrigger>
                     <SelectValue />

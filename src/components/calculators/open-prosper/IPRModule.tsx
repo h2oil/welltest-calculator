@@ -185,7 +185,7 @@ export const IPRModule: React.FC<IPRModuleProps> = ({
                 <Label htmlFor="ipr-type">IPR Model Type</Label>
                 <Select
                   value={localIPR.type}
-                  onValueChange={(value: any) => handleIPRUpdate({ type: value })}
+                  onValueChange={(value: string) => handleIPRUpdate({ type: value as 'vogel' | 'fetkovich' | 'jones' })}
                 >
                   <SelectTrigger>
                     <SelectValue />

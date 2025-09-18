@@ -126,7 +126,7 @@ class WellProfileService {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading trajectory:', error);
+      // Error downloading trajectory
       throw error;
     }
   }

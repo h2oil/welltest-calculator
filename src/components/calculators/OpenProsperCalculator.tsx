@@ -14,9 +14,7 @@ import {
   FileText,
   Download,
   Upload,
-  Save,
-  AlertTriangle,
-  CheckCircle
+  AlertTriangle
 } from 'lucide-react';
 
 import { H2OilCompleteEngine } from '@/lib/open-prosper-engine';
@@ -25,11 +23,7 @@ import type {
   OpenProsperProject, 
   OpenProsperUIState, 
   UnitSystem,
-  Fluid,
-  IPRModel,
-  VLPSettings,
   Completion,
-  DeviationSurvey,
   NodalResult
 } from '@/types/open-prosper';
 

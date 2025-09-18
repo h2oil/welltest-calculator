@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,23 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Settings, 
   Plus, 
   Trash2, 
   AlertTriangle,
-  CheckCircle,
-  Wrench,
-  Target,
   Layers,
-  Circle,
-  Square,
-  Triangle,
   Download,
   RefreshCw
 } from 'lucide-react';
 
 import { config } from '@/lib/config';
-import type { Completion, Device, PerforationInterval, DeviceType, UnitSystem } from '@/types/open-prosper';
+import type { Completion, UnitSystem } from '@/types/open-prosper';
 
 interface WellSchematicViewerProps {
   completion: Completion | undefined;
@@ -49,7 +42,7 @@ interface CompletionData {
   completion_type: string;
 }
 
-export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
+export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.memo(({
   completion,
   unitSystem,
   onUpdate
@@ -102,11 +95,22 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
     setLoading(true);
     setError('');
 
+    // Validate inputs
+    if (!wellName.trim()) {
+      setError('Well name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (totalDepth <= 0) {
+      setError('Total depth must be greater than 0');
+      setLoading(false);
+      return;
+    }
+
     try {
       // Try backend first
       try {
-        console.log('Attempting to connect to backend:', `${config.backendUrl}/well-schematics/generate-schematic`);
-        
         // Create AbortController for timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -128,37 +132,21 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
 
         clearTimeout(timeoutId);
 
-        console.log('Backend response status:', response.status);
-
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
             setSchematicImage(`data:image/png;base64,${result.image_base64}`);
             return;
-          } else {
-            console.warn('Backend returned error:', result.message);
           }
-        } else {
-          console.warn('Backend returned non-OK status:', response.status, response.statusText);
         }
       } catch (backendError) {
-        if (backendError.name === 'AbortError') {
-          console.warn('Backend request timed out, using fallback');
-        } else {
-          console.warn('Backend connection failed, using fallback:', backendError);
-        }
-        // Don't set error here, just use fallback
+        // Silently fall back to local generation
       }
 
       // Fallback: Generate simple schematic using SVG
-      console.log('Using SVG fallback schematic generation');
       generateSVGSchematic();
       
-      // Show a subtle notification that we're using fallback
-      console.info('Backend unavailable - using local schematic generation');
-      
     } catch (err) {
-      console.error('Schematic generation error:', err);
       setError(`Error generating schematic: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
@@ -166,9 +154,10 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
   };
 
   const generateSVGSchematic = () => {
-    // Create SVG using DOM methods to avoid CSP violations
-    const svgWidth = 1000;
-    const svgHeight = 800;
+    try {
+      // Create SVG using DOM methods to avoid CSP violations
+      const svgWidth = 1000;
+      const svgHeight = 800;
     
     // Wellbore dimensions
     const wellX = 150;
@@ -374,36 +363,41 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
       svg.appendChild(legendText);
     });
 
-    // Convert SVG to data URL
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svg);
-    const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
-    setSchematicImage(svgDataUrl);
+      // Convert SVG to data URL
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svg);
+      const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+      setSchematicImage(svgDataUrl);
+    } catch (svgError) {
+      setError(`Error generating SVG schematic: ${svgError instanceof Error ? svgError.message : 'Unknown error'}`);
+    }
   };
 
-  const addCasing = () => {
-    setCasings([...casings, {
-      name: `Casing-${casings.length + 1}`,
+  const addCasing = useCallback(() => {
+    setCasings(prev => [...prev, {
+      name: `Casing-${prev.length + 1}`,
       top_depth: 0,
       bottom_depth: 1000,
       outer_diameter: 9.625,
       inner_diameter: 8.535,
       weight: 40
     }]);
-  };
+  }, []);
 
-  const removeCasing = (index: number) => {
-    setCasings(casings.filter((_, i) => i !== index));
-  };
+  const removeCasing = useCallback((index: number) => {
+    setCasings(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const updateCasing = (index: number, field: keyof CasingData, value: any) => {
-    const updated = [...casings];
-    updated[index] = { ...updated[index], [field]: value };
-    setCasings(updated);
-  };
+  const updateCasing = useCallback((index: number, field: keyof CasingData, value: string | number) => {
+    setCasings(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  }, []);
 
-  const getLengthUnit = () => unitSystem === 'metric' ? 'm' : 'ft';
-  const getDiameterUnit = () => unitSystem === 'metric' ? 'm' : 'in';
+  const getLengthUnit = useMemo(() => unitSystem === 'metric' ? 'm' : 'ft', [unitSystem]);
+  const getDiameterUnit = useMemo(() => unitSystem === 'metric' ? 'm' : 'in', [unitSystem]);
 
   return (
     <div className="space-y-6">
@@ -578,4 +572,4 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
       </Card>
     </div>
   );
-};
+});
