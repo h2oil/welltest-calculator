@@ -22,6 +22,7 @@ import {
   Triangle
 } from 'lucide-react';
 
+import { WellSchematicViewer } from './WellSchematicViewer';
 import type { Completion, Device, PerforationInterval, DeviceType, UnitSystem } from '@/types/open-prosper';
 
 interface CompletionModuleProps {
@@ -191,66 +192,6 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
     return icons[type] || Circle;
   };
 
-  // Calculate completion schematic data
-  const completionSchematic = useMemo(() => {
-    const items = [];
-    
-    // Add tubing
-    if (localCompletion.tubing_id > 0) {
-      items.push({
-        id: 'tubing',
-        type: 'tubing',
-        name: 'Tubing',
-        depth: 0,
-        length: 10000, // Assume full length for now
-        diameter: localCompletion.tubing_id,
-        color: '#3b82f6',
-        icon: Circle
-      });
-    }
-
-    // Add devices
-    localCompletion.devices.forEach(device => {
-      const mdStart = device.md_start || 0;
-      const mdEnd = device.md_end || 0;
-      const deviceInfo = {
-        id: device.id,
-        type: device.type,
-        name: getDeviceName(device.type),
-        depth: mdStart,
-        length: Math.max(0, mdEnd - mdStart),
-        diameter: device.id_inner || device.id_outer || 0.1,
-        color: getDeviceColor(device.type),
-        icon: getDeviceIcon(device.type),
-        status: device.properties?.status || 'active'
-      };
-      items.push(deviceInfo);
-    });
-
-    // Add perforations
-    localCompletion.perforations.forEach(perf => {
-      const mdStart = perf.md_start || 0;
-      const mdEnd = perf.md_end || 0;
-      const perfInfo = {
-        id: perf.id,
-        type: 'perforation',
-        name: `Perforation ${perf.id}`,
-        depth: mdStart,
-        length: Math.max(0, mdEnd - mdStart),
-        diameter: perf.diameter || 0.5,
-        color: '#ef4444',
-        icon: Target,
-        density: perf.density || 12,
-        phasing: perf.phasing || 60
-      };
-      items.push(perfInfo);
-    });
-
-    // Sort by depth and ensure all items have valid depths
-    return items
-      .filter(item => item.depth !== undefined && item.depth !== null)
-      .sort((a, b) => (a.depth || 0) - (b.depth || 0));
-  }, [localCompletion]);
 
   const calculateCompletionStats = () => {
     const perforations = localCompletion?.perforations || [];
@@ -323,191 +264,12 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
         </Card>
       </div>
 
-      {/* Completion Schematic */}
-      {completionSchematic.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="h-5 w-5" />
-              Completion Schematic
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Well Schematic */}
-              <div className="h-[500px] w-full overflow-auto border rounded-lg bg-gray-50 dark:bg-gray-900 p-6">
-                <div className="relative flex h-full">
-                  {/* Left side - Depth scale and wellbore */}
-                  <div className="flex-shrink-0 w-20">
-                    {/* Depth scale */}
-                    <div className="relative w-2 h-full bg-gray-300 dark:bg-gray-700 rounded">
-                      {Array.from({ length: 11 }, (_, i) => {
-                        // Calculate proper depth range
-                        const deviceDepths = completionSchematic.map(item => (item.depth || 0) + (item.length || 0));
-                        const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
-                        const minDeviceDepth = deviceDepths.length > 0 ? Math.min(...deviceDepths) : 0;
-                        
-                        // Add 1000ft below lowest device and 500ft above highest device
-                        const schematicMinDepth = Math.max(0, minDeviceDepth - 500);
-                        const schematicMaxDepth = maxDeviceDepth + 1000;
-                        const depthRange = schematicMaxDepth - schematicMinDepth;
-                        
-                        const depth = schematicMinDepth + (i / 10) * depthRange;
-                        const topPosition = (i / 10) * 100;
-                        return (
-                          <div
-                            key={i}
-                            className="absolute text-xs text-muted-foreground flex items-center"
-                            style={{ top: `${topPosition}%`, transform: 'translateY(-50%)' }}
-                          >
-                            <div className="w-1 h-1 bg-gray-600 dark:bg-gray-400 rounded-full -ml-0.5"></div>
-                            <div className="ml-2 -mt-1 font-mono">{Number(depth?.toFixed(0)) || 0} {getLengthUnit()}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Wellbore line */}
-                    <div className="absolute left-8 top-0 w-1 bg-gray-400 dark:bg-gray-600 rounded-full h-full"></div>
-                  </div>
-                  
-                  {/* Right side - Devices positioned by depth */}
-                  <div className="flex-1 ml-4 relative">
-                    {completionSchematic
-                      .sort((a, b) => (a.depth || 0) - (b.depth || 0))
-                      .map((item, index) => {
-                      const IconComponent = item.icon;
-                      
-                      // Calculate proper depth range (same as depth scale)
-                      const deviceDepths = completionSchematic.map(i => (i.depth || 0) + (i.length || 0));
-                      const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
-                      const minDeviceDepth = deviceDepths.length > 0 ? Math.min(...deviceDepths) : 0;
-                      
-                      const schematicMinDepth = Math.max(0, minDeviceDepth - 500);
-                      const schematicMaxDepth = maxDeviceDepth + 1000;
-                      const depthRange = schematicMaxDepth - schematicMinDepth;
-                      
-                      // Position based on actual depth
-                      const depthPercent = depthRange > 0 ? ((item.depth || 0) - schematicMinDepth) / depthRange * 100 : 0;
-                      
-                      return (
-                        <div
-                          key={item.id}
-                          className="absolute flex items-center gap-3 group"
-                          style={{
-                            left: '0px',
-                            top: `${depthPercent}%`,
-                            transform: 'translateY(-50%)'
-                          }}
-                        >
-                          {/* Device icon on wellbore */}
-                          <div 
-                            className="flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 z-10"
-                            style={{ 
-                              backgroundColor: item.color + '20',
-                              borderColor: item.color,
-                              color: item.color,
-                              position: 'absolute',
-                              left: '-60px',
-                              top: '50%',
-                              transform: 'translateY(-50%)'
-                            }}
-                          >
-                            <IconComponent className="h-4 w-4" />
-                          </div>
-                          
-                          {/* Arrow from device to info box */}
-                          <div 
-                            className="absolute top-1/2 left-0 w-12 h-0.5 bg-gray-400 dark:bg-gray-500"
-                            style={{ transform: 'translateY(-50%)' }}
-                          ></div>
-                          <div 
-                            className="absolute top-1/2 left-10 w-0 h-0 border-l-4 border-l-gray-400 dark:border-l-gray-500 border-t-2 border-t-transparent border-b-2 border-b-transparent"
-                            style={{ transform: 'translateY(-50%)' }}
-                          ></div>
-                          
-                          {/* Information box */}
-                          <div 
-                            className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700 max-w-xs"
-                            style={{ 
-                              position: 'absolute',
-                              left: '60px',
-                              top: '50%',
-                              transform: 'translateY(-50%)'
-                            }}
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{item.name}</span>
-                              {item.status && (
-                                <Badge 
-                                  variant={item.status === 'active' ? 'default' : 'secondary'}
-                                  className="text-xs"
-                                >
-                                  {item.status}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground space-y-1">
-                              <div className="flex justify-between">
-                                <span>Depth:</span>
-                                <span className="font-medium">{Number((item.depth || 0).toFixed(1))} {getLengthUnit()}</span>
-                              </div>
-                              {(item.length || 0) > 0 && (
-                                <div className="flex justify-between">
-                                  <span>Length:</span>
-                                  <span className="font-medium">{Number((item.length || 0).toFixed(1))} {getLengthUnit()}</span>
-                                </div>
-                              )}
-                              {(item.diameter || 0) > 0 && (
-                                <div className="flex justify-between">
-                                  <span>ID:</span>
-                                  <span className="font-medium">{Number((item.diameter || 0).toFixed(3))} {getDiameterUnit()}</span>
-                                </div>
-                              )}
-                              {item.density && (
-                                <div className="flex justify-between">
-                                  <span>Density:</span>
-                                  <span className="font-medium">{item.density} shots/ft</span>
-                                </div>
-                              )}
-                              {item.phasing && (
-                                <div className="flex justify-between">
-                                  <span>Phasing:</span>
-                                  <span className="font-medium">{item.phasing}°</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Depth range summary */}
-              {completionSchematic.length > 0 && (
-                <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Depth Range:</span>
-                    <span className="font-semibold">
-                      {Math.min(...completionSchematic.map(item => item.depth || 0)).toFixed(0)} - {Math.max(...completionSchematic.map(item => (item.depth || 0) + (item.length || 0))).toFixed(0)} {getLengthUnit()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm mt-1">
-                    <span className="text-muted-foreground">Total Devices:</span>
-                    <span className="font-semibold">{completionSchematic.length}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>This schematic shows the completion design with devices and perforations positioned by depth.</p>
-              <p>Items are sorted by depth from shallowest (top) to deepest (bottom).</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Well Schematic Viewer */}
+      <WellSchematicViewer
+        completion={localCompletion}
+        unitSystem={unitSystem}
+        onUpdate={handleCompletionUpdate}
+      />
 
       <Tabs defaultValue="tubing" className="w-full">
         <TabsList className="grid w-full grid-cols-4">

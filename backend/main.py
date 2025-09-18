@@ -18,17 +18,21 @@ from pathlib import Path
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.utils import PlotlyJSONEncoder
+from well_schematics_service import router as well_schematics_router
 
 app = FastAPI(title="H2Oil Complete - Well Profile API", version="1.0.0")
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8081", "http://localhost:8082", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:8081", "http://localhost:8082", "http://localhost:5173", "http://localhost:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include well schematics router
+app.include_router(well_schematics_router, prefix="/well-schematics", tags=["well-schematics"])
 
 # Pydantic models
 class TrajectoryPoint(BaseModel):
