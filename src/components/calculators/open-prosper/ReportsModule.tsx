@@ -13,6 +13,7 @@ import {
   Target,
   TrendingUp
 } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 import type { 
   OpenProsperCase, 
@@ -132,13 +133,131 @@ END OF REPORT
   };
 
   const downloadReport = (content: string, format: string) => {
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `open-prosper-report-${case_?.name || 'case'}.${format}`;
-    link.click();
-    URL.revokeObjectURL(url);
+    if (format === 'pdf') {
+      generatePDF(content);
+    } else {
+      const mimeType = format === 'html' ? 'text/html' : 'text/plain';
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `h2oil-complete-report-${case_?.name || 'case'}.${format}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const generatePDF = (content: string) => {
+    if (!case_ || !nodalResult) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPosition = 20;
+    const lineHeight = 7;
+    const margin = 20;
+
+    // Helper function to add text with page breaks
+    const addText = (text: string, fontSize: number = 10, isBold: boolean = false) => {
+      if (yPosition > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.setFontSize(fontSize);
+      if (isBold) {
+        doc.setFont(undefined, 'bold');
+      } else {
+        doc.setFont(undefined, 'normal');
+      }
+      
+      const lines = doc.splitTextToSize(text, pageWidth - 2 * margin);
+      doc.text(lines, margin, yPosition);
+      yPosition += lines.length * lineHeight + 5;
+    };
+
+    // Header
+    addText('H2Oil COMPLETE - Well Performance Report', 16, true);
+    addText('==========================================', 12);
+    addText('', 10);
+    
+    // Project Info
+    addText('PROJECT INFORMATION', 12, true);
+    addText(`Project: ${project.name}`, 10);
+    addText(`Case: ${case_.name}`, 10);
+    addText(`Generated: ${new Date().toLocaleString()}`, 10);
+    addText(`Unit System: ${unitSystem === 'metric' ? 'Metric' : 'Field'}`, 10);
+    addText('', 10);
+
+    // Well Summary
+    addText('WELL SUMMARY', 12, true);
+    addText(`Well Type: ${case_.fluid.kind}`, 10);
+    addText(`Reservoir Pressure: ${case_.ipr.parameters.reservoir_pressure.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Reservoir Temperature: ${case_.fluid.temperature.toFixed(1)}°C`, 10);
+    addText(`Tubing ID: ${case_.completion.tubing_id.toFixed(3)} ${unitSystem === 'metric' ? 'm' : 'in'}`, 10);
+    addText(`Total Depth: ${Math.max(...case_.deviation.map(d => d.md)).toFixed(0)} ${unitSystem === 'metric' ? 'm' : 'ft'}`, 10);
+    addText('', 10);
+
+    // Operating Point
+    addText('OPERATING POINT', 12, true);
+    addText(`Flow Rate: ${nodalResult.operating_point.rate.toFixed(1)} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
+    addText(`Bottomhole Pressure: ${nodalResult.operating_point.pwf.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Wellhead Pressure: ${nodalResult.operating_point.whp.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Convergence: ${nodalResult.convergence ? 'Yes' : 'No'}`, 10);
+    addText(`Iterations: ${nodalResult.iterations}`, 10);
+    addText('', 10);
+
+    // IPR Curve
+    addText('IPR CURVE', 12, true);
+    addText(`Model: ${case_.ipr.type}`, 10);
+    addText(`Max Rate: ${nodalResult.ipr_curve.max_rate.toFixed(1)} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
+    addText(`Max Pressure: ${nodalResult.ipr_curve.max_pressure.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Data Points: ${nodalResult.ipr_curve.rates.length}`, 10);
+    addText('', 10);
+
+    // VLP Curve
+    addText('VLP CURVE', 12, true);
+    addText(`Correlation: ${case_.vlp.correlation}`, 10);
+    addText(`Max Rate: ${nodalResult.vlp_curve.max_rate.toFixed(1)} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
+    addText(`Max Pressure: ${nodalResult.vlp_curve.max_pressure.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Data Points: ${nodalResult.vlp_curve.rates.length}`, 10);
+    addText('', 10);
+
+    // Completion Details
+    addText('COMPLETION DETAILS', 12, true);
+    addText(`Tubing ID: ${case_.completion.tubing_id.toFixed(3)} ${unitSystem === 'metric' ? 'm' : 'in'}`, 10);
+    addText(`Tubing Roughness: ${case_.completion.tubing_roughness.toFixed(5)} ${unitSystem === 'metric' ? 'm' : 'in'}`, 10);
+    addText(`Packer Depth: ${case_.completion.packer_depth?.toFixed(0) || 'Not set'} ${unitSystem === 'metric' ? 'm' : 'ft'}`, 10);
+    addText(`Perforations: ${case_.completion.perforations.length}`, 10);
+    addText(`Devices: ${case_.completion.devices.length}`, 10);
+    addText('', 10);
+
+    // Fluid Properties
+    addText('FLUID PROPERTIES', 12, true);
+    addText(`Fluid Type: ${case_.fluid.kind}`, 10);
+    addText(`GOR: ${case_.fluid.gor || 0} scf/stb`, 10);
+    addText(`WCT: ${case_.fluid.wct || 0}%`, 10);
+    addText(`Oil Density: ${case_.fluid.pvt.rho_o || 0} kg/m³`, 10);
+    addText(`Gas Density: ${case_.fluid.pvt.rho_g || 0} kg/m³`, 10);
+    addText(`Oil Viscosity: ${case_.fluid.pvt.mu_o || 0} cp`, 10);
+    addText(`Gas Viscosity: ${case_.fluid.pvt.mu_g || 0} cp`, 10);
+    addText('', 10);
+
+    // Warnings
+    if (nodalResult.warnings.length > 0) {
+      addText('WARNINGS', 12, true);
+      nodalResult.warnings.forEach(warning => {
+        addText(`• ${warning}`, 10);
+      });
+      addText('', 10);
+    }
+
+    // Footer
+    addText('END OF REPORT', 12, true);
+    addText('Generated by H2Oil COMPLETE - Professional Well Modelling Suite', 8);
+
+    // Download the PDF
+    doc.save(`h2oil-complete-report-${case_.name}.pdf`);
   };
 
   const exportData = (format: string) => {
@@ -216,7 +335,7 @@ Formation Thickness,${case_.ipr.parameters.thickness},${unitSystem === 'metric' 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pdf">PDF Report</SelectItem>
+                  <SelectItem value="pdf">PDF Report (Professional)</SelectItem>
                   <SelectItem value="txt">Text Report</SelectItem>
                   <SelectItem value="html">HTML Report</SelectItem>
                 </SelectContent>
