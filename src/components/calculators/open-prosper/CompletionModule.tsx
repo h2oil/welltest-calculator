@@ -334,145 +334,156 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
           </CardHeader>
           <CardContent>
             <div className="h-[600px] w-full overflow-auto border rounded-lg bg-gray-50 dark:bg-gray-900 p-6">
-              <div className="relative" style={{ minHeight: '1200px' }}>
-                {/* Wellbore line */}
-                <div className="absolute left-8 top-0 w-1 bg-gray-400 dark:bg-gray-600 rounded-full" style={{ height: '1000px' }}></div>
-                
-                {completionSchematic
-                  .sort((a, b) => (a.depth || 0) - (b.depth || 0)) // Sort by depth first
-                  .map((item, index) => {
-                  const IconComponent = item.icon;
-                  
-                  // Calculate max depth and add 1000ft below lowest device
-                  const deviceDepths = completionSchematic.map(i => (i.depth || 0) + (i.length || 0));
-                  const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
-                  
-                  // Add 1000ft below the lowest device (not round up to nearest 1000ft)
-                  const schematicMaxDepth = maxDeviceDepth + 1000;
-                  
-                  // Position based on actual depth
-                  const depthPixels = schematicMaxDepth > 0 ? ((item.depth || 0) / schematicMaxDepth) * 1000 : 0;
-                  const lengthPixels = schematicMaxDepth > 0 ? ((item.length || 0) / schematicMaxDepth) * 1000 : 40;
-                  
-                  // Calculate text box position to prevent overlapping
-                  // Use alternating left/right positioning for text boxes
-                  const textBoxSide = index % 2 === 0 ? 'right' : 'left';
-                  const textBoxOffset = textBoxSide === 'right' ? 120 : -320; // Position to right or left of wellbore
-                  
-                  return (
-                    <div
-                      key={item.id}
-                      className="absolute flex items-start gap-4 group"
-                      style={{
-                        left: '120px',
-                        top: `${depthPixels + 20}px`,
-                        minHeight: `${Math.max(lengthPixels, 60)}px`
-                      }}
-                    >
-                      {/* Device icon on wellbore */}
-                      <div 
-                        className="flex items-center justify-center w-10 h-10 rounded-full border-2 flex-shrink-0 mt-2 z-10"
-                        style={{ 
-                          backgroundColor: item.color + '20',
-                          borderColor: item.color,
-                          color: item.color,
-                          position: 'absolute',
-                          left: '-80px',
-                          top: '0px'
-                        }}
-                      >
-                        <IconComponent className="h-5 w-5" />
-                      </div>
+              <div className="relative flex" style={{ minHeight: '1200px' }}>
+                {/* Left side - Depth scale and wellbore */}
+                <div className="flex-shrink-0 w-20">
+                  {/* Depth scale */}
+                  <div className="relative w-2 h-full bg-gray-300 dark:bg-gray-700 rounded">
+                    {Array.from({ length: 11 }, (_, i) => {
+                      // Calculate proper depth range
+                      const deviceDepths = completionSchematic.map(item => (item.depth || 0) + (item.length || 0));
+                      const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
+                      const minDeviceDepth = deviceDepths.length > 0 ? Math.min(...deviceDepths) : 0;
                       
-                      {/* Arrow from device to info box */}
-                      <div 
-                        className="absolute top-[20px] w-12 h-0.5 bg-gray-400 dark:bg-gray-500"
-                        style={{ 
-                          left: textBoxSide === 'right' ? '-60px' : '60px',
-                          transform: textBoxSide === 'right' ? 'rotate(0deg)' : 'rotate(180deg)'
-                        }}
-                      ></div>
-                      <div 
-                        className="absolute top-[16px] w-0 h-0 border-l-4 border-l-gray-400 dark:border-l-gray-500 border-t-2 border-t-transparent border-b-2 border-b-transparent"
-                        style={{ 
-                          left: textBoxSide === 'right' ? '-12px' : '48px',
-                          transform: textBoxSide === 'right' ? 'rotate(0deg)' : 'rotate(180deg)'
-                        }}
-                      ></div>
+                      // Add 1000ft below lowest device and 500ft above highest device
+                      const schematicMinDepth = Math.max(0, minDeviceDepth - 500);
+                      const schematicMaxDepth = maxDeviceDepth + 1000;
+                      const depthRange = schematicMaxDepth - schematicMinDepth;
                       
-                      {/* Information box */}
-                      <div 
-                        className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700 max-w-xs"
-                        style={{ 
-                          position: 'absolute',
-                          left: `${textBoxOffset}px`,
-                          top: '0px'
-                        }}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{item.name}</span>
-                          {item.status && (
-                            <Badge 
-                              variant={item.status === 'active' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {item.status}
-                            </Badge>
-                          )}
+                      const depth = schematicMinDepth + (i / 10) * depthRange;
+                      const topPosition = (i / 10) * 1000;
+                      return (
+                        <div
+                          key={i}
+                          className="absolute text-xs text-muted-foreground flex items-center"
+                          style={{ top: `${topPosition}px`, transform: 'translateY(-50%)' }}
+                        >
+                          <div className="w-1 h-1 bg-gray-600 dark:bg-gray-400 rounded-full -ml-0.5"></div>
+                          <div className="ml-2 -mt-1 font-mono">{Number(depth?.toFixed(0)) || 0} {getLengthUnit()}</div>
                         </div>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <div className="flex justify-between">
-                            <span>Depth:</span>
-                            <span className="font-medium">{Number((item.depth || 0).toFixed(1))} {getLengthUnit()}</span>
-                          </div>
-                          {(item.length || 0) > 0 && (
-                            <div className="flex justify-between">
-                              <span>Length:</span>
-                              <span className="font-medium">{Number((item.length || 0).toFixed(1))} {getLengthUnit()}</span>
-                            </div>
-                          )}
-                          {(item.diameter || 0) > 0 && (
-                            <div className="flex justify-between">
-                              <span>ID:</span>
-                              <span className="font-medium">{Number((item.diameter || 0).toFixed(3))} {getDiameterUnit()}</span>
-                            </div>
-                          )}
-                          {item.density && (
-                            <div className="flex justify-between">
-                              <span>Density:</span>
-                              <span className="font-medium">{item.density} shots/ft</span>
-                            </div>
-                          )}
-                          {item.phasing && (
-                            <div className="flex justify-between">
-                              <span>Phasing:</span>
-                              <span className="font-medium">{item.phasing}°</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Wellbore line */}
+                  <div className="absolute left-8 top-0 w-1 bg-gray-400 dark:bg-gray-600 rounded-full" style={{ height: '1000px' }}></div>
+                </div>
                 
-                {/* Depth scale */}
-                <div className="absolute left-0 top-0 w-2 bg-gray-300 dark:bg-gray-700 rounded" style={{ height: '1000px' }}>
-                  {Array.from({ length: 11 }, (_, i) => {
-                    // Use the same auto-scaled depth as the schematic
-                    const deviceDepths = completionSchematic.map(item => (item.depth || 0) + (item.length || 0));
-                    const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
-                    const schematicMaxDepth = maxDeviceDepth + 1000; // Add 1000ft below lowest device
+                {/* Right side - Devices and info boxes */}
+                <div className="flex-1 ml-4">
+                  {completionSchematic
+                    .sort((a, b) => (a.depth || 0) - (b.depth || 0))
+                    .map((item, index) => {
+                    const IconComponent = item.icon;
                     
-                    const depth = (i / 10) * schematicMaxDepth;
-                    const topPosition = (i / 10) * 1000;
+                    // Calculate proper depth range (same as depth scale)
+                    const deviceDepths = completionSchematic.map(i => (i.depth || 0) + (i.length || 0));
+                    const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
+                    const minDeviceDepth = deviceDepths.length > 0 ? Math.min(...deviceDepths) : 0;
+                    
+                    const schematicMinDepth = Math.max(0, minDeviceDepth - 500);
+                    const schematicMaxDepth = maxDeviceDepth + 1000;
+                    const depthRange = schematicMaxDepth - schematicMinDepth;
+                    
+                    // Position based on actual depth
+                    const depthPixels = depthRange > 0 ? ((item.depth || 0) - schematicMinDepth) / depthRange * 1000 : 0;
+                    
+                    // Calculate text box position to prevent overlapping
+                    const textBoxSide = index % 2 === 0 ? 'right' : 'left';
+                    const textBoxOffset = textBoxSide === 'right' ? 0 : -280;
+                    
                     return (
                       <div
-                        key={i}
-                        className="absolute text-xs text-muted-foreground flex items-center"
-                        style={{ top: `${topPosition}px`, transform: 'translateY(-50%)' }}
+                        key={item.id}
+                        className="absolute flex items-start gap-4 group"
+                        style={{
+                          left: textBoxSide === 'right' ? '0px' : '0px',
+                          top: `${depthPixels + 20}px`,
+                          minHeight: '80px'
+                        }}
                       >
-                        <div className="w-1 h-1 bg-gray-600 dark:bg-gray-400 rounded-full -ml-0.5"></div>
-                        <div className="ml-2 -mt-1 font-mono">{Number(depth?.toFixed(0)) || 0} {getLengthUnit()}</div>
+                        {/* Device icon on wellbore */}
+                        <div 
+                          className="flex items-center justify-center w-10 h-10 rounded-full border-2 flex-shrink-0 mt-2 z-10"
+                          style={{ 
+                            backgroundColor: item.color + '20',
+                            borderColor: item.color,
+                            color: item.color,
+                            position: 'absolute',
+                            left: textBoxSide === 'right' ? '-60px' : '280px',
+                            top: '0px'
+                          }}
+                        >
+                          <IconComponent className="h-5 w-5" />
+                        </div>
+                        
+                        {/* Arrow from device to info box */}
+                        <div 
+                          className="absolute top-[20px] w-12 h-0.5 bg-gray-400 dark:bg-gray-500"
+                          style={{ 
+                            left: textBoxSide === 'right' ? '-60px' : '220px',
+                            transform: textBoxSide === 'right' ? 'rotate(0deg)' : 'rotate(180deg)'
+                          }}
+                        ></div>
+                        <div 
+                          className="absolute top-[16px] w-0 h-0 border-l-4 border-l-gray-400 dark:border-l-gray-500 border-t-2 border-t-transparent border-b-2 border-b-transparent"
+                          style={{ 
+                            left: textBoxSide === 'right' ? '-12px' : '208px',
+                            transform: textBoxSide === 'right' ? 'rotate(0deg)' : 'rotate(180deg)'
+                          }}
+                        ></div>
+                        
+                        {/* Information box */}
+                        <div 
+                          className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700 max-w-xs"
+                          style={{ 
+                            position: 'absolute',
+                            left: `${textBoxOffset}px`,
+                            top: '0px'
+                          }}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{item.name}</span>
+                            {item.status && (
+                              <Badge 
+                                variant={item.status === 'active' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {item.status}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div className="flex justify-between">
+                              <span>Depth:</span>
+                              <span className="font-medium">{Number((item.depth || 0).toFixed(1))} {getLengthUnit()}</span>
+                            </div>
+                            {(item.length || 0) > 0 && (
+                              <div className="flex justify-between">
+                                <span>Length:</span>
+                                <span className="font-medium">{Number((item.length || 0).toFixed(1))} {getLengthUnit()}</span>
+                              </div>
+                            )}
+                            {(item.diameter || 0) > 0 && (
+                              <div className="flex justify-between">
+                                <span>ID:</span>
+                                <span className="font-medium">{Number((item.diameter || 0).toFixed(3))} {getDiameterUnit()}</span>
+                              </div>
+                            )}
+                            {item.density && (
+                              <div className="flex justify-between">
+                                <span>Density:</span>
+                                <span className="font-medium">{item.density} shots/ft</span>
+                              </div>
+                            )}
+                            {item.phasing && (
+                              <div className="flex justify-between">
+                                <span>Phasing:</span>
+                                <span className="font-medium">{item.phasing}°</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
