@@ -427,7 +427,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
   return (
     <div className="h-screen flex">
       {/* Left Sidebar Navigation */}
-      <div className="w-64 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0 flex flex-col">
+      <div className="w-80 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <div>
@@ -436,15 +436,15 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
               Completion & Well Modelling
             </p>
           </div>
-          <div className="flex items-center gap-2 mt-3">
-            <Badge variant="outline" className="text-xs bg-gray-800 text-gray-300">
+          <div className="flex items-center gap-1 mt-3 flex-wrap">
+            <Badge variant="outline" className="text-xs bg-gray-800 text-gray-300 flex-shrink-0">
               v1.0.0
             </Badge>
-            <Button variant="outline" size="sm" onClick={exportProject} className="text-xs">
+            <Button variant="outline" size="sm" onClick={exportProject} className="text-xs flex-shrink-0">
               <Download className="h-3 w-3 mr-1" />
               Export
             </Button>
-            <Button variant="outline" size="sm" asChild className="text-xs">
+            <Button variant="outline" size="sm" asChild className="text-xs flex-shrink-0">
               <label>
                 <Upload className="h-3 w-3 mr-1" />
                 Import
