@@ -348,11 +348,9 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                   // Round up to nearest 1000ft below the lowest device
                   const schematicMaxDepth = Math.ceil(maxDeviceDepth / 1000) * 1000;
                   
+                  // Position based on actual depth - pure depth-based positioning
                   const depthPixels = schematicMaxDepth > 0 ? ((item.depth || 0) / schematicMaxDepth) * 1000 : 0;
                   const lengthPixels = schematicMaxDepth > 0 ? ((item.length || 0) / schematicMaxDepth) * 1000 : 40;
-                  
-                  // Add spacing to prevent overlapping - each item gets at least 80px vertical space
-                  const spacingOffset = index * 80;
                   
                   return (
                     <div
@@ -360,7 +358,7 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                       className="absolute flex items-start gap-4 group"
                       style={{
                         left: '120px',
-                        top: `${depthPixels + 20 + spacingOffset}px`,
+                        top: `${depthPixels + 20}px`,
                         minHeight: `${Math.max(lengthPixels, 60)}px`
                       }}
                     >
