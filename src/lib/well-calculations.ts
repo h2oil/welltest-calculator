@@ -50,8 +50,23 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
     autoCalculateDischargeCoeff = true
   } = inputs;
 
-  // Unit conversions
+  // Input validation
+  if (!pipeID || pipeID <= 0 || !orificeD || orificeD <= 0) {
+    throw new Error('Pipe ID and orifice diameter must be greater than zero');
+  }
+  if (!deltaP || deltaP <= 0) {
+    throw new Error('Differential pressure must be greater than zero');
+  }
+  if (!pressure || pressure <= 0) {
+    throw new Error('Line pressure must be greater than zero');
+  }
+  if (!temperature || temperature <= 0) {
+    throw new Error('Temperature must be greater than zero');
+  }
+
+  // Unit conversions with validation
   const convertDeltaPToPa = (value: number, unit: string): number => {
+    if (!value || isNaN(value)) return 0;
     switch (unit) {
       case 'psia': return value * 6894.76;
       case 'psig': return value * 6894.76;
@@ -63,6 +78,7 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
   };
 
   const convertPressureToPa = (value: number, unit: string): number => {
+    if (!value || isNaN(value)) return 0;
     switch (unit) {
       case 'psia': return value * 6894.76;
       case 'psig': return value * 6894.76 + 101325; // Add atmospheric pressure
@@ -73,41 +89,59 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
   };
 
   const convertTemperatureToK = (value: number, unit: string): number => {
+    if (!value || isNaN(value)) return 0;
     if (unit === 'fahrenheit') {
       return (value - 32) * 5/9 + 273.15;
     }
     return value + 273.15; // Celsius
   };
 
-  // Convert units to SI
+  // Convert units to SI with validation
   const deltaP_Pa = convertDeltaPToPa(deltaP, deltaPUnit);
   const pressure_Pa = convertPressureToPa(pressure, pressureUnit);
   const temperature_K = convertTemperatureToK(temperature, temperatureUnit);
 
-  // Calculate beta ratio (d/D) - ensure no division by zero
-  if (pipeID <= 0 || orificeD <= 0) {
-    throw new Error('Pipe ID and orifice diameter must be greater than zero');
+  // Validate converted values
+  if (deltaP_Pa <= 0 || pressure_Pa <= 0 || temperature_K <= 0) {
+    throw new Error('Invalid input values after unit conversion');
   }
+
+  // Calculate beta ratio (d/D)
   const beta = orificeD / pipeID;
 
   // Validate beta ratio for AGA-3
-  if (beta < 0.1 || beta > 0.75) {
-    throw new Error('Beta ratio must be between 0.1 and 0.75 for AGA-3 compliance');
+  const isBetaInRange = beta >= 0.1 && beta <= 0.75;
+  if (!isBetaInRange) {
+    throw new Error(`Beta ratio ${beta.toFixed(4)} must be between 0.1 and 0.75 for AGA-3 compliance`);
   }
 
-  // Calculate density
+  // Calculate density with proper validation
   let density = inputs.density || 0;
   if (fluidType === 'gas' && autoCalculateDensity) {
+    // Validate gas properties
+    if (!gasProperties || !gasProperties.MW || gasProperties.MW <= 0) {
+      throw new Error('Valid gas molecular weight is required for density calculation');
+    }
+    if (!gasProperties.Z || gasProperties.Z <= 0) {
+      throw new Error('Valid gas compressibility factor is required for density calculation');
+    }
+    
     // Use gas specific gravity if available, otherwise calculate from MW
     let gasMW = gasProperties.MW;
-    if (gasProperties.specificGravity) {
+    if (gasProperties.specificGravity && gasProperties.specificGravity > 0) {
       gasMW = gasProperties.specificGravity * 28.97; // Air molecular weight
     }
+    
     density = calculateGasDensity(pressure_Pa, temperature_K, gasMW, gasProperties.Z);
+    
+    // Validate calculated density
+    if (!density || isNaN(density) || density <= 0) {
+      throw new Error('Invalid density calculated from gas properties');
+    }
   }
 
   // Validate density
-  if (density <= 0) {
+  if (density <= 0 || isNaN(density)) {
     throw new Error('Density must be greater than zero');
   }
 
@@ -115,17 +149,17 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
   let cd = dischargeCoeff;
   if (fluidType === 'gas' && autoCalculateDischargeCoeff) {
     // Reader-Harris/Gallagher equation for AGA-3
-    const Re = 10000; // Simplified Reynolds number estimation
-    const L1 = 0.0254 / pipeID; // Upstream tap location
-    const L2 = 0.0254 / pipeID; // Downstream tap location
+    const Re = Math.max(4000, Math.min(10000000, 10000)); // Constrain Reynolds number
+    const L1 = Math.max(0.1, 0.0254 / pipeID); // Upstream tap location
+    const L2 = Math.max(0.1, 0.0254 / pipeID); // Downstream tap location
     
-    // Basic Reader-Harris/Gallagher equation
+    // Basic Reader-Harris/Gallagher equation with validation
     const A1 = 0.5961 + 0.0261 * Math.pow(beta, 2) - 0.216 * Math.pow(beta, 8);
     const A2 = 0.000511 * Math.pow(10000 / Re, 0.7);
     const A3 = 0.0210 + 0.0049 * Math.pow(beta, 4);
     const A4 = 0.0188 + 0.0063 * Math.pow(beta, 3.5);
     const A5 = 0.043 + 0.080 * Math.exp(-10 * L1) - 0.123 * Math.exp(-7 * L1);
-    const A6 = 0.11 * Math.exp(-7 * L2) - 0.031 * (L2 - 0.8) * Math.pow(L2 - 0.8, 1.1);
+    const A6 = 0.11 * Math.exp(-7 * L2) - 0.031 * Math.max(0, (L2 - 0.8)) * Math.pow(Math.max(0, (L2 - 0.8)), 1.1);
     
     cd = A1 + A2 + A3 * Math.pow(beta, 4) * (1 - Math.pow(beta, 4)) + A4 * Math.pow(beta, 3) + A5 * Math.pow(beta, 4) + A6 * Math.pow(beta, 3);
     
@@ -133,11 +167,16 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
     cd = Math.max(0.5, Math.min(0.8, cd));
   }
 
+  // Validate discharge coefficient
+  if (cd <= 0 || isNaN(cd)) {
+    throw new Error('Invalid discharge coefficient calculated');
+  }
+
   // AGA-3 expansion factor (Y) for gas
   let expansionFactor = 1.0;
   if (fluidType === 'gas') {
-    const deltaP_P1 = deltaP_Pa / pressure_Pa;
-    const k = gasProperties.k; // Specific heat ratio
+    const deltaP_P1 = Math.min(0.25, deltaP_Pa / pressure_Pa); // Limit to 25% for stability
+    const k = Math.max(1.0, Math.min(1.67, gasProperties.k || 1.3)); // Constrain k value
     
     // AGA-3 expansion factor equation
     expansionFactor = 1 - (0.41 + 0.35 * Math.pow(beta, 4)) * (deltaP_P1 / k);
@@ -146,26 +185,52 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
     expansionFactor = Math.max(0.5, Math.min(1.0, expansionFactor));
   }
 
+  // Validate expansion factor
+  if (expansionFactor <= 0 || isNaN(expansionFactor)) {
+    throw new Error('Invalid expansion factor calculated');
+  }
+
   // Calculate orifice area
   const orificeArea = calculatePipeArea(orificeD);
+  if (orificeArea <= 0 || isNaN(orificeArea)) {
+    throw new Error('Invalid orifice area calculated');
+  }
 
-  // AGA-3 mass flow calculation
+  // AGA-3 mass flow calculation with validation
+  const beta4 = Math.pow(beta, 4);
+  const denominator = 1 - beta4;
+  if (denominator <= 0) {
+    throw new Error('Invalid beta ratio - denominator becomes zero or negative');
+  }
+
   const massFlow = cd * expansionFactor * orificeArea * 
-    Math.sqrt((2 * density * deltaP_Pa) / (1 - Math.pow(beta, 4)));
+    Math.sqrt((2 * density * deltaP_Pa) / denominator);
+
+  // Validate mass flow
+  if (isNaN(massFlow) || massFlow < 0) {
+    throw new Error('Invalid mass flow calculated');
+  }
 
   // Volumetric flow
   const volumetricFlow = massFlow / density;
+  if (isNaN(volumetricFlow) || volumetricFlow < 0) {
+    throw new Error('Invalid volumetric flow calculated');
+  }
 
   // Standard flow (convert to MMSCFD for gas)
   let standardFlow = 0;
   if (fluidType === 'gas') {
-    standardFlow = standardToActualFlow(
-      volumetricFlow,
-      pressure_Pa,
-      temperature_K,
-      gasProperties.Z,
-      { pressure: STANDARD_CONDITIONS.pressure_kPa * 1000, temperature: STANDARD_CONDITIONS.temperature_C + 273.15 }
-    ) * 86400 / 28316.8; // Convert to MMSCFD
+    try {
+      standardFlow = standardToActualFlow(
+        volumetricFlow,
+        pressure_Pa,
+        temperature_K,
+        gasProperties.Z || 1.0,
+        { pressure: STANDARD_CONDITIONS.pressure_kPa * 1000, temperature: STANDARD_CONDITIONS.temperature_C + 273.15 }
+      ) * 86400 / 28316.8; // Convert to MMSCFD
+    } catch (error) {
+      standardFlow = 0; // Set to 0 if conversion fails
+    }
   }
 
   // Reynolds number estimation (simplified)
@@ -173,30 +238,47 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
   const viscosity = fluidType === 'gas' ? 1.8e-5 : 1e-3; // Rough estimates
   const reynoldsNumber = (density * velocity * pipeID) / viscosity;
 
-  // AGA-3 specific warnings
+  // AGA-3 specific warnings and uncertainty analysis
   const warnings: string[] = [];
+  const uncertaintyFactors: string[] = [];
+  
   if (reynoldsNumber < 4000) {
     warnings.push('Reynolds number below 4,000 - AGA-3 may not be applicable');
+    uncertaintyFactors.push('Low Reynolds number increases uncertainty');
   }
   if (reynoldsNumber > 10000000) {
     warnings.push('Reynolds number above 10,000,000 - verify AGA-3 applicability');
+    uncertaintyFactors.push('Very high Reynolds number may affect accuracy');
   }
-  if (beta < 0.1 || beta > 0.75) {
+  if (!isBetaInRange) {
     warnings.push('Beta ratio outside AGA-3 range (0.1-0.75) - results may be inaccurate');
+    uncertaintyFactors.push('Beta ratio outside recommended range increases uncertainty');
   }
   if (deltaP_Pa / pressure_Pa > 0.25 && fluidType === 'gas') {
     warnings.push('High differential pressure ratio - verify expansion factor calculation');
+    uncertaintyFactors.push('High pressure ratio may affect expansion factor accuracy');
   }
   if (fluidType === 'gas' && (gasProperties.k < 1.0 || gasProperties.k > 1.67)) {
     warnings.push('Specific heat ratio outside typical range (1.0-1.67) - verify gas properties');
+    uncertaintyFactors.push('Unusual k value may affect expansion factor calculation');
   }
+
+  // Calculate uncertainty based on AGA-3 parameters
+  let uncertaintyPercent = 0.5; // Base uncertainty
+  if (reynoldsNumber < 4000) uncertaintyPercent += 1.0;
+  if (reynoldsNumber > 10000000) uncertaintyPercent += 0.5;
+  if (!isBetaInRange) uncertaintyPercent += 2.0;
+  if (deltaP_Pa / pressure_Pa > 0.25) uncertaintyPercent += 1.0;
+  if (gasProperties.k < 1.0 || gasProperties.k > 1.67) uncertaintyPercent += 0.5;
 
   const assumptions = [
     `AGA-3 Reader-Harris/Gallagher discharge coefficient: ${cd.toFixed(4)}`,
     `AGA-3 expansion factor: ${expansionFactor.toFixed(4)}`,
     `Gas properties: k=${gasProperties.k}, MW=${gasProperties.MW} kg/kmol, Z=${gasProperties.Z}`,
-    `Beta ratio: ${beta.toFixed(4)} (within AGA-3 range: 0.1-0.75)`,
+    `Beta ratio: ${beta.toFixed(4)} (${isBetaInRange ? 'within' : 'outside'} AGA-3 range: 0.1-0.75)`,
     `Pressure location: ${pressureLocation}`,
+    `Reynolds number: ${reynoldsNumber.toFixed(0)} (${reynoldsNumber >= 4000 && reynoldsNumber <= 10000000 ? 'within' : 'outside'} recommended range)`,
+    `Estimated uncertainty: ±${uncertaintyPercent.toFixed(1)}%`,
     fluidType === 'gas' && autoCalculateDensity ? 'Density calculated from gas properties per AGA-3' : 'Density user-provided'
   ];
 
@@ -206,7 +288,11 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
     standardFlow,
     reynoldsNumber,
     warnings,
-    assumptions
+    assumptions,
+    betaRatio: beta,
+    isBetaInRange,
+    uncertaintyPercent,
+    uncertaintyFactors
   };
 };
 

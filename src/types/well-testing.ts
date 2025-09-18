@@ -45,6 +45,10 @@ export interface DanielOrificeOutputs {
   reynoldsNumber: number;
   warnings: string[];
   assumptions: string[];
+  betaRatio: number;
+  isBetaInRange: boolean;
+  uncertaintyPercent: number;
+  uncertaintyFactors: string[];
 }
 
 export interface ChokeInputs {
