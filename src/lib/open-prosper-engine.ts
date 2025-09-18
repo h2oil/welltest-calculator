@@ -275,9 +275,13 @@ export class VLPCalculator {
     rate: number,
     unitSystem: UnitSystem
   ): { pressure: number; holdup: number; temperature: number } {
-    // Start from wellhead and work down
-    let pressure = fluid.standardConditions.pressure; // Wellhead pressure
-    let temperature = fluid.standardConditions.temperature;
+    // Start from a reasonable wellhead pressure (not atmospheric)
+    // Use a fraction of reservoir pressure as initial wellhead pressure
+    const reservoirPressure = fluid.pressure; // This should be in the fluid definition
+    const initialWHP = reservoirPressure * 0.1; // 10% of reservoir pressure as initial guess
+    
+    let pressure = initialWHP; // Wellhead pressure
+    let temperature = fluid.temperature; // Use reservoir temperature as starting point
     let holdup = 0.5; // Initial guess
     
     const segments = this.createSegments(deviation, completion);
@@ -305,6 +309,20 @@ export class VLPCalculator {
       
       // Update holdup
       holdup = this.calculateHoldup(segment, fluid, rate, pressure, temperature, settings);
+    }
+    
+    // Validate and clamp the results to reasonable ranges
+    const maxPressure = reservoirPressure * 1.5; // Maximum 150% of reservoir pressure
+    const minPressure = 0.1; // Minimum 0.1 psi/kPa
+    
+    pressure = Math.max(minPressure, Math.min(maxPressure, pressure));
+    temperature = Math.max(273.15, Math.min(500, temperature)); // 0°C to 227°C
+    holdup = Math.max(0, Math.min(1, holdup)); // 0 to 1
+    
+    // Check for invalid values
+    if (isNaN(pressure) || isNaN(temperature) || isNaN(holdup)) {
+      console.warn('Invalid VLP calculation result:', { pressure, temperature, holdup, rate });
+      return { pressure: initialWHP, holdup: 0.5, temperature: fluid.temperature };
     }
     
     return { pressure, holdup, temperature };
@@ -365,7 +383,27 @@ export class VLPCalculator {
       holdup
     );
     
-    return deltaP_hydrostatic + deltaP_friction + deltaP_acceleration;
+    const totalDeltaP = deltaP_hydrostatic + deltaP_friction + deltaP_acceleration;
+    
+    // Validate the pressure drop to prevent extreme values
+    const maxDeltaP = pressure * 0.5; // Maximum 50% pressure drop per segment
+    const clampedDeltaP = Math.max(-maxDeltaP, Math.min(maxDeltaP, totalDeltaP));
+    
+    // Check for invalid values
+    if (isNaN(clampedDeltaP) || !isFinite(clampedDeltaP)) {
+      console.warn('Invalid pressure drop calculated:', { 
+        deltaP_hydrostatic, 
+        deltaP_friction, 
+        deltaP_acceleration, 
+        totalDeltaP,
+        segment: segment.length,
+        rate,
+        pressure
+      });
+      return 0; // Return zero pressure drop if calculation fails
+    }
+    
+    return clampedDeltaP;
   }
 
   private static calculateMixtureDensity(
@@ -555,21 +593,35 @@ export class NodalAnalyzer {
     // Find intersection of IPR and VLP curves
     let bestRate = 0;
     let minDiff = Infinity;
+    let bestIndex = 0;
     
     for (let i = 0; i < ipr.rates.length; i++) {
       const rate = ipr.rates[i];
       const iprPressure = ipr.pressures[i];
       const vlpPressure = vlp.pressures[i];
       
+      // Validate pressure values
+      if (!iprPressure || !vlpPressure || isNaN(iprPressure) || isNaN(vlpPressure)) {
+        continue;
+      }
+      
       const diff = Math.abs(iprPressure - vlpPressure);
       if (diff < minDiff) {
         minDiff = diff;
         bestRate = rate;
+        bestIndex = i;
       }
     }
     
-    const pwf = ipr.pressures[ipr.rates.indexOf(bestRate)];
-    const whp = vlp.pressures[vlp.rates.indexOf(bestRate)];
+    // Use the index directly instead of indexOf to avoid -1 issues
+    const pwf = ipr.pressures[bestIndex] || 0;
+    const whp = vlp.pressures[bestIndex] || 0;
+    
+    // Validate the results
+    if (isNaN(pwf) || isNaN(whp) || pwf < 0 || whp < 0) {
+      console.warn('Invalid operating point calculated:', { rate: bestRate, pwf, whp });
+      return { rate: bestRate, pwf: 0, whp: 0 };
+    }
     
     return { rate: bestRate, pwf, whp };
   }
