@@ -166,7 +166,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
   };
 
   const generateSVGSchematic = () => {
-    // Create SVG schematic
+    // Create SVG using DOM methods to avoid CSP violations
     const svgWidth = 1000;
     const svgHeight = 800;
     
@@ -177,20 +177,68 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
     const wellBottom = svgHeight - 80;
     const wellHeight = wellBottom - wellTop;
 
-    // Generate depth markers
-    const depthMarkers = [];
+    // Create SVG element
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', svgWidth.toString());
+    svg.setAttribute('height', svgHeight.toString());
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    // Background
+    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    background.setAttribute('width', '100%');
+    background.setAttribute('height', '100%');
+    background.setAttribute('fill', '#f8f9fa');
+    svg.appendChild(background);
+
+    // Depth scale line
+    const depthLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    depthLine.setAttribute('x1', (wellX - 50).toString());
+    depthLine.setAttribute('y1', wellTop.toString());
+    depthLine.setAttribute('x2', (wellX - 50).toString());
+    depthLine.setAttribute('y2', wellBottom.toString());
+    depthLine.setAttribute('stroke', '#374151');
+    depthLine.setAttribute('stroke-width', '3');
+    svg.appendChild(depthLine);
+
+    // Depth markers
     for (let i = 0; i <= 10; i++) {
       const y = wellTop + (wellHeight * i / 10);
       const depth = Math.round(totalDepth * i / 10);
-      depthMarkers.push({
-        y,
-        depth,
-        id: `depth-${i}`
-      });
+      
+      // Tick mark
+      const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      tick.setAttribute('x1', (wellX - 60).toString());
+      tick.setAttribute('y1', y.toString());
+      tick.setAttribute('x2', (wellX - 40).toString());
+      tick.setAttribute('y2', y.toString());
+      tick.setAttribute('stroke', '#374151');
+      tick.setAttribute('stroke-width', '2');
+      svg.appendChild(tick);
+      
+      // Depth label
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', (wellX - 120).toString());
+      text.setAttribute('y', (y + 4).toString());
+      text.setAttribute('font-family', 'monospace');
+      text.setAttribute('font-size', '12');
+      text.setAttribute('fill', '#374151');
+      text.textContent = `${depth} ${getLengthUnit()}`;
+      svg.appendChild(text);
     }
 
-    // Generate casing elements
-    const casingElements = casings.map((casing, index) => {
+    // Wellbore background
+    const wellbore = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    wellbore.setAttribute('x', wellX.toString());
+    wellbore.setAttribute('y', wellTop.toString());
+    wellbore.setAttribute('width', wellWidth.toString());
+    wellbore.setAttribute('height', wellHeight.toString());
+    wellbore.setAttribute('fill', '#e5e7eb');
+    wellbore.setAttribute('stroke', '#374151');
+    wellbore.setAttribute('stroke-width', '2');
+    svg.appendChild(wellbore);
+
+    // Casings
+    casings.forEach((casing, index) => {
       const topDepth = casing.top_depth || 0;
       const bottomDepth = casing.bottom_depth || topDepth + 100;
       
@@ -200,18 +248,32 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
       const casingWidth = Math.max(8, wellWidth * 0.8);
       const casingX = wellX + (wellWidth - casingWidth) / 2;
       
-      return {
-        x: casingX,
-        y: topY,
-        width: casingWidth,
-        height: bottomY - topY,
-        name: casing.name || `Casing ${index + 1}`,
-        id: `casing-${index}`
-      };
+      // Casing rectangle
+      const casingRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      casingRect.setAttribute('x', casingX.toString());
+      casingRect.setAttribute('y', topY.toString());
+      casingRect.setAttribute('width', casingWidth.toString());
+      casingRect.setAttribute('height', (bottomY - topY).toString());
+      casingRect.setAttribute('fill', '#6b7280');
+      casingRect.setAttribute('stroke', '#374151');
+      casingRect.setAttribute('stroke-width', '1');
+      svg.appendChild(casingRect);
+      
+      // Casing label
+      const casingLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      casingLabel.setAttribute('x', (wellX + wellWidth + 20).toString());
+      casingLabel.setAttribute('y', (topY + 15).toString());
+      casingLabel.setAttribute('font-family', 'sans-serif');
+      casingLabel.setAttribute('font-size', '10');
+      casingLabel.setAttribute('font-weight', 'bold');
+      casingLabel.setAttribute('fill', '#000');
+      casingLabel.textContent = casing.name || `Casing ${index + 1}`;
+      svg.appendChild(casingLabel);
     });
 
-    // Generate completion elements
-    const completionElements = completions.map((completion, index) => {
+    // Completions
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    completions.forEach((completion, index) => {
       const topDepth = completion.top_depth || 0;
       const bottomDepth = completion.bottom_depth || topDepth + 50;
       
@@ -221,82 +283,101 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
       const deviceWidth = Math.max(6, wellWidth * 0.6);
       const deviceX = wellX + (wellWidth - deviceWidth) / 2;
       
-      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+      // Completion rectangle
+      const completionRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      completionRect.setAttribute('x', deviceX.toString());
+      completionRect.setAttribute('y', topY.toString());
+      completionRect.setAttribute('width', deviceWidth.toString());
+      completionRect.setAttribute('height', (bottomY - topY).toString());
+      completionRect.setAttribute('fill', colors[index % colors.length]);
+      completionRect.setAttribute('stroke', '#000');
+      completionRect.setAttribute('stroke-width', '1');
+      svg.appendChild(completionRect);
       
-      return {
-        x: deviceX,
-        y: topY,
-        width: deviceWidth,
-        height: bottomY - topY,
-        name: completion.name || `Device ${index + 1}`,
-        color: colors[index % colors.length],
-        id: `completion-${index}`
-      };
+      // Completion label
+      const completionLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      completionLabel.setAttribute('x', (wellX + wellWidth + 20).toString());
+      completionLabel.setAttribute('y', (topY + 15).toString());
+      completionLabel.setAttribute('font-family', 'sans-serif');
+      completionLabel.setAttribute('font-size', '10');
+      completionLabel.setAttribute('fill', '#000');
+      completionLabel.textContent = completion.name || `Device ${index + 1}`;
+      svg.appendChild(completionLabel);
     });
 
-    // Create SVG string
-    const svgContent = `
-      <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
-        <!-- Background -->
-        <rect width="100%" height="100%" fill="#f8f9fa"/>
-        
-        <!-- Depth scale line -->
-        <line x1="${wellX - 50}" y1="${wellTop}" x2="${wellX - 50}" y2="${wellBottom}" 
-              stroke="#374151" stroke-width="3"/>
-        
-        <!-- Depth markers -->
-        ${depthMarkers.map(marker => `
-          <line x1="${wellX - 60}" y1="${marker.y}" x2="${wellX - 40}" y2="${marker.y}" 
-                stroke="#374151" stroke-width="2"/>
-          <text x="${wellX - 120}" y="${marker.y + 4}" font-family="monospace" font-size="12" 
-                fill="#374151">${marker.depth} ${getLengthUnit()}</text>
-        `).join('')}
-        
-        <!-- Wellbore background -->
-        <rect x="${wellX}" y="${wellTop}" width="${wellWidth}" height="${wellHeight}" 
-              fill="#e5e7eb" stroke="#374151" stroke-width="2"/>
-        
-        <!-- Casings -->
-        ${casingElements.map(casing => `
-          <rect x="${casing.x}" y="${casing.y}" width="${casing.width}" height="${casing.height}" 
-                fill="#6b7280" stroke="#374151" stroke-width="1"/>
-          <text x="${wellX + wellWidth + 20}" y="${casing.y + 15}" font-family="sans-serif" 
-                font-size="10" font-weight="bold" fill="#000">${casing.name}</text>
-        `).join('')}
-        
-        <!-- Completions -->
-        ${completionElements.map(completion => `
-          <rect x="${completion.x}" y="${completion.y}" width="${completion.width}" 
-                height="${completion.height}" fill="${completion.color}" stroke="#000" stroke-width="1"/>
-          <text x="${wellX + wellWidth + 20}" y="${completion.y + 15}" font-family="sans-serif" 
-                font-size="10" fill="#000">${completion.name}</text>
-        `).join('')}
-        
-        <!-- Well name and title -->
-        <text x="${wellX}" y="50" font-family="sans-serif" font-size="18" font-weight="bold" fill="#000">${wellName}</text>
-        <text x="${wellX}" y="70" font-family="sans-serif" font-size="14" fill="#000">Well Schematic</text>
-        
-        <!-- Legend -->
-        <text x="${wellX + wellWidth + 200}" y="${wellTop}" font-family="sans-serif" 
-              font-size="12" font-weight="bold" fill="#000">Legend:</text>
-        
-        <!-- Casing legend -->
-        <rect x="${wellX + wellWidth + 200}" y="${wellTop + 15}" width="15" height="8" fill="#6b7280"/>
-        <text x="${wellX + wellWidth + 220}" y="${wellTop + 25}" font-family="sans-serif" 
-              font-size="10" fill="#000">Casing</text>
-        
-        <!-- Completion legend -->
-        ${completionElements.map((completion, index) => `
-          <rect x="${wellX + wellWidth + 200}" y="${wellTop + 35 + index * 20}" width="15" height="8" 
-                fill="${completion.color}"/>
-          <text x="${wellX + wellWidth + 220}" y="${wellTop + 45 + index * 20}" font-family="sans-serif" 
-                font-size="10" fill="#000">${completion.name}</text>
-        `).join('')}
-      </svg>
-    `;
+    // Well name and title
+    const wellNameText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    wellNameText.setAttribute('x', wellX.toString());
+    wellNameText.setAttribute('y', '50');
+    wellNameText.setAttribute('font-family', 'sans-serif');
+    wellNameText.setAttribute('font-size', '18');
+    wellNameText.setAttribute('font-weight', 'bold');
+    wellNameText.setAttribute('fill', '#000');
+    wellNameText.textContent = wellName;
+    svg.appendChild(wellNameText);
+
+    const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    titleText.setAttribute('x', wellX.toString());
+    titleText.setAttribute('y', '70');
+    titleText.setAttribute('font-family', 'sans-serif');
+    titleText.setAttribute('font-size', '14');
+    titleText.setAttribute('fill', '#000');
+    titleText.textContent = 'Well Schematic';
+    svg.appendChild(titleText);
+
+    // Legend
+    const legendTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    legendTitle.setAttribute('x', (wellX + wellWidth + 200).toString());
+    legendTitle.setAttribute('y', wellTop.toString());
+    legendTitle.setAttribute('font-family', 'sans-serif');
+    legendTitle.setAttribute('font-size', '12');
+    legendTitle.setAttribute('font-weight', 'bold');
+    legendTitle.setAttribute('fill', '#000');
+    legendTitle.textContent = 'Legend:';
+    svg.appendChild(legendTitle);
+
+    // Casing legend
+    const casingLegendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    casingLegendRect.setAttribute('x', (wellX + wellWidth + 200).toString());
+    casingLegendRect.setAttribute('y', (wellTop + 15).toString());
+    casingLegendRect.setAttribute('width', '15');
+    casingLegendRect.setAttribute('height', '8');
+    casingLegendRect.setAttribute('fill', '#6b7280');
+    svg.appendChild(casingLegendRect);
+
+    const casingLegendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    casingLegendText.setAttribute('x', (wellX + wellWidth + 220).toString());
+    casingLegendText.setAttribute('y', (wellTop + 25).toString());
+    casingLegendText.setAttribute('font-family', 'sans-serif');
+    casingLegendText.setAttribute('font-size', '10');
+    casingLegendText.setAttribute('fill', '#000');
+    casingLegendText.textContent = 'Casing';
+    svg.appendChild(casingLegendText);
+
+    // Completion legend
+    completions.forEach((completion, index) => {
+      const legendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      legendRect.setAttribute('x', (wellX + wellWidth + 200).toString());
+      legendRect.setAttribute('y', (wellTop + 35 + index * 20).toString());
+      legendRect.setAttribute('width', '15');
+      legendRect.setAttribute('height', '8');
+      legendRect.setAttribute('fill', colors[index % colors.length]);
+      svg.appendChild(legendRect);
+
+      const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      legendText.setAttribute('x', (wellX + wellWidth + 220).toString());
+      legendText.setAttribute('y', (wellTop + 45 + index * 20).toString());
+      legendText.setAttribute('font-family', 'sans-serif');
+      legendText.setAttribute('font-size', '10');
+      legendText.setAttribute('fill', '#000');
+      legendText.textContent = completion.name || `Device ${index + 1}`;
+      svg.appendChild(legendText);
+    });
 
     // Convert SVG to data URL
-    const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgContent)}`;
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svg);
+    const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
     setSchematicImage(svgDataUrl);
   };
 
