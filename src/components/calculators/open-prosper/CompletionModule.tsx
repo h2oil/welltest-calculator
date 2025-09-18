@@ -311,13 +311,13 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.totalPerforations?.toFixed(0) ?? '0'}</div>
+            <div className="text-2xl font-bold">{Number(stats.totalPerforations?.toFixed(0)) || 0}</div>
             <p className="text-sm text-muted-foreground">Total Perforations</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.totalPerforatedLength?.toFixed(1) ?? '0.0'}</div>
+            <div className="text-2xl font-bold">{Number(stats.totalPerforatedLength?.toFixed(1)) || 0}</div>
             <p className="text-sm text-muted-foreground">Perforated Length ({getLengthUnit()})</p>
           </CardContent>
         </Card>
@@ -373,12 +373,12 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground space-y-1">
-                          <div>Depth: {(item.depth || 0).toFixed(1)} {getLengthUnit()}</div>
+                          <div>Depth: {Number((item.depth || 0).toFixed(1))} {getLengthUnit()}</div>
                           {(item.length || 0) > 0 && (
-                            <div>Length: {(item.length || 0).toFixed(1)} {getLengthUnit()}</div>
+                            <div>Length: {Number((item.length || 0).toFixed(1))} {getLengthUnit()}</div>
                           )}
                           {(item.diameter || 0) > 0 && (
-                            <div>ID: {(item.diameter || 0).toFixed(3)} {getDiameterUnit()}</div>
+                            <div>ID: {Number((item.diameter || 0).toFixed(3))} {getDiameterUnit()}</div>
                           )}
                           {item.density && (
                             <div>{item.density} shots/ft</div>
@@ -405,7 +405,7 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                         style={{ top: `${(i / 9) * 100}%`, transform: 'translateY(-50%)' }}
                       >
                         <div className="w-1 h-1 bg-gray-600 dark:bg-gray-400 rounded-full -ml-0.5"></div>
-                        <div className="ml-2 -mt-1">{depth?.toFixed(0) ?? '0'} {getLengthUnit()}</div>
+                        <div className="ml-2 -mt-1">{Number(depth?.toFixed(0)) || 0} {getLengthUnit()}</div>
                       </div>
                     );
                   })}

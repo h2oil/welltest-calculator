@@ -366,25 +366,25 @@ export const WellModule: React.FC<WellModuleProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.totalMD?.toFixed(0) ?? '0'}</div>
+            <div className="text-2xl font-bold">{Number(wellPathStats.totalMD?.toFixed(0)) || 0}</div>
             <p className="text-sm text-muted-foreground">Total MD ({getLengthUnit()})</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.totalTVD?.toFixed(0) ?? '0'}</div>
+            <div className="text-2xl font-bold">{Number(wellPathStats.totalTVD?.toFixed(0)) || 0}</div>
             <p className="text-sm text-muted-foreground">Total TVD ({getLengthUnit()})</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.maxInc?.toFixed(1) ?? '0.0'}</div>
+            <div className="text-2xl font-bold">{Number(wellPathStats.maxInc?.toFixed(1)) || 0}</div>
             <p className="text-sm text-muted-foreground">Max Inclination ({getAngleUnit()})</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.dogleg?.toFixed(1) ?? '0.0'}</div>
+            <div className="text-2xl font-bold">{Number(wellPathStats.dogleg?.toFixed(1)) || 0}</div>
             <p className="text-sm text-muted-foreground">Max Dogleg ({getAngleUnit()})</p>
           </CardContent>
         </Card>

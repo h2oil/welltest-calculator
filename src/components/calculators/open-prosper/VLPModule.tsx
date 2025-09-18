@@ -310,11 +310,11 @@ export const VLPModule: React.FC<VLPModuleProps> = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 bg-muted rounded-lg">
-                      <div className="text-2xl font-bold">{vlpResult?.max_rate?.toFixed(1) ?? 'N/A'}</div>
+                      <div className="text-2xl font-bold">{vlpResult?.max_rate ? Number(vlpResult.max_rate.toFixed(1)) : 'N/A'}</div>
                       <p className="text-sm text-muted-foreground">Max Rate ({getFlowRateUnit()})</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
-                      <div className="text-2xl font-bold">{vlpResult?.max_pressure?.toFixed(0) ?? 'N/A'}</div>
+                      <div className="text-2xl font-bold">{vlpResult?.max_pressure ? Number(vlpResult.max_pressure.toFixed(0)) : 'N/A'}</div>
                       <p className="text-sm text-muted-foreground">Max Pressure ({getPressureUnit()})</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">

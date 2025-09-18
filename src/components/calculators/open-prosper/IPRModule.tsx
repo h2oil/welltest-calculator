@@ -439,11 +439,11 @@ export const IPRModule: React.FC<IPRModuleProps> = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 bg-muted rounded-lg">
-                      <div className="text-2xl font-bold">{iprResult?.max_rate?.toFixed(1) ?? 'N/A'}</div>
+                      <div className="text-2xl font-bold">{iprResult?.max_rate ? Number(iprResult.max_rate.toFixed(1)) : 'N/A'}</div>
                       <p className="text-sm text-muted-foreground">Max Rate ({getFlowRateUnit()})</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
-                      <div className="text-2xl font-bold">{iprResult?.max_pressure?.toFixed(0) ?? 'N/A'}</div>
+                      <div className="text-2xl font-bold">{iprResult?.max_pressure ? Number(iprResult.max_pressure.toFixed(0)) : 'N/A'}</div>
                       <p className="text-sm text-muted-foreground">Max Pressure ({getPressureUnit()})</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
@@ -495,7 +495,7 @@ export const IPRModule: React.FC<IPRModuleProps> = ({
                     <h4 className="font-semibold mb-2 text-green-900">IPR Curve Generated</h4>
                     <p className="text-sm text-green-700">
                       Successfully calculated IPR curve with {iprResult.rates.length} points.
-                      Maximum flow rate: {iprResult?.max_rate?.toFixed(1) ?? 'N/A'} {getFlowRateUnit()}
+                      Maximum flow rate: {iprResult?.max_rate ? Number(iprResult.max_rate.toFixed(1)) : 'N/A'} {getFlowRateUnit()}
                     </p>
                   </div>
                 </div>
