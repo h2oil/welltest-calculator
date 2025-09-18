@@ -286,8 +286,15 @@ export class TrajectoryCalculator {
       Math.pow(lastPoint.east - trajectory.startPoint.east, 2)
     );
     
-    const maxInclination = Math.max(...points.map(p => p.inc));
-    const maxAzimuth = Math.max(...points.map(p => p.azi));
+    // Validate and clamp extreme values
+    const validPoints = points.map(p => ({
+      ...p,
+      inc: Math.max(0, Math.min(90, p.inc)), // Clamp inclination between 0-90 degrees
+      azi: ((p.azi % 360) + 360) % 360 // Normalize azimuth to 0-360 degrees
+    }));
+    
+    const maxInclination = Math.max(...validPoints.map(p => p.inc));
+    const maxAzimuth = Math.max(...validPoints.map(p => p.azi));
     
     let maxDLS = 0;
     let totalDLS = 0;

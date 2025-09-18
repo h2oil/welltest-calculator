@@ -85,14 +85,18 @@ class WellProfileServiceFallback {
       const north = this.calculateNorth(md, inc, azi);
       const east = this.calculateEast(md, inc, azi);
       
+      // Validate and clamp values to prevent extreme results
+      const validInc = Math.max(0, Math.min(90, inc)); // Clamp inclination 0-90°
+      const validAzi = ((azi % 360) + 360) % 360; // Normalize azimuth 0-360°
+      
       points.push({
         md,
         tvd: tvd + request.start_point.tvd,
-        inc,
-        azi,
+        inc: validInc,
+        azi: validAzi,
         north: north + request.start_point.north,
         east: east + request.start_point.east,
-        dls: this.calculateDLS(points[points.length - 1], { md, tvd, inc, azi, north, east }),
+        dls: this.calculateDLS(points[points.length - 1], { md, tvd, inc: validInc, azi: validAzi, north, east }),
         buildRate: 0,
         turnRate: 0
       });
@@ -152,9 +156,10 @@ class WellProfileServiceFallback {
       
       if (md <= kop) return 0;
       if (md <= eob) {
+        // Linear build from 0 to buildAngle over the build section
         const buildSection = md - kop;
-        const radius = 180 / (Math.PI * buildAngle);
-        return (buildSection / radius) * 180 / Math.PI;
+        const totalBuildSection = eob - kop;
+        return (buildSection / totalBuildSection) * buildAngle;
       }
       return buildAngle;
     }

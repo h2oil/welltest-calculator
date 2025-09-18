@@ -62,6 +62,19 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
     setError(null);
     setSuccess(null);
     
+    // Validate profile parameters
+    if (profile.buildAngle && (profile.buildAngle < 0 || profile.buildAngle > 90)) {
+      setError('Build angle must be between 0 and 90 degrees');
+      setLoading(false);
+      return;
+    }
+    
+    if (profile.kop && profile.eob && profile.kop >= profile.eob) {
+      setError('Kick-off point must be less than end of build');
+      setLoading(false);
+      return;
+    }
+    
     try {
       // Check if backend is available
       await wellProfileService.healthCheck();
@@ -90,6 +103,14 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
       };
       
       const trajectory = await wellProfileService.generateTrajectory(request);
+      
+      // Validate trajectory for extreme values
+      const maxInc = Math.max(...trajectory.points.map(p => p.inc));
+      if (maxInc > 90) {
+        setError(`Invalid trajectory: Maximum inclination of ${maxInc.toFixed(1)}° exceeds 90°. Please check your profile parameters.`);
+        setLoading(false);
+        return;
+      }
       
       setGeneratedTrajectory(trajectory);
       onTrajectoryGenerated(trajectory);
@@ -250,8 +271,15 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
                         id="build-angle"
                         type="number"
                         value={profile.buildAngle || ''}
-                        onChange={(e) => setProfile(prev => ({ ...prev, buildAngle: parseFloat(e.target.value) || 0 }))}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (value >= 0 && value <= 90) {
+                            setProfile(prev => ({ ...prev, buildAngle: value }));
+                          }
+                        }}
                         placeholder="Enter build angle"
+                        min="0"
+                        max="90"
                       />
                     </div>
                     <div>
@@ -305,8 +333,15 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
                         id="build-angle"
                         type="number"
                         value={profile.buildAngle || ''}
-                        onChange={(e) => setProfile(prev => ({ ...prev, buildAngle: parseFloat(e.target.value) || 0 }))}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (value >= 0 && value <= 90) {
+                            setProfile(prev => ({ ...prev, buildAngle: value }));
+                          }
+                        }}
                         placeholder="Enter build angle"
+                        min="0"
+                        max="90"
                       />
                     </div>
                     <div>
@@ -360,8 +395,15 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
                         id="build-angle"
                         type="number"
                         value={profile.buildAngle || ''}
-                        onChange={(e) => setProfile(prev => ({ ...prev, buildAngle: parseFloat(e.target.value) || 0 }))}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (value >= 0 && value <= 90) {
+                            setProfile(prev => ({ ...prev, buildAngle: value }));
+                          }
+                        }}
                         placeholder="Enter build angle"
+                        min="0"
+                        max="90"
                       />
                     </div>
                     <div>
