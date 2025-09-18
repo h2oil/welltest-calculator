@@ -20,9 +20,9 @@ import {
   WellTrajectory, 
   TrajectoryProfile, 
   TrajectoryCalculationParams, 
-  TrajectoryPoint,
-  TrajectoryCalculator as TrajectoryCalc
+  TrajectoryPoint
 } from '@/types/well-trajectory';
+import { wellProfileService, TrajectoryRequest } from '@/services/wellProfileService';
 
 interface TrajectoryCalculatorProps {
   onTrajectoryGenerated: (trajectory: WellTrajectory) => void;
@@ -63,73 +63,45 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
     setSuccess(null);
     
     try {
-      const params: TrajectoryCalculationParams = {
-        profile,
-        startPoint,
-        unitSystem,
-        stepSize: calculationParams.stepSize,
-        maxDLS: calculationParams.maxDLS
-      };
+      // Check if backend is available
+      await wellProfileService.healthCheck();
       
-      const points = TrajectoryCalc.generateTrajectory(params);
-      
-      if (points.length === 0) {
-        throw new Error('Failed to generate trajectory points');
-      }
-      
-      // Calculate additional properties for each point
-      const enhancedPoints = points.map((point, index) => {
-        let dls = 0;
-        let buildRate = 0;
-        let turnRate = 0;
-        
-        if (index > 0) {
-          const prevPoint = points[index - 1];
-          dls = TrajectoryCalc.calculateDLS(prevPoint, point, unitSystem);
-          buildRate = TrajectoryCalc.calculateBuildRate(prevPoint, point, unitSystem);
-          turnRate = TrajectoryCalc.calculateTurnRate(prevPoint, point, unitSystem);
-        }
-        
-        return {
-          ...point,
-          dls,
-          buildRate,
-          turnRate
-        };
-      });
-      
-      const lastPoint = enhancedPoints[enhancedPoints.length - 1];
-      const totalDisplacement = Math.sqrt(
-        Math.pow(lastPoint.north - startPoint.north, 2) + 
-        Math.pow(lastPoint.east - startPoint.east, 2)
-      );
-      
-      const trajectory: WellTrajectory = {
-        id: `trajectory_${Date.now()}`,
-        name: `${profile.type}-Profile-${Date.now()}`,
-        points: enhancedPoints,
-        unitSystem,
-        startPoint,
-        endPoint: {
-          north: lastPoint.north,
-          east: lastPoint.east,
-          tvd: lastPoint.tvd
+      const request: TrajectoryRequest = {
+        profile: {
+          type: profile.type,
+          kop: profile.kop,
+          eob: profile.eob,
+          eod: profile.eod,
+          build_angle: profile.buildAngle,
+          drop_angle: profile.dropAngle,
+          horizontal_length: profile.horizontalLength,
+          target_depth: profile.targetDepth,
+          target_displacement: profile.targetDisplacement,
+          target_azimuth: profile.targetAzimuth
         },
-        totalDepth: lastPoint.md,
-        totalDisplacement,
-        maxInclination: Math.max(...enhancedPoints.map(p => p.inc)),
-        maxDLS: Math.max(...enhancedPoints.map(p => p.dls || 0)),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        start_point: {
+          north: startPoint.north,
+          east: startPoint.east,
+          tvd: startPoint.tvd
+        },
+        unit_system: unitSystem,
+        step_size: calculationParams.stepSize,
+        max_dls: calculationParams.maxDLS
       };
+      
+      const trajectory = await wellProfileService.generateTrajectory(request);
       
       setGeneratedTrajectory(trajectory);
       onTrajectoryGenerated(trajectory);
-      setSuccess('Trajectory generated successfully');
+      setSuccess('Trajectory generated successfully using well_profile library');
       
     } catch (err) {
       console.error('Error generating trajectory:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate trajectory');
+      if (err instanceof Error && err.message.includes('Failed to fetch')) {
+        setError('Backend server not available. Please start the Python backend server.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to generate trajectory');
+      }
     } finally {
       setLoading(false);
     }
@@ -150,51 +122,62 @@ export const TrajectoryCalculator: React.FC<TrajectoryCalculatorProps> = ({
     setSuccess(null);
   };
 
-  const exportTrajectory = () => {
+  const exportTrajectory = async () => {
     if (!generatedTrajectory) return;
     
-    const exportData = {
-      trajectory: generatedTrajectory,
-      profile,
-      startPoint,
-      calculationParams,
-      exportedAt: new Date().toISOString(),
-      version: '1.0'
-    };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${generatedTrajectory.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_trajectory.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      await wellProfileService.downloadTrajectory(
+        generatedTrajectory, 
+        `${generatedTrajectory.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_trajectory.xlsx`
+      );
+      setSuccess('Trajectory exported to Excel successfully');
+    } catch (err) {
+      console.error('Error exporting trajectory:', err);
+      setError(err instanceof Error ? err.message : 'Failed to export trajectory');
+    }
   };
 
-  const importTrajectory = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const importTrajectory = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        if (data.trajectory) {
-          setGeneratedTrajectory(data.trajectory);
-          onTrajectoryGenerated(data.trajectory);
-          setSuccess('Trajectory imported successfully');
-        }
-        if (data.profile) setProfile(data.profile);
-        if (data.startPoint) setStartPoint(data.startPoint);
-        if (data.calculationParams) setCalculationParams(data.calculationParams);
-      } catch (err) {
-        console.error('Error importing trajectory:', err);
-        setError('Failed to import trajectory file');
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Check if it's an Excel file
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        const trajectory = await wellProfileService.loadTrajectory(file);
+        setGeneratedTrajectory(trajectory);
+        onTrajectoryGenerated(trajectory);
+        setSuccess('Trajectory imported from Excel successfully');
+      } else {
+        // Fallback to JSON import
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target?.result as string);
+            if (data.trajectory) {
+              setGeneratedTrajectory(data.trajectory);
+              onTrajectoryGenerated(data.trajectory);
+              setSuccess('Trajectory imported from JSON successfully');
+            }
+            if (data.profile) setProfile(data.profile);
+            if (data.startPoint) setStartPoint(data.startPoint);
+            if (data.calculationParams) setCalculationParams(data.calculationParams);
+          } catch (err) {
+            console.error('Error importing trajectory:', err);
+            setError('Failed to import trajectory file');
+          }
+        };
+        reader.readAsText(file);
       }
-    };
-    reader.readAsText(file);
+    } catch (err) {
+      console.error('Error importing trajectory:', err);
+      setError(err instanceof Error ? err.message : 'Failed to import trajectory');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const depthUnit = unitSystem === 'metric' ? 'm' : 'ft';

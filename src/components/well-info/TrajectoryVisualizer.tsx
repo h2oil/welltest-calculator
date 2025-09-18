@@ -16,7 +16,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { WellTrajectory, TrajectoryVisualizationOptions, TrajectoryAnalysis } from '@/types/well-trajectory';
-import { TrajectoryCalculator } from '@/types/well-trajectory';
+import { wellProfileService, TrajectoryAnalysis as ServiceAnalysis, PlotStyle } from '@/services/wellProfileService';
 
 interface TrajectoryVisualizerProps {
   trajectory: WellTrajectory | null;
@@ -42,8 +42,9 @@ export const TrajectoryVisualizer: React.FC<TrajectoryVisualizerProps> = ({
     showBuildRate: false,
     showTurnRate: false
   });
-  const [analysis, setAnalysis] = useState<TrajectoryAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<ServiceAnalysis | null>(null);
   const [is3D, setIs3D] = useState(true);
+  const [plotData, setPlotData] = useState<any>(null);
   const [camera, setCamera] = useState({
     x: 0,
     y: 0,
@@ -55,11 +56,38 @@ export const TrajectoryVisualizer: React.FC<TrajectoryVisualizerProps> = ({
 
   useEffect(() => {
     if (trajectory) {
-      const analysisResult = TrajectoryCalculator.analyzeTrajectory(trajectory);
-      setAnalysis(analysisResult);
-      drawTrajectory();
+      loadAnalysis();
+      load3DPlot();
     }
-  }, [trajectory, visualizationOptions, camera, is3D]);
+  }, [trajectory, visualizationOptions]);
+
+  const loadAnalysis = async () => {
+    if (!trajectory) return;
+    
+    try {
+      const analysisResult = await wellProfileService.analyzeTrajectory(trajectory);
+      setAnalysis(analysisResult);
+    } catch (err) {
+      console.error('Error loading analysis:', err);
+    }
+  };
+
+  const load3DPlot = async () => {
+    if (!trajectory) return;
+    
+    try {
+      const style: PlotStyle = {
+        color: visualizationOptions.colorBy,
+        size: visualizationOptions.size,
+        darkMode: visualizationOptions.darkMode
+      };
+      
+      const plotResult = await wellProfileService.create3DPlot(trajectory, style);
+      setPlotData(plotResult.plot_data);
+    } catch (err) {
+      console.error('Error loading 3D plot:', err);
+    }
+  };
 
   const drawTrajectory = () => {
     const canvas = canvasRef.current;
