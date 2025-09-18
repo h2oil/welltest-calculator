@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart3, 
   Plus, 
@@ -14,7 +15,9 @@ import {
   Upload,
   AlertTriangle,
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  MapPin,
+  Calculator
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -28,6 +31,9 @@ import {
 } from 'recharts';
 
 import type { DeviationSurvey, DeviationPoint, UnitSystem } from '@/types/open-prosper';
+import { TrajectoryCalculator } from '@/components/well-info/TrajectoryCalculator';
+import { TrajectoryVisualizer } from '@/components/well-info/TrajectoryVisualizer';
+import { WellTrajectory } from '@/types/well-trajectory';
 
 interface WellModuleProps {
   deviation: DeviationSurvey | undefined;
@@ -47,6 +53,9 @@ export const WellModule: React.FC<WellModuleProps> = ({
       { md: 2000, tvd: 2000, inc: 0, azi: 0 }
     ]
   );
+  
+  const [currentTrajectory, setCurrentTrajectory] = useState<WellTrajectory | null>(null);
+  const [activeTab, setActiveTab] = useState('deviation');
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [newPoint, setNewPoint] = useState<DeviationPoint>({
@@ -285,31 +294,59 @@ export const WellModule: React.FC<WellModuleProps> = ({
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <BarChart3 className="h-6 w-6" />
-            Well Deviation Survey
+            Well Trajectory & Deviation Survey
           </h2>
           <p className="text-muted-foreground">
-            Define well trajectory and deviation survey data
+            Define well trajectory, generate 3D paths, and manage deviation survey data
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportDeviation}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <label>
-              <Upload className="h-4 w-4 mr-2" />
-              Import CSV
-              <input
-                type="file"
-                accept=".csv"
-                onChange={importDeviation}
-                className="hidden"
-              />
-            </label>
-          </Button>
-        </div>
       </div>
+
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="deviation" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Deviation Survey
+          </TabsTrigger>
+          <TabsTrigger value="calculator" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Trajectory Calculator
+          </TabsTrigger>
+          <TabsTrigger value="visualizer" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            3D Visualization
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="deviation" className="space-y-6">
+          {/* Deviation Survey Content */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Deviation Survey Data</h3>
+              <p className="text-sm text-muted-foreground">
+                Input and manage well deviation survey points
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={exportDeviation}>
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <label>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import CSV
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={importDeviation}
+                    className="hidden"
+                  />
+                </label>
+              </Button>
+            </div>
+          </div>
 
       {/* Errors */}
       {errors.length > 0 && (
@@ -552,15 +589,32 @@ export const WellModule: React.FC<WellModuleProps> = ({
         </CardContent>
       </Card>
 
-      {/* Validation Status */}
-      {errors.length === 0 && localDeviation.length >= 2 && (
-        <Alert>
-          <CheckCircle className="h-4 w-4" />
-          <AlertDescription>
-            Deviation survey is valid with {localDeviation.length} points
-          </AlertDescription>
-        </Alert>
-      )}
+          {/* Validation Status */}
+          {errors.length === 0 && localDeviation.length >= 2 && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Deviation survey is valid with {localDeviation.length} points
+              </AlertDescription>
+            </Alert>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="calculator" className="space-y-6">
+          <TrajectoryCalculator
+            onTrajectoryGenerated={setCurrentTrajectory}
+            unitSystem={unitSystem}
+          />
+        </TabsContent>
+        
+        <TabsContent value="visualizer" className="space-y-6">
+          <TrajectoryVisualizer
+            trajectory={currentTrajectory}
+            onTrajectoryChange={setCurrentTrajectory}
+            unitSystem={unitSystem}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

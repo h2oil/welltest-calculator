@@ -71,6 +71,136 @@ export type Database = {
         }
         Relationships: []
       }
+      well_projects: {
+        Row: {
+          id: string
+          user_id: string
+          project_name: string
+          well_name: string
+          client_name: string | null
+          location_name: string | null
+          country: string | null
+          state_province: string | null
+          latitude: number | null
+          longitude: number | null
+          google_maps_url: string | null
+          well_type: string
+          operator_name: string | null
+          field_name: string | null
+          reservoir_name: string | null
+          spud_date: string | null
+          completion_date: string | null
+          total_depth: number | null
+          measured_depth: number | null
+          true_vertical_depth: number | null
+          unit_system: string
+          project_data: Json
+          is_template: boolean
+          template_name: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          project_name: string
+          well_name: string
+          client_name?: string | null
+          location_name?: string | null
+          country?: string | null
+          state_province?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          google_maps_url?: string | null
+          well_type?: string
+          operator_name?: string | null
+          field_name?: string | null
+          reservoir_name?: string | null
+          spud_date?: string | null
+          completion_date?: string | null
+          total_depth?: number | null
+          measured_depth?: number | null
+          true_vertical_depth?: number | null
+          unit_system?: string
+          project_data?: Json
+          is_template?: boolean
+          template_name?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          project_name?: string
+          well_name?: string
+          client_name?: string | null
+          location_name?: string | null
+          country?: string | null
+          state_province?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          google_maps_url?: string | null
+          well_type?: string
+          operator_name?: string | null
+          field_name?: string | null
+          reservoir_name?: string | null
+          spud_date?: string | null
+          completion_date?: string | null
+          total_depth?: number | null
+          measured_depth?: number | null
+          true_vertical_depth?: number | null
+          unit_system?: string
+          project_data?: Json
+          is_template?: boolean
+          template_name?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      well_configurations: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          configuration_name: string
+          configuration_data: Json
+          calculation_results: Json | null
+          last_calculated_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          configuration_name: string
+          configuration_data?: Json
+          calculation_results?: Json | null
+          last_calculated_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          user_id?: string
+          configuration_name?: string
+          configuration_data?: Json
+          calculation_results?: Json | null
+          last_calculated_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "well_configurations_project_id_fkey"
+            columns: ["project_id"]
+            referencedRelation: "well_projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
