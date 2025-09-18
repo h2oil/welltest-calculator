@@ -22,19 +22,25 @@ interface Props {
 const DanielOrificeCalculator = ({ unitSystem }: Props) => {
   const { toast } = useToast();
   const [inputs, setInputs] = useState<DanielOrificeInputs>({
-    pipeID: 0.1016, // 4 inches in meters
+    pipeID: 0.146, // 5.761 inches in meters
     orificeD: 0.0508, // 2 inches in meters
-    deltaP: 10, // kPa
+    deltaP: 200, // inwg
     density: 1.2, // kg/m³
-    pressure: 3000, // kPa
-    temperature: 20, // °C
+    pressure: 750, // psig
+    temperature: 60, // °F
     dischargeCoeff: 0.6,
     fluidType: 'gas',
     autoCalculateDensity: true,
+    autoCalculateDischargeCoeff: true,
+    pressureLocation: 'upstream',
+    deltaPUnit: 'inwg',
+    pressureUnit: 'psig',
+    temperatureUnit: 'fahrenheit',
     gasProperties: {
       k: 1.3,
       MW: 18.2,
-      Z: 1.0
+      Z: 1.0,
+      specificGravity: 0.6
     }
   });
 
@@ -103,19 +109,25 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
 
   const handleReset = () => {
     setInputs({
-      pipeID: 0.1016,
-      orificeD: 0.0508,
-      deltaP: 10,
-      density: 1.2,
-      pressure: 3000,
-      temperature: 20,
+      pipeID: 0.146, // 5.761 inches in meters
+      orificeD: 0.0508, // 2 inches in meters
+      deltaP: 200, // inwg
+      density: 1.2, // kg/m³
+      pressure: 750, // psig
+      temperature: 60, // °F
       dischargeCoeff: 0.6,
       fluidType: 'gas',
       autoCalculateDensity: true,
+      autoCalculateDischargeCoeff: true,
+      pressureLocation: 'upstream',
+      deltaPUnit: 'inwg',
+      pressureUnit: 'psig',
+      temperatureUnit: 'fahrenheit',
       gasProperties: {
         k: 1.3,
         MW: 18.2,
-        Z: 1.0
+        Z: 1.0,
+        specificGravity: 0.6
       }
     });
     setOutputs(null);
@@ -249,7 +261,7 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="deltaP">Differential Pressure (ΔP)</Label>
-                  <div className="relative">
+                  <div className="flex gap-2">
                     <Input
                       id="deltaP"
                       type="number"
@@ -258,16 +270,25 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
                       onChange={(e) => handleInputChange('deltaP', parseFloat(e.target.value) || 0)}
                       className={errors.deltaP ? 'border-destructive' : ''}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                      {getUnitLabel('pressure')}
-                    </span>
+                    <Select value={inputs.deltaPUnit} onValueChange={(value: 'psia' | 'psig' | 'kpa' | 'bar' | 'inwg') => handleInputChange('deltaPUnit', value)}>
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inwg">inwg</SelectItem>
+                        <SelectItem value="psia">psia</SelectItem>
+                        <SelectItem value="psig">psig</SelectItem>
+                        <SelectItem value="kpa">kPa</SelectItem>
+                        <SelectItem value="bar">bar</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   {errors.deltaP && <p className="text-xs text-destructive">{errors.deltaP}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="pressure">Line Pressure (P₁)</Label>
-                  <div className="relative">
+                  <div className="flex gap-2">
                     <Input
                       id="pressure"
                       type="number"
@@ -276,9 +297,17 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
                       onChange={(e) => handleInputChange('pressure', parseFloat(e.target.value) || 0)}
                       className={errors.pressure ? 'border-destructive' : ''}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                      {getUnitLabel('pressure')}
-                    </span>
+                    <Select value={inputs.pressureUnit} onValueChange={(value: 'psia' | 'psig' | 'kpa' | 'bar') => handleInputChange('pressureUnit', value)}>
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="psig">psig</SelectItem>
+                        <SelectItem value="psia">psia</SelectItem>
+                        <SelectItem value="kpa">kPa</SelectItem>
+                        <SelectItem value="bar">bar</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   {errors.pressure && <p className="text-xs text-destructive">{errors.pressure}</p>}
                 </div>
@@ -286,7 +315,7 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
 
               <div className="space-y-2">
                 <Label htmlFor="temperature">Temperature</Label>
-                <div className="relative">
+                <div className="flex gap-2">
                   <Input
                     id="temperature"
                     type="number"
@@ -294,9 +323,15 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
                     value={inputs.temperature}
                     onChange={(e) => handleInputChange('temperature', parseFloat(e.target.value) || 0)}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    {getUnitLabel('temperature')}
-                  </span>
+                  <Select value={inputs.temperatureUnit} onValueChange={(value: 'celsius' | 'fahrenheit') => handleInputChange('temperatureUnit', value)}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fahrenheit">°F</SelectItem>
+                      <SelectItem value="celsius">°C</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -318,6 +353,19 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label>Pressure Measurement Location</Label>
+                <Select value={inputs.pressureLocation} onValueChange={(value: 'upstream' | 'downstream') => handleInputChange('pressureLocation', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upstream">Upstream of Orifice</SelectItem>
+                    <SelectItem value="downstream">Downstream of Orifice</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {inputs.fluidType === 'gas' && (
                 <>
                   <div className="flex items-center space-x-2">
@@ -329,7 +377,17 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
                   </div>
 
                   {inputs.autoCalculateDensity && (
-                    <div className="grid grid-cols-3 gap-3 bg-muted/30 p-3 rounded-lg">
+                    <div className="grid grid-cols-2 gap-3 bg-muted/30 p-3 rounded-lg">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Gas Specific Gravity</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={inputs.gasProperties.specificGravity || 0.6}
+                          onChange={(e) => handleGasPropertyChange('specificGravity', parseFloat(e.target.value) || 0.6)}
+                          className="text-sm"
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label className="text-xs">k (Cp/Cv)</Label>
                         <Input
@@ -386,26 +444,38 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="dischargeCoeff" className="flex items-center space-x-1">
-                  <span>Discharge Coefficient (C)</span>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>AGA-3 Reader-Harris/Gallagher equation will auto-calculate for gas. Manual input for liquids.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
-                <Input
-                  id="dischargeCoeff"
-                  type="number"
-                  step="0.001"
-                  value={inputs.dischargeCoeff}
-                  onChange={(e) => handleInputChange('dischargeCoeff', parseFloat(e.target.value) || 0.6)}
-                  className={errors.dischargeCoeff ? 'border-destructive' : ''}
-                />
-                {errors.dischargeCoeff && <p className="text-xs text-destructive">{errors.dischargeCoeff}</p>}
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={inputs.autoCalculateDischargeCoeff}
+                    onCheckedChange={(checked) => handleInputChange('autoCalculateDischargeCoeff', checked)}
+                  />
+                  <Label className="text-sm">Auto-calculate discharge coefficient (AGA-3)</Label>
+                </div>
+                
+                {!inputs.autoCalculateDischargeCoeff && (
+                  <div className="space-y-2">
+                    <Label htmlFor="dischargeCoeff" className="flex items-center space-x-1">
+                      <span>Discharge Coefficient (C)</span>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Manual discharge coefficient input</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </Label>
+                    <Input
+                      id="dischargeCoeff"
+                      type="number"
+                      step="0.001"
+                      value={inputs.dischargeCoeff}
+                      onChange={(e) => handleInputChange('dischargeCoeff', parseFloat(e.target.value) || 0.6)}
+                      className={errors.dischargeCoeff ? 'border-destructive' : ''}
+                    />
+                    {errors.dischargeCoeff && <p className="text-xs text-destructive">{errors.dischargeCoeff}</p>}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

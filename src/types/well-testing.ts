@@ -15,6 +15,7 @@ export interface GasProperties {
   k: number; // Cp/Cv ratio
   MW: number; // Molecular weight kg/kmol
   Z: number; // Compressibility factor
+  specificGravity?: number; // Gas specific gravity
 }
 
 export interface DanielOrificeInputs {
@@ -30,6 +31,11 @@ export interface DanielOrificeInputs {
   fluidType: FluidType;
   autoCalculateDensity: boolean;
   gasProperties: GasProperties;
+  pressureLocation: 'upstream' | 'downstream'; // Pressure measurement location
+  deltaPUnit: 'psia' | 'psig' | 'kpa' | 'bar' | 'inwg'; // Differential pressure unit
+  pressureUnit: 'psia' | 'psig' | 'kpa' | 'bar'; // Line pressure unit
+  temperatureUnit: 'celsius' | 'fahrenheit'; // Temperature unit
+  autoCalculateDischargeCoeff: boolean; // Auto-calculate discharge coefficient
 }
 
 export interface DanielOrificeOutputs {
