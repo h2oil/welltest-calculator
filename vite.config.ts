@@ -13,9 +13,15 @@ export default defineConfig(() => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react', 'react-dom'],
   },
   build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
+      external: [],
       output: {
         manualChunks: (id) => {
           // Core calculation engines
@@ -54,11 +60,12 @@ export default defineConfig(() => ({
           }
           // Split large vendor libraries
           if (id.includes('node_modules')) {
+            // Keep React and React-DOM together to avoid internals error
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react';
+            }
             if (id.includes('lucide-react')) {
               return 'lucide-icons';
-            }
-            if (id.includes('react-dom')) {
-              return 'react-dom';
             }
             if (id.includes('react-router')) {
               return 'react-router';
