@@ -322,7 +322,7 @@ export function calculateChokeFlow(
     const d_bean_m = (chokeSpec.bean_d_in || 0.5) * 0.0254; // Convert inches to meters
     area_m2 = Math.PI * Math.pow(d_bean_m / 2, 2);
   } else {
-    // Percent open - use quadratic relationship
+    // Percent open - use quadratic relationship for adjustable chokes
     const percent = chokeSpec.percent_open || 50;
     const max_area = Math.PI * Math.pow(0.0254 / 2, 2); // 1 inch max
     area_m2 = max_area * Math.pow(percent / 100, 2);
@@ -331,19 +331,51 @@ export function calculateChokeFlow(
   // Calculate critical pressure ratio
   const r_critical = Math.pow(2 / (k + 1), k / (k - 1));
   
-  // For now, assume subcritical flow and solve iteratively
-  // This is a simplified approach - in practice, you'd solve the full equation
-  const P2_guess = P0 * 0.8; // Initial guess
+  // Calculate gas density at upstream conditions
+  const density_0 = calculateFluidDensity(P0, T0, fluid);
   
-  // Calculate mass flow rate
-  const density = calculateFluidDensity(P0, T0, fluid);
-  const mdot = upstreamState.mdot_kg_s; // Use upstream mass flow as initial guess
+  // Calculate mass flow rate using upstream conditions
+  const mdot = upstreamState.mdot_kg_s;
   
-  // Determine regime
-  const regime = (P2_guess / P0) <= r_critical ? 'critical' : 'subcritical';
+  // For critical flow, downstream pressure is fixed by critical pressure ratio
+  // For subcritical flow, we need to solve the orifice equation
+  let P2_kPa: number;
+  let regime: 'critical' | 'subcritical';
+  
+  // Calculate the pressure ratio that would give critical flow
+  const P2_critical = P0 * r_critical;
+  
+  // Use a simplified approach: if choke is very open (>80%), assume subcritical
+  // If choke is very closed (<20%), assume critical
+  const chokeOpenness = chokeSpec.mode === 'fixed-bean' ? 
+    (chokeSpec.bean_d_in || 0.5) / 1.0 : // Normalize by 1 inch max
+    (chokeSpec.percent_open || 50) / 100;
+  
+  if (chokeOpenness < 0.2) {
+    // Very closed choke - critical flow
+    regime = 'critical';
+    P2_kPa = P2_critical;
+  } else if (chokeOpenness > 0.8) {
+    // Very open choke - subcritical flow with minimal pressure drop
+    regime = 'subcritical';
+    P2_kPa = P0 * 0.95; // Only 5% pressure drop
+  } else {
+    // Intermediate opening - use a pressure drop based on choke opening
+    // More closed = more pressure drop
+    const pressureDropRatio = 1 - (chokeOpenness * 0.7); // 0-70% pressure drop
+    P2_kPa = P0 * (1 - pressureDropRatio);
+    
+    // Check if this would be critical
+    if (P2_kPa <= P2_critical) {
+      regime = 'critical';
+      P2_kPa = P2_critical;
+    } else {
+      regime = 'subcritical';
+    }
+  }
   
   return {
-    P2_kPa: P2_guess,
+    P2_kPa,
     mdot_kg_s: mdot,
     regime
   };
@@ -433,16 +465,46 @@ export function solveNetwork(
       
       if (!fromNode || !toNode) continue;
 
-      // Calculate segment pressure drop
-      const segmentResult = calculateSegmentPressureDrop({
-        segment,
-        fluid: fluidSpec,
-        upstreamState: fromNode,
-        downstreamPressure_kPa: toNode.pressure_kPa
-      });
+      let segmentResult: SegmentResultDetailed;
+      let newPressure: number;
 
-      // Update downstream node pressure
-      const newPressure = fromNode.pressure_kPa - segmentResult.deltaP_total_kPa;
+      // Check if this segment connects to a choke node
+      const chokeNode = nodes.find(n => n.id === toNode.id && n.kind === 'choke');
+      
+      if (chokeNode && chokeNode.choke) {
+        // Handle choke pressure drop
+        const chokeResult = calculateChokeFlow(fromNode, chokeNode.choke, fluidSpec);
+        newPressure = chokeResult.P2_kPa;
+        
+        // Create segment result for choke
+        segmentResult = {
+          deltaP_total_kPa: fromNode.pressure_kPa - newPressure,
+          deltaP_friction_kPa: 0, // Choke pressure drop is not friction-based
+          deltaP_fittings_kPa: fromNode.pressure_kPa - newPressure, // All pressure drop is due to choke
+          deltaP_hydrostatic_kPa: 0,
+          velocity_m_s: 0, // Will be calculated below
+          mach: 0,
+          reynolds: 0,
+          friction_factor: 0,
+          erosional_check: {
+            velocity_limit_m_s: 0,
+            is_erosional: false,
+            mach_limit_exceeded: false
+          }
+        };
+      } else {
+        // Normal pipe segment calculation
+        segmentResult = calculateSegmentPressureDrop({
+          segment,
+          fluid: fluidSpec,
+          upstreamState: fromNode,
+          downstreamPressure_kPa: toNode.pressure_kPa
+        });
+
+        // Update downstream node pressure
+        newPressure = fromNode.pressure_kPa - segmentResult.deltaP_total_kPa;
+      }
+
       const pressureChange = Math.abs(newPressure - toNode.pressure_kPa);
       maxPressureChange = Math.max(maxPressureChange, pressureChange);
       
