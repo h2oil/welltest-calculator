@@ -211,33 +211,37 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
 
     // Add devices
     localCompletion.devices.forEach(device => {
+      const mdStart = device.md_start || 0;
+      const mdEnd = device.md_end || 0;
       const deviceInfo = {
         id: device.id,
         type: device.type,
         name: getDeviceName(device.type),
-        depth: device.md_start,
-        length: device.md_end - device.md_start,
+        depth: mdStart,
+        length: Math.max(0, mdEnd - mdStart),
         diameter: device.id_inner || device.id_outer || 0.1,
         color: getDeviceColor(device.type),
         icon: getDeviceIcon(device.type),
-        status: device.status || 'active'
+        status: device.properties?.status || 'active'
       };
       items.push(deviceInfo);
     });
 
     // Add perforations
     localCompletion.perforations.forEach(perf => {
+      const mdStart = perf.md_start || 0;
+      const mdEnd = perf.md_end || 0;
       const perfInfo = {
         id: perf.id,
         type: 'perforation',
         name: `Perforation ${perf.id}`,
-        depth: perf.md_start,
-        length: perf.md_end - perf.md_start,
-        diameter: perf.diameter,
+        depth: mdStart,
+        length: Math.max(0, mdEnd - mdStart),
+        diameter: perf.diameter || 0.5,
         color: '#ef4444',
         icon: Target,
-        density: perf.density,
-        phasing: perf.phasing
+        density: perf.density || 12,
+        phasing: perf.phasing || 60
       };
       items.push(perfInfo);
     });
@@ -381,7 +385,8 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                 {/* Depth scale */}
                 <div className="absolute left-0 top-0 bottom-0 w-2 bg-gray-300 dark:bg-gray-700 rounded">
                   {Array.from({ length: 10 }, (_, i) => {
-                    const maxDepth = Math.max(...completionSchematic.map(item => item.depth + item.length));
+                    const depths = completionSchematic.map(item => (item.depth || 0) + (item.length || 0));
+                    const maxDepth = depths.length > 0 ? Math.max(...depths) : 10000;
                     const depth = (i / 9) * maxDepth;
                     return (
                       <div

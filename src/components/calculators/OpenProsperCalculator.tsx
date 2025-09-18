@@ -156,37 +156,52 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           {
             id: 'sssv-1',
             type: 'sssv',
-            depth: 200, // m
-            diameter: 0.073, // m
-            status: 'open'
+            md_start: 0,
+            md_end: 200, // m
+            id_inner: 0.073, // m
+            id_outer: 0.073, // m
+            roughness: 0.00015,
+            properties: { status: 'open' }
           },
           {
             id: 'packer-1',
             type: 'packer',
-            depth: 2800, // m (9,200 ft)
-            diameter: 0.178, // m (7" casing)
-            status: 'set'
+            md_start: 2800,
+            md_end: 2800, // m (9,200 ft)
+            id_inner: 0.178, // m (7" casing)
+            id_outer: 0.178, // m
+            roughness: 0.00015,
+            properties: { status: 'set' }
           },
           {
             id: 'ssd-1',
             type: 'ssd',
-            depth: 2900, // m (9,500 ft)
-            diameter: 0.073, // m
-            status: 'open'
+            md_start: 2900,
+            md_end: 2900, // m (9,500 ft)
+            id_inner: 0.073, // m
+            id_outer: 0.073, // m
+            roughness: 0.00015,
+            properties: { status: 'open' }
           },
           {
             id: 'ssd-2',
             type: 'ssd',
-            depth: 3000, // m (9,850 ft)
-            diameter: 0.073, // m
-            status: 'open'
+            md_start: 3000,
+            md_end: 3000, // m (9,850 ft)
+            id_inner: 0.073, // m
+            id_outer: 0.073, // m
+            roughness: 0.00015,
+            properties: { status: 'open' }
           },
           {
             id: 'ssd-3',
             type: 'ssd',
-            depth: 3100, // m (10,200 ft)
-            diameter: 0.073, // m
-            status: 'open'
+            md_start: 3100,
+            md_end: 3100, // m (10,200 ft)
+            id_inner: 0.073, // m
+            id_outer: 0.073, // m
+            roughness: 0.00015,
+            properties: { status: 'open' }
           }
         ],
         perforations: [
@@ -477,67 +492,67 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
         orientation="vertical"
       >
         {/* Left Sidebar Navigation */}
-        <div className="w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <TabsList className="flex flex-col h-full w-full bg-transparent p-2 space-y-1">
+        <div className="w-64 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0">
+          <TabsList className="flex flex-col h-full w-full bg-gray-900 dark:bg-gray-800 p-2 space-y-1">
             <TabsTrigger 
               value="fluids" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('fluids')}
               <span>Fluids</span>
             </TabsTrigger>
             <TabsTrigger 
               value="well" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('well')}
               <span>Well</span>
             </TabsTrigger>
             <TabsTrigger 
               value="completion" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('completion')}
               <span>Completion</span>
             </TabsTrigger>
             <TabsTrigger 
               value="ipr" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('ipr')}
               <span>IPR</span>
             </TabsTrigger>
             <TabsTrigger 
               value="vlp" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('vlp')}
               <span>VLP</span>
             </TabsTrigger>
             <TabsTrigger 
               value="nodal" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('nodal')}
               <span>Nodal</span>
             </TabsTrigger>
             <TabsTrigger 
               value="matching" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('matching')}
               <span>Matching</span>
             </TabsTrigger>
             <TabsTrigger 
               value="sensitivity" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('sensitivity')}
               <span>Sensitivity</span>
             </TabsTrigger>
             <TabsTrigger 
               value="reports" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
             >
               {getTabIcon('reports')}
               <span>Reports</span>
