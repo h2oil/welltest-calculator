@@ -1,0 +1,78 @@
+MIT License
+
+Copyright (c) 2025 H2Oil Engineering
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+PROFESSIONAL USE DISCLAIMER
+
+This software is designed for professional use in the oil and gas industry.
+While every effort has been made to ensure accuracy, users are responsible for:
+
+1. Verifying all calculations and results
+2. Ensuring compliance with applicable industry standards
+3. Validating results against other calculation methods
+4. Following proper engineering practices and safety protocols
+
+The authors and contributors disclaim any liability for:
+- Incorrect calculations or results
+- Damages arising from use of this software
+- Non-compliance with industry standards
+- Any other issues related to the use of this software
+
+Users should always consult with qualified engineers and follow
+applicable industry standards and regulations.
+
+---
+
+INDUSTRY STANDARDS COMPLIANCE
+
+This software implements calculations based on:
+- API Standard 521 (Flare Radiation)
+- API RP 14E (Erosional Velocity)
+- Darcy-Weisbach Equation (Pressure Drop)
+- Beggs-Brill Correlation (Two-Phase Flow)
+- Other recognized industry standards
+
+Users are responsible for ensuring compliance with:
+- Local regulations and standards
+- Company-specific requirements
+- Safety protocols and procedures
+- Environmental regulations
+
+---
+
+TECHNICAL SUPPORT
+
+For technical support, bug reports, or feature requests:
+- GitHub Issues: https://github.com/loloil123/welltest-calculator/issues
+- GitHub Discussions: https://github.com/loloil123/welltest-calculator/discussions
+- Documentation: https://github.com/loloil123/welltest-calculator/wiki
+
+---
+
+VERSION INFORMATION
+
+Software Version: 1.0.0
+Last Updated: January 2025
+License: MIT License
+Maintainer: AI Assistant
+Repository: https://github.com/loloil123/welltest-calculator

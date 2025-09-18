@@ -1,8 +1,36 @@
 {
-  "name": "welltest-calculator",
+  "name": "h2oil-welltest-calculator",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Professional engineering calculator suite for oil and gas industry well testing operations",
+  "keywords": [
+    "oil",
+    "gas",
+    "well-testing",
+    "calculator",
+    "engineering",
+    "petroleum",
+    "flare",
+    "radiation",
+    "flow-assurance",
+    "react",
+    "typescript"
+  ],
+  "author": "H2Oil Engineering",
+  "license": "MIT",
+  "homepage": "https://github.com/loloil123/welltest-calculator#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loloil123/welltest-calculator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/loloil123/welltest-calculator/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
