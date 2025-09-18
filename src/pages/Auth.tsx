@@ -16,6 +16,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -54,9 +55,9 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     await signInWithGoogle();
-    setIsLoading(false);
+    setIsGoogleLoading(false);
   };
 
   return (
@@ -76,11 +77,11 @@ const Auth = () => {
           <div className="mb-6">
             <Button
               onClick={handleGoogleSignIn}
-              disabled={isLoading}
+              disabled={isGoogleLoading}
               className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
               variant="outline"
             >
-              {isLoading ? (
+              {isGoogleLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">

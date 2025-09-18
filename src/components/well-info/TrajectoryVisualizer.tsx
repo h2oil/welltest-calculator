@@ -16,7 +16,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { WellTrajectory, TrajectoryVisualizationOptions, TrajectoryAnalysis } from '@/types/well-trajectory';
-import { wellProfileService, TrajectoryAnalysis as ServiceAnalysis, PlotStyle } from '@/services/wellProfileService';
+import { wellProfileService, TrajectoryAnalysis as ServiceAnalysis, PlotStyle } from '@/services/wellProfileServiceFallback';
 
 interface TrajectoryVisualizerProps {
   trajectory: WellTrajectory | null;

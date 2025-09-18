@@ -22,7 +22,7 @@ import {
   TrajectoryCalculationParams, 
   TrajectoryPoint
 } from '@/types/well-trajectory';
-import { wellProfileService, TrajectoryRequest } from '@/services/wellProfileService';
+import { wellProfileService, TrajectoryRequest } from '@/services/wellProfileServiceFallback';
 
 interface TrajectoryCalculatorProps {
   onTrajectoryGenerated: (trajectory: WellTrajectory) => void;
