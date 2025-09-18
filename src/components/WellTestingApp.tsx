@@ -178,8 +178,84 @@ const WellTestingApp = () => {
     <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="border-b border-border bg-gradient-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          {/* Mobile Layout */}
+          <div className="flex flex-col space-y-4 sm:hidden">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                H2Oil Well Testing
+              </h1>
+              <Badge variant="secondary" className="text-xs">
+                Professional
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span className="truncate max-w-[150px]">{user.email}</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Units:</span>
+                <Select value={unitSystem} onValueChange={handleUnitSystemChange}>
+                  <SelectTrigger className="w-20 bg-secondary">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="metric">Metric</SelectItem>
+                    <SelectItem value="field">Field</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Mobile Session Management */}
+            <div className="flex items-center justify-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportSession}
+                className="flex items-center space-x-1"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden xs:inline">Export</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleImportSession}
+                className="flex items-center space-x-1"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden xs:inline">Import</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearAllData}
+                className="flex items-center space-x-1 text-destructive hover:text-destructive-foreground"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden xs:inline">Clear</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center space-x-1"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden xs:inline">Sign Out</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden sm:flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 H2Oil Well Testing
@@ -256,21 +332,25 @@ const WellTestingApp = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
         <Card className="bg-gradient-card shadow-card">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 bg-secondary/50">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 bg-secondary/50">
               <TabsTrigger value="daniel-orifice" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Daniel Orifice (AGA-3)
+                <span className="hidden sm:inline">Daniel Orifice (AGA-3)</span>
+                <span className="sm:hidden">AGA-3</span>
               </TabsTrigger>
               <TabsTrigger value="flare-radiation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Flare Radiation
+                <span className="hidden sm:inline">Flare Radiation</span>
+                <span className="sm:hidden">Flare</span>
               </TabsTrigger>
               <TabsTrigger value="flow-assurance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                Flow Assurance
+                <span className="hidden sm:inline">Flow Assurance</span>
+                <span className="sm:hidden">Flow</span>
               </TabsTrigger>
               <TabsTrigger value="h2oil-complete" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                H2Oil COMPLETE
+                <span className="hidden sm:inline">H2Oil COMPLETE</span>
+                <span className="sm:hidden">H2Oil</span>
               </TabsTrigger>
               
               {/* Miscellaneous Calculators Dropdown */}
@@ -280,7 +360,8 @@ const WellTestingApp = () => {
                     variant={activeTab.startsWith('misc-') ? 'default' : 'outline'} 
                     className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs h-10"
                   >
-                    Misc Calculators
+                    <span className="hidden sm:inline">Misc Calculators</span>
+                    <span className="sm:hidden">Misc</span>
                     <ChevronDown className="ml-1 h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
