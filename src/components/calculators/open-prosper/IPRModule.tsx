@@ -459,8 +459,8 @@ export const IPRModule: React.FC<IPRModuleProps> = ({
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={iprResult.rates.map((rate, index) => ({
-                            rate: rate?.toFixed(1) ?? '0.0',
-                            pressure: iprResult?.pressures?.[index]?.toFixed(0) ?? '0',
+                            rate: Number(rate?.toFixed(1)) || 0,
+                            pressure: Number(iprResult?.pressures?.[index]?.toFixed(0)) || 0,
                             name: `Point ${index + 1}`
                           }))}
                           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}

@@ -83,16 +83,16 @@ Unit System: ${unitSystem === 'metric' ? 'Metric' : 'Field'}
 WELL SUMMARY
 ============
 Well Type: ${case_.fluid.kind}
-Reservoir Pressure: ${case_.ipr.parameters.reservoir_pressure.toFixed(0)} ${getPressureUnit()}
-Reservoir Temperature: ${case_.fluid.temperature.toFixed(1)}°C
-Tubing ID: ${case_.completion.tubing_id.toFixed(3)} ${getLengthUnit()}
-Total Depth: ${Math.max(...case_.deviation.map(d => d.md)).toFixed(0)} ${getLengthUnit()}
+Reservoir Pressure: ${Number(case_.ipr.parameters.reservoir_pressure?.toFixed(0)) || 0} ${getPressureUnit()}
+Reservoir Temperature: ${Number(case_.fluid.temperature?.toFixed(1)) || 0}°C
+Tubing ID: ${Number(case_.completion.tubing_id?.toFixed(3)) || 0} ${getLengthUnit()}
+Total Depth: ${Number(Math.max(...case_.deviation.map(d => d.md))?.toFixed(0)) || 0} ${getLengthUnit()}
 
 OPERATING POINT
 ===============
-Flow Rate: ${nodalResult.operating_point?.rate?.toFixed(1) ?? 'N/A'} ${getFlowRateUnit()}
-Bottomhole Pressure: ${nodalResult.operating_point?.pwf?.toFixed(0) ?? 'N/A'} ${getPressureUnit()}
-Wellhead Pressure: ${nodalResult.operating_point?.whp?.toFixed(0) ?? 'N/A'} ${getPressureUnit()}
+Flow Rate: ${nodalResult.operating_point?.rate ? Number(nodalResult.operating_point.rate.toFixed(1)) : 'N/A'} ${getFlowRateUnit()}
+Bottomhole Pressure: ${nodalResult.operating_point?.pwf ? Number(nodalResult.operating_point.pwf.toFixed(0)) : 'N/A'} ${getPressureUnit()}
+Wellhead Pressure: ${nodalResult.operating_point?.whp ? Number(nodalResult.operating_point.whp.toFixed(0)) : 'N/A'} ${getPressureUnit()}
 Convergence: ${nodalResult.convergence ? 'Yes' : 'No'}
 Iterations: ${nodalResult.iterations}
 

@@ -415,11 +415,11 @@ export const WellModule: React.FC<WellModuleProps> = ({
                     label={{ value: `North-South Displacement (${getDistanceUnit()})`, angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip 
-                    formatter={(value, name) => [value?.toFixed(2) ?? '0.00', name === 'x' ? 'East-West' : 'North-South']}
+                    formatter={(value, name) => [Number(value?.toFixed(2)) || 0, name === 'x' ? 'East-West' : 'North-South']}
                     labelFormatter={(label, payload) => {
                       if (payload && payload[0]) {
                         const data = payload[0].payload;
-                        return `MD: ${data.md?.toFixed(1) ?? '0.0'} ${getDepthUnit()}, TVD: ${data.tvd?.toFixed(1) ?? '0.0'} ${getDepthUnit()}`;
+                        return `MD: ${Number(data.md?.toFixed(1)) || 0} ${getDepthUnit()}, TVD: ${Number(data.tvd?.toFixed(1)) || 0} ${getDepthUnit()}`;
                       }
                       return '';
                     }}

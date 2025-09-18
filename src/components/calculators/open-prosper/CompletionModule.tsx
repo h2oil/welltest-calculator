@@ -837,9 +837,9 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                 <div>
                   <h3 className="font-semibold mb-2">Statistics</h3>
                   <div className="space-y-1 text-sm">
-                    <div>Total Perforations: {stats.totalPerforations?.toFixed(0) ?? '0'}</div>
-                    <div>Perforated Length: {stats.totalPerforatedLength?.toFixed(1) ?? '0.0'} {getLengthUnit()}</div>
-                    <div>Average Density: {stats.totalPerforatedLength > 0 ? ((stats.totalPerforations || 0) / (stats.totalPerforatedLength || 1)).toFixed(1) : '0.0'} {getDensityUnit()}</div>
+                    <div>Total Perforations: {Number(stats.totalPerforations?.toFixed(0)) || 0}</div>
+                    <div>Perforated Length: {Number(stats.totalPerforatedLength?.toFixed(1)) || 0} {getLengthUnit()}</div>
+                    <div>Average Density: {stats.totalPerforatedLength > 0 ? Number(((stats.totalPerforations || 0) / (stats.totalPerforatedLength || 1)).toFixed(1)) : 0} {getDensityUnit()}</div>
                   </div>
                 </div>
               </div>
