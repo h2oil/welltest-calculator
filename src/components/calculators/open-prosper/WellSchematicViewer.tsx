@@ -146,29 +146,25 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = 1000;
+    canvas.height = 800;
 
     // Background
     ctx.fillStyle = '#f8f9fa';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Wellbore
-    const wellX = 100;
-    const wellWidth = 20;
-    const wellTop = 50;
-    const wellBottom = canvas.height - 50;
+    // Wellbore dimensions
+    const wellX = 150;
+    const wellWidth = 40;
+    const wellTop = 80;
+    const wellBottom = canvas.height - 80;
 
-    // Draw wellbore
-    ctx.fillStyle = '#6b7280';
-    ctx.fillRect(wellX, wellTop, wellWidth, wellBottom - wellTop);
-
-    // Draw depth scale
+    // Draw depth scale (left side)
     ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(wellX - 30, wellTop);
-    ctx.lineTo(wellX - 30, wellBottom);
+    ctx.moveTo(wellX - 50, wellTop);
+    ctx.lineTo(wellX - 50, wellBottom);
     ctx.stroke();
 
     // Add depth markers
@@ -178,37 +174,113 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
       const y = wellTop + (wellBottom - wellTop) * (i / 10);
       const depth = totalDepth * (i / 10);
       
+      // Depth tick marks
       ctx.beginPath();
-      ctx.moveTo(wellX - 35, y);
-      ctx.lineTo(wellX - 25, y);
+      ctx.moveTo(wellX - 60, y);
+      ctx.lineTo(wellX - 40, y);
       ctx.stroke();
       
-      ctx.fillText(`${Math.round(depth)} ${getLengthUnit()}`, wellX - 80, y + 4);
+      // Depth labels
+      ctx.fillText(`${Math.round(depth)} ${getLengthUnit()}`, wellX - 120, y + 4);
     }
 
-    // Draw devices
-    const allItems = [...completions, ...casings];
-    allItems.forEach((item, index) => {
-      const topDepth = item.top_depth || 0;
-      const bottomDepth = item.bottom_depth || topDepth + 100;
+    // Draw wellbore (background)
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillRect(wellX, wellTop, wellWidth, wellBottom - wellTop);
+
+    // Draw wellbore outline
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(wellX, wellTop, wellWidth, wellBottom - wellTop);
+
+    // Draw casings first (behind everything)
+    casings.forEach((casing, index) => {
+      const topDepth = casing.top_depth || 0;
+      const bottomDepth = casing.bottom_depth || topDepth + 100;
       
       const topY = wellTop + (wellBottom - wellTop) * (topDepth / totalDepth);
       const bottomY = wellTop + (wellBottom - wellTop) * (bottomDepth / totalDepth);
       
-      // Device rectangle
-      ctx.fillStyle = index % 2 === 0 ? '#3b82f6' : '#10b981';
-      ctx.fillRect(wellX + wellWidth + 10, topY, 30, bottomY - topY);
+      // Casing (thicker, darker)
+      const casingWidth = Math.max(8, wellWidth * 0.8);
+      const casingX = wellX + (wellWidth - casingWidth) / 2;
+      
+      ctx.fillStyle = '#6b7280';
+      ctx.fillRect(casingX, topY, casingWidth, bottomY - topY);
+      
+      // Casing outline
+      ctx.strokeStyle = '#374151';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(casingX, topY, casingWidth, bottomY - topY);
+      
+      // Casing label
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText(casing.name || `Casing ${index + 1}`, wellX + wellWidth + 20, topY + 15);
+    });
+
+    // Draw completions/devices inside the wellbore
+    completions.forEach((completion, index) => {
+      const topDepth = completion.top_depth || 0;
+      const bottomDepth = completion.bottom_depth || topDepth + 50;
+      
+      const topY = wellTop + (wellBottom - wellTop) * (topDepth / totalDepth);
+      const bottomY = wellTop + (wellBottom - wellTop) * (bottomDepth / totalDepth);
+      
+      // Device inside wellbore
+      const deviceWidth = Math.max(6, wellWidth * 0.6);
+      const deviceX = wellX + (wellWidth - deviceWidth) / 2;
+      
+      // Different colors for different completion types
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+      ctx.fillStyle = colors[index % colors.length];
+      ctx.fillRect(deviceX, topY, deviceWidth, bottomY - topY);
+      
+      // Device outline
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(deviceX, topY, deviceWidth, bottomY - topY);
       
       // Device label
       ctx.fillStyle = '#000';
       ctx.font = '10px sans-serif';
-      ctx.fillText(item.name || `Item ${index + 1}`, wellX + wellWidth + 50, topY + 15);
+      ctx.fillText(completion.name || `Device ${index + 1}`, wellX + wellWidth + 20, topY + 15);
     });
 
-    // Well name
+    // Draw well name and title
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(wellName, wellX, 30);
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(wellName, wellX, 50);
+    
+    ctx.font = '14px sans-serif';
+    ctx.fillText('Well Schematic', wellX, 70);
+
+    // Add legend
+    const legendX = wellX + wellWidth + 200;
+    const legendY = wellTop;
+    
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('Legend:', legendX, legendY);
+    
+    let legendItemY = legendY + 25;
+    
+    // Casing legend
+    ctx.fillStyle = '#6b7280';
+    ctx.fillRect(legendX, legendItemY - 10, 15, 8);
+    ctx.fillStyle = '#000';
+    ctx.font = '10px sans-serif';
+    ctx.fillText('Casing', legendX + 20, legendItemY);
+    legendItemY += 20;
+    
+    // Completion legend
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    colors.forEach((color, index) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(legendX, legendItemY - 10, 15, 8);
+      ctx.fillStyle = '#000';
+      ctx.fillText(`Completion ${index + 1}`, legendX + 20, legendItemY);
+      legendItemY += 20;
+    });
 
     // Convert to base64
     const dataURL = canvas.toDataURL('image/png');
