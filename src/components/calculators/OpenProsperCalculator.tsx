@@ -427,17 +427,17 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
   return (
     <div className="h-screen flex">
       {/* Left Sidebar Navigation */}
-      <div className="w-80 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0 flex flex-col">
+      <div className="w-80 bg-background border-r border-border flex-shrink-0 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-border">
           <div>
-            <h1 className="text-xl font-bold text-white">H2Oil COMPLETE</h1>
-            <p className="text-sm text-gray-300">
+            <h1 className="text-xl font-bold text-foreground">H2Oil COMPLETE</h1>
+            <p className="text-sm text-muted-foreground">
               Completion & Well Modelling
             </p>
           </div>
           <div className="flex items-center gap-1 mt-3 flex-wrap">
-            <Badge variant="outline" className="text-xs bg-gray-800 text-gray-300 flex-shrink-0">
+            <Badge variant="outline" className="text-xs bg-secondary text-secondary-foreground flex-shrink-0">
               v1.0.0
             </Badge>
             <Button variant="outline" size="sm" onClick={exportProject} className="text-xs flex-shrink-0">
@@ -461,7 +461,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
 
         {/* Status and Errors */}
         {(errors.length > 0 || warnings.length > 0) && (
-          <div className="p-4 border-b border-gray-700">
+          <div className="p-4 border-b border-border">
             {errors.length > 0 && (
               <Alert variant="destructive" className="mb-2">
                 <AlertTriangle className="h-4 w-4" />
@@ -496,66 +496,66 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           className="flex-1 flex flex-col"
           orientation="vertical"
         >
-          <TabsList className="flex flex-col w-full bg-gray-900 dark:bg-gray-800 p-2 space-y-1 flex-1">
+          <TabsList className="flex flex-col w-full bg-background p-2 space-y-1 flex-1">
             <TabsTrigger 
               value="fluids" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('fluids')}
               <span>Fluids</span>
             </TabsTrigger>
             <TabsTrigger 
               value="well" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('well')}
               <span>Well</span>
             </TabsTrigger>
             <TabsTrigger 
               value="completion" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('completion')}
               <span>Completion</span>
             </TabsTrigger>
             <TabsTrigger 
               value="ipr" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('ipr')}
               <span>IPR</span>
             </TabsTrigger>
             <TabsTrigger 
               value="vlp" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('vlp')}
               <span>VLP</span>
             </TabsTrigger>
             <TabsTrigger 
               value="nodal" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('nodal')}
               <span>Nodal</span>
             </TabsTrigger>
             <TabsTrigger 
               value="matching" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('matching')}
               <span>Matching</span>
             </TabsTrigger>
             <TabsTrigger 
               value="sensitivity" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('sensitivity')}
               <span>Sensitivity</span>
             </TabsTrigger>
             <TabsTrigger 
               value="reports" 
-              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 text-muted-foreground hover:text-foreground hover:bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors"
             >
               {getTabIcon('reports')}
               <span>Reports</span>
