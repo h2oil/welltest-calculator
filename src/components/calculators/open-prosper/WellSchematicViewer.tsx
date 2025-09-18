@@ -105,6 +105,12 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
     try {
       // Try backend first
       try {
+        console.log('Attempting to connect to backend:', `${config.backendUrl}/well-schematics/generate-schematic`);
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
         const response = await fetch(`${config.backendUrl}/well-schematics/generate-schematic`, {
           method: 'POST',
           headers: {
@@ -117,23 +123,42 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
             completions: completions,
             open_holes: []
           }),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
+
+        console.log('Backend response status:', response.status);
 
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
             setSchematicImage(`data:image/png;base64,${result.image_base64}`);
             return;
+          } else {
+            console.warn('Backend returned error:', result.message);
           }
+        } else {
+          console.warn('Backend returned non-OK status:', response.status, response.statusText);
         }
       } catch (backendError) {
-        console.warn('Backend not available, using fallback:', backendError);
+        if (backendError.name === 'AbortError') {
+          console.warn('Backend request timed out, using fallback');
+        } else {
+          console.warn('Backend connection failed, using fallback:', backendError);
+        }
+        // Don't set error here, just use fallback
       }
 
       // Fallback: Generate simple schematic using SVG
+      console.log('Using SVG fallback schematic generation');
       generateSVGSchematic();
       
+      // Show a subtle notification that we're using fallback
+      console.info('Backend unavailable - using local schematic generation');
+      
     } catch (err) {
+      console.error('Schematic generation error:', err);
       setError(`Error generating schematic: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
