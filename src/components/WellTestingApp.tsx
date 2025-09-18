@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
@@ -8,19 +8,32 @@ import { Badge } from '@/components/ui/badge';
 import { Settings, Download, Upload, Trash2, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-import DanielOrificeCalculator from './calculators/DanielOrificeCalculator';
-import ChokeRateCalculator from './calculators/ChokeRateCalculator';
-import CriticalFlowCalculator from './calculators/CriticalFlowCalculator';
-import GORCalculator from './calculators/GORCalculator';
-import GasVelocityCalculatorV2 from './calculators/GasVelocityCalculatorV2';
-import APIGravityCalculator from './calculators/APIGravityCalculator';
-import FlareRadiationCalculatorEnhanced from './calculators/FlareRadiationCalculatorEnhanced';
-import FlowAssuranceCalculator from './calculators/FlowAssuranceCalculator';
-import UnitConverter from './calculators/UnitConverter';
+// Lazy load calculator components for code splitting
+const DanielOrificeCalculator = lazy(() => import('./calculators/DanielOrificeCalculator'));
+const ChokeRateCalculator = lazy(() => import('./calculators/ChokeRateCalculator'));
+const CriticalFlowCalculator = lazy(() => import('./calculators/CriticalFlowCalculator'));
+const GORCalculator = lazy(() => import('./calculators/GORCalculator'));
+const GasVelocityCalculatorV2 = lazy(() => import('./calculators/GasVelocityCalculatorV2'));
+const APIGravityCalculator = lazy(() => import('./calculators/APIGravityCalculator'));
+const FlareRadiationCalculatorEnhanced = lazy(() => import('./calculators/FlareRadiationCalculatorEnhanced'));
+const FlowAssuranceCalculator = lazy(() => import('./calculators/FlowAssuranceCalculator'));
+const UnitConverter = lazy(() => import('./calculators/UnitConverter'));
 
 import { getStoredUnitSystem, storeUnitSystem, getStoredSession, storeSession, exportSessionToJSON, importSessionFromJSON, clearAllStoredData } from '@/lib/storage';
 import type { UnitSystem, CalculationSession } from '@/types/well-testing';
 import { useToast } from '@/hooks/use-toast';
+
+// Loading component for calculator tabs
+const CalculatorSkeleton = () => (
+  <div className="space-y-6">
+    <div className="h-8 bg-muted animate-pulse rounded" />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="h-64 bg-muted animate-pulse rounded" />
+      <div className="h-64 bg-muted animate-pulse rounded" />
+    </div>
+    <div className="h-32 bg-muted animate-pulse rounded" />
+  </div>
+);
 
 const WellTestingApp = () => {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('field');
@@ -276,39 +289,57 @@ const WellTestingApp = () => {
 
             <div className="mt-6">
               <TabsContent value="daniel-orifice" className="space-y-6">
-                <DanielOrificeCalculator unitSystem={unitSystem} />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <DanielOrificeCalculator unitSystem={unitSystem} />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="choke-rate" className="space-y-6">
-                <ChokeRateCalculator unitSystem={unitSystem} />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <ChokeRateCalculator unitSystem={unitSystem} />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="critical-flow" className="space-y-6">
-                <CriticalFlowCalculator unitSystem={unitSystem} />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <CriticalFlowCalculator unitSystem={unitSystem} />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="gor" className="space-y-6">
-                <GORCalculator unitSystem={unitSystem} />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <GORCalculator unitSystem={unitSystem} />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="gas-velocity" className="space-y-6">
-                <GasVelocityCalculatorV2 />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <GasVelocityCalculatorV2 />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="api-gravity" className="space-y-6">
-                <APIGravityCalculator unitSystem={unitSystem} />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <APIGravityCalculator unitSystem={unitSystem} />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="flare-radiation" className="space-y-6">
-                <FlareRadiationCalculatorEnhanced unitSystem={unitSystem} />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <FlareRadiationCalculatorEnhanced unitSystem={unitSystem} />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="flow-assurance" className="space-y-6">
-                <FlowAssuranceCalculator unitSystem={unitSystem} />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <FlowAssuranceCalculator unitSystem={unitSystem} />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="unit-converter" className="space-y-6">
-                <UnitConverter />
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <UnitConverter />
+                </Suspense>
               </TabsContent>
             </div>
           </Tabs>

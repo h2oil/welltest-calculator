@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,7 @@ interface ContourData {
   polarRadii?: number[];
 }
 
-const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
+const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
   flareHeight,
   tipDiameter,
   flameLength,
@@ -67,20 +67,20 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const [customContourValues, setCustomContourValues] = useState<number[]>([]);
   const { toast } = useToast();
 
-  // Debug logging for prop changes
-  useEffect(() => {
-    console.log('Flare2DViewer props updated:', {
-      flareHeight,
-      tipDiameter,
-      flameLength,
-      flameTilt,
-      windSpeed,
-      windDirection,
-      radiationContours: radiationContours?.length,
-      noiseContours: noiseContours?.length,
-      unitSystem
-    });
-  }, [flareHeight, tipDiameter, flameLength, flameTilt, windSpeed, windDirection, radiationContours, noiseContours, unitSystem]);
+  // Debug logging for prop changes (removed for performance)
+  // useEffect(() => {
+  //   console.log('Flare2DViewer props updated:', {
+  //     flareHeight,
+  //     tipDiameter,
+  //     flameLength,
+  //     flameTilt,
+  //     windSpeed,
+  //     windDirection,
+  //     radiationContours: radiationContours?.length,
+  //     noiseContours: noiseContours?.length,
+  //     unitSystem
+  //   });
+  // }, [flareHeight, tipDiameter, flameLength, flameTilt, windSpeed, windDirection, radiationContours, noiseContours, unitSystem]);
 
   // Convert units based on system
   const getLengthUnit = () => unitSystem === 'metric' ? 'm' : 'ft';
@@ -88,14 +88,15 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
   const getPowerUnit = () => unitSystem === 'metric' ? 'kW/m²' : 'Btu/hr·ft²';
   const getSoundUnit = () => 'dB(A)';
 
-  // Process contour data for 2D views
-  const processContours = useCallback(() => {
-    console.log('Processing contours:', {
-      radiationContours: radiationContours?.length,
-      noiseContours: noiseContours?.length,
-      selectedRadiationContours,
-      selectedNoiseContours
-    });
+  // Process contour data for 2D views - memoized for performance
+  const processedContours = useMemo(() => {
+    // Debug logging removed for performance
+    // console.log('Processing contours:', {
+    //   radiationContours: radiationContours?.length,
+    //   noiseContours: noiseContours?.length,
+    //   selectedRadiationContours,
+    //   selectedNoiseContours
+    // });
 
     const radiationData: ContourData[] = radiationContours.map(contour => {
       // Use polarRadii if available, otherwise calculate from points
@@ -125,13 +126,14 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       };
     });
 
-    console.log('Processed data:', { radiationData: radiationData.length, noiseData: noiseData.length });
+    // Debug logging removed for performance
+    // console.log('Processed data:', { radiationData: radiationData.length, noiseData: noiseData.length });
     return { radiationData, noiseData };
   }, [radiationContours, noiseContours, selectedRadiationContours, selectedNoiseContours]);
 
   // Draw Top View (Plan)
   const drawTopView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    const { radiationData, noiseData } = processContours();
+    const { radiationData, noiseData } = processedContours;
     
     // Set high DPI for crisp rendering
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -490,11 +492,11 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.stroke();
     
     // Range indicator removed - now shows full visible range
-  }, [processContours, topPan, topZoom, topViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processedContours, topPan, topZoom, topViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, windSpeed, windDirection, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Draw Side View (Elevation)
   const drawSideView = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    const { radiationData, noiseData } = processContours();
+    const { radiationData, noiseData } = processedContours;
     
     // Set high DPI for crisp rendering
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -888,7 +890,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
     ctx.fillText(`${50 * getLengthFactor()} ${getLengthUnit()}`, 20, groundY - 25);
     
     // Range indicator removed - now shows full visible range
-  }, [processContours, sidePan, sideZoom, sideViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
+  }, [processedContours, sidePan, sideZoom, sideViewMode, selectedRadiationContours, selectedNoiseContours, showGrid, showLabels, flareHeight, tipDiameter, flameLength, flameTilt, getLengthFactor, getLengthUnit, getPowerUnit, getSoundUnit]);
 
   // Handle mouse events for interactivity
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>, viewType: 'top' | 'side') => {
@@ -1418,6 +1420,8 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = ({
       </Card>
     </div>
   );
-};
+});
+
+Flare2DViewer.displayName = 'Flare2DViewer';
 
 export default Flare2DViewer;

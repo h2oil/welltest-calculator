@@ -8,6 +8,76 @@ const R_GAS = 8314.47; // J/(kmol·K) - Universal gas constant
 const GRAVITY = 9.80665; // m/s²
 const DEFAULT_ROUGHNESS = 4.6e-5; // m (carbon steel)
 const DEFAULT_CD = 0.82; // Choke discharge coefficient
+
+/**
+ * Calculate discharge coefficient based on choke size and type
+ * Based on industry correlations for choke performance
+ */
+export function calculateDischargeCoefficient(
+  chokeSizeInches: number,
+  chokeType: 'fixed-bean' | 'adjustable' = 'fixed-bean'
+): number {
+  // For fixed bean chokes, Cd varies with size due to flow characteristics
+  if (chokeType === 'fixed-bean') {
+    // Industry correlation: Cd increases with size up to a point, then levels off
+    if (chokeSizeInches <= 0.125) { // 1/8" and smaller
+      return 0.60; // Very small chokes have lower Cd due to flow restrictions
+    } else if (chokeSizeInches <= 0.25) { // 1/4"
+      return 0.65;
+    } else if (chokeSizeInches <= 0.375) { // 3/8"
+      return 0.70;
+    } else if (chokeSizeInches <= 0.5) { // 1/2"
+      return 0.75;
+    } else if (chokeSizeInches <= 0.625) { // 5/8"
+      return 0.80;
+    } else if (chokeSizeInches <= 0.75) { // 3/4"
+      return 0.82;
+    } else if (chokeSizeInches <= 1.0) { // 1"
+      return 0.85;
+    } else if (chokeSizeInches <= 1.25) { // 1-1/4"
+      return 0.87;
+    } else if (chokeSizeInches <= 1.5) { // 1-1/2"
+      return 0.88;
+    } else if (chokeSizeInches <= 2.0) { // 2"
+      return 0.89;
+    } else { // 2" and larger
+      return 0.90; // Large chokes approach theoretical maximum
+    }
+  } else {
+    // For adjustable chokes, Cd varies with opening percentage
+    // This is a simplified correlation - in practice, it depends on specific valve design
+    return 0.82; // Default for adjustable chokes
+  }
+}
+
+/**
+ * Calculate discharge coefficient for adjustable choke based on opening percentage
+ */
+export function calculateAdjustableChokeCd(percentOpen: number): number {
+  // Correlation based on typical adjustable choke performance
+  // Cd increases with opening percentage but levels off
+  if (percentOpen <= 10) {
+    return 0.50; // Very low opening
+  } else if (percentOpen <= 20) {
+    return 0.60;
+  } else if (percentOpen <= 30) {
+    return 0.68;
+  } else if (percentOpen <= 40) {
+    return 0.74;
+  } else if (percentOpen <= 50) {
+    return 0.78;
+  } else if (percentOpen <= 60) {
+    return 0.81;
+  } else if (percentOpen <= 70) {
+    return 0.83;
+  } else if (percentOpen <= 80) {
+    return 0.85;
+  } else if (percentOpen <= 90) {
+    return 0.86;
+  } else { // 90-100%
+    return 0.87; // Near fully open
+  }
+}
 const DEFAULT_Z = 1.0; // Compressibility factor
 const DEFAULT_K = 1.30; // Cp/Cv ratio for gas
 const DEFAULT_MW = 18.2; // kg/kmol (air)
@@ -99,6 +169,36 @@ export function calculateActualFlowRate(
 }
 
 /**
+ * Calculate total volumetric flow rate including all phases
+ */
+export function calculateTotalFlowRate(
+  gasRate_m3_s: number,
+  oilRate_m3_s: number,
+  waterRate_m3_s: number,
+  fluid: FluidSpec
+): number {
+  if (fluid.kind === 'gas') {
+    return gasRate_m3_s;
+  } else if (fluid.kind === 'liquid') {
+    return oilRate_m3_s + waterRate_m3_s;
+  } else {
+    // Two-phase: return total of all phases
+    return gasRate_m3_s + oilRate_m3_s + waterRate_m3_s;
+  }
+}
+
+/**
+ * Calculate velocity in a pipe segment
+ */
+export function calculateVelocity(
+  totalFlowRate_m3_s: number,
+  pipeId_m: number
+): number {
+  const area = Math.PI * Math.pow(pipeId_m / 2, 2);
+  return totalFlowRate_m3_s / area;
+}
+
+/**
  * Calculate Reynolds number
  */
 export function calculateReynolds(
@@ -142,13 +242,16 @@ export function calculateSegmentPressureDrop(
   const P_avg = (upstreamState.pressure_kPa + downstreamPressure_kPa) / 2;
   const T_avg = upstreamState.temperature_K; // Assume isothermal for now
   
-  // Calculate fluid properties at average conditions
-  const density = calculateFluidDensity(P_avg, T_avg, fluid);
-  const viscosity = fluid.mu_Pa_s || 1.8e-5; // Default air viscosity
-  
-  // Calculate velocity
-  const area = Math.PI * Math.pow(segment.id_inner_m / 2, 2);
-  const velocity = upstreamState.q_actual_m3_s / area;
+      // Calculate fluid properties at average conditions
+      const density = calculateFluidDensity(P_avg, T_avg, fluid);
+      const viscosity = fluid.mu_Pa_s || 1.8e-5; // Default air viscosity
+      
+      // Calculate velocity using actual flow rates and segment pipe ID
+      const gasRate = fluid.gasRate_m3_s || 0;
+      const oilRate = fluid.oilRate_m3_s || 0;
+      const waterRate = fluid.waterRate_m3_s || 0;
+      const totalFlowRate = calculateTotalFlowRate(gasRate, oilRate, waterRate, fluid);
+      const velocity = calculateVelocity(totalFlowRate, segment.id_inner_m);
   
   // Calculate Reynolds number
   const reynolds = calculateReynolds(velocity, segment.id_inner_m, density, viscosity);
@@ -270,18 +373,24 @@ export function solveNetwork(
     const pressure = node.kind === 'wellhead' ? fluidSpec.P_in_kPa : fluidSpec.P_in_kPa * 0.9;
     const temperature = fluidSpec.T_K;
     const density = calculateFluidDensity(pressure, temperature, fluidSpec);
-    const q_actual = calculateActualFlowRate(
+    
+    // Calculate actual flow rates for each phase
+    const gasRate = fluidSpec.gasRate_m3_s || calculateActualFlowRate(
       fluidSpec.q_std.value,
       fluidSpec.q_std.unit,
       pressure,
       temperature,
       fluidSpec
     );
-    const mdot = q_actual * density;
+    const oilRate = fluidSpec.oilRate_m3_s || 0;
+    const waterRate = fluidSpec.waterRate_m3_s || 0;
     
-    // Calculate initial velocity (assume 4" pipe for initial estimate)
-    const area = Math.PI * Math.pow(0.1023 / 2, 2); // 4" pipe
-    const velocity = q_actual / area;
+    // Calculate total flow rate
+    const totalFlowRate = calculateTotalFlowRate(gasRate, oilRate, waterRate, fluidSpec);
+    const mdot = totalFlowRate * density;
+    
+    // Calculate initial velocity (will be updated with actual segment pipe ID)
+    const velocity = 0; // Will be calculated during iteration with actual pipe ID
     const erosional_velocity = EROSIONAL_C / Math.sqrt(density);
     
     return {
@@ -290,7 +399,7 @@ export function solveNetwork(
       label: node.label,
       pressure_kPa: pressure,
       temperature_K: temperature,
-      q_actual_m3_s: q_actual,
+      q_actual_m3_s: totalFlowRate,
       mdot_kg_s: mdot,
       density_kg_m3: density,
       velocity_m_s: velocity,
@@ -299,7 +408,7 @@ export function solveNetwork(
       friction_factor: 0, // Will be calculated during iteration
       erosional_check: {
         velocity_limit_m_s: erosional_velocity,
-        is_erosional: velocity > erosional_velocity,
+        is_erosional: false, // Will be calculated during iteration
         mach_limit_exceeded: false
       },
       warnings: []
@@ -341,18 +450,25 @@ export function solveNetwork(
       
       // Update fluid properties
       toNode.density_kg_m3 = calculateFluidDensity(toNode.pressure_kPa, toNode.temperature_K, fluidSpec);
-      toNode.q_actual_m3_s = calculateActualFlowRate(
+      
+      // Calculate actual flow rates for each phase
+      const gasRate = fluidSpec.gasRate_m3_s || calculateActualFlowRate(
         fluidSpec.q_std.value,
         fluidSpec.q_std.unit,
         toNode.pressure_kPa,
         toNode.temperature_K,
         fluidSpec
       );
-      toNode.mdot_kg_s = toNode.q_actual_m3_s * toNode.density_kg_m3;
+      const oilRate = fluidSpec.oilRate_m3_s || 0;
+      const waterRate = fluidSpec.waterRate_m3_s || 0;
       
-      // Check for erosional velocity
-      const area = Math.PI * Math.pow(segment.id_inner_m / 2, 2);
-      const velocity = toNode.q_actual_m3_s / area;
+      // Calculate total flow rate
+      const totalFlowRate = calculateTotalFlowRate(gasRate, oilRate, waterRate, fluidSpec);
+      toNode.q_actual_m3_s = totalFlowRate;
+      toNode.mdot_kg_s = totalFlowRate * toNode.density_kg_m3;
+      
+      // Calculate velocity using actual segment pipe ID
+      const velocity = calculateVelocity(totalFlowRate, segment.id_inner_m);
       const erosional_velocity = EROSIONAL_C / Math.sqrt(toNode.density_kg_m3);
       
       // Update node velocity
@@ -550,6 +666,9 @@ export function createDefaultFluidSpec(): FluidSpec {
     q_std: {
       unit: 'MSCFD',
       value: 10
-    }
+    },
+    gasRate_m3_s: 0.28, // 10 MSCFD converted to m³/s
+    oilRate_m3_s: 0.05, // 50 bbl/day converted to m³/s
+    waterRate_m3_s: 0.01 // 10 bbl/day converted to m³/s
   };
 }

@@ -393,6 +393,10 @@ export interface FluidSpec {
   gamma_g?: number; // optional gas SG
   watercut_frac?: number; // for two-phase helper calcs
   q_std: { unit: "MSCFD"|"Sm3/d"|"STB/d"; value: number }; // standard flow
+  // Additional flow rates for multi-phase calculations
+  gasRate_m3_s?: number; // actual gas flow rate
+  oilRate_m3_s?: number; // actual oil flow rate
+  waterRate_m3_s?: number; // actual water flow rate
 }
 
 export interface NodeState {

@@ -18,6 +18,7 @@ import {
 
 import { 
   solveNetwork, createDefaultNetwork, createDefaultFluidSpec,
+  calculateDischargeCoefficient, calculateAdjustableChokeCd,
   type NodeSpec, type SegmentSpec, type FluidSpec, type NetworkResult
 } from '@/lib/flow-assurance-engine';
 import { copyResultsToClipboard } from '@/lib/storage';
@@ -43,7 +44,8 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
     size64ths: 32, // 32/64 inch = 0.5 inch
     mode: 'fixed-bean' as 'fixed-bean' | 'percent-open',
     percentOpen: 50,
-    cd: 0.82
+    cd: 0.82,
+    manualCd: false // Whether to use manual Cd or auto-calculate
   });
   
   // Results
@@ -59,6 +61,57 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
     setSegments(defaultNetwork.segments);
   }, []);
 
+  // Calculate current discharge coefficient
+  const getCurrentCd = () => {
+    if (chokeSettings.manualCd) {
+      return chokeSettings.cd;
+    }
+    
+    if (chokeSettings.mode === 'fixed-bean') {
+      const chokeSizeInches = chokeSettings.size64ths / 64;
+      return calculateDischargeCoefficient(chokeSizeInches, 'fixed-bean');
+    } else {
+      return calculateAdjustableChokeCd(chokeSettings.percentOpen);
+    }
+  };
+
+  // Convert input values when unit system changes
+  useEffect(() => {
+    const convertFluidSpecToNewUnitSystem = (prevFluidSpec: FluidSpec, newUnitSystem: UnitSystem) => {
+      const converted = { ...prevFluidSpec };
+      
+      // Convert pressure (P_in_kPa is already in SI, but we need to convert display values)
+      // The pressure input is handled by convertPressureToSI/convertPressureFromSI functions
+      
+      // Convert temperature (T_K is already in SI, but we need to convert display values)
+      // The temperature input is handled by convertTemperatureToSI/convertTemperatureFromSI functions
+      
+      // Convert flow rates - these are the main ones that need conversion
+      if (converted.q_std) {
+        // Convert standard flow rate
+        const currentUnit = converted.q_std.unit;
+        const newUnit = newUnitSystem === 'metric' ? 'Sm3/d' : 'MSCFD';
+        
+        if (currentUnit !== newUnit) {
+          // Convert from current unit to SI, then to new unit
+          const siValue = convertToSI(converted.q_std.value, currentUnit);
+          converted.q_std = {
+            unit: newUnit,
+            value: convertFromSI(siValue, newUnit)
+          };
+        }
+      }
+      
+      // Convert actual flow rates (gasRate_m3_s, oilRate_m3_s, waterRate_m3_s)
+      // These are already in SI units, so we don't need to convert them
+      // The display conversion is handled by the input components
+      
+      return converted;
+    };
+    
+    setFluidSpec(prev => convertFluidSpecToNewUnitSystem(prev, unitSystem));
+  }, [unitSystem]);
+
   // Auto-calculate when inputs change
   useEffect(() => {
     if (nodes.length > 0 && segments.length > 0) {
@@ -69,6 +122,9 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
   const calculateNetwork = async () => {
     setIsCalculating(true);
     try {
+      // Calculate current discharge coefficient
+      const currentCd = getCurrentCd();
+      
       // Update choke node with current settings
       const updatedNodes = nodes.map(node => {
         if (node.kind === 'choke') {
@@ -78,7 +134,7 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
               mode: chokeSettings.mode,
               bean_d_in: chokeSettings.mode === 'fixed-bean' ? chokeSettings.size64ths / 64 : undefined,
               percent_open: chokeSettings.mode === 'percent-open' ? chokeSettings.percentOpen : undefined,
-              Cd: chokeSettings.cd
+              Cd: currentCd
             }
           };
         }
@@ -162,7 +218,8 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
       size64ths: 32,
       mode: 'fixed-bean',
       percentOpen: 50,
-      cd: 0.82
+      cd: 0.82,
+      manualCd: false
     });
     setNetworkResult(null);
   };
@@ -542,7 +599,7 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Standard Flow Rate ({getFlowUnit()})</Label>
+                      <Label>Gas Flow Rate ({getFlowUnit()})</Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -551,6 +608,26 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                           ...fluidSpec.q_std,
                           value: parseFloat(e.target.value) || 0
                         })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Oil Flow Rate ({getFlowUnit()})</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={fluidSpec.oilRate_m3_s ? (fluidSpec.oilRate_m3_s * 86400) : 0}
+                        onChange={(e) => handleFluidSpecChange('oilRate_m3_s', (parseFloat(e.target.value) || 0) / 86400)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Water Flow Rate ({getFlowUnit()})</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={fluidSpec.waterRate_m3_s ? (fluidSpec.waterRate_m3_s * 86400) : 0}
+                        onChange={(e) => handleFluidSpecChange('waterRate_m3_s', (parseFloat(e.target.value) || 0) / 86400)}
                       />
                     </div>
                   </CardContent>
@@ -737,18 +814,48 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                     )}
 
                     <div className="space-y-2">
-                      <Label>Discharge Coefficient (Cd)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0.1"
-                        max="1.0"
-                        value={chokeSettings.cd}
-                        onChange={(e) => setChokeSettings(prev => ({ 
-                          ...prev, 
-                          cd: parseFloat(e.target.value) || 0.82 
-                        }))}
-                      />
+                      <div className="flex items-center justify-between">
+                        <Label>Discharge Coefficient (Cd)</Label>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="manualCd"
+                            checked={chokeSettings.manualCd}
+                            onChange={(e) => setChokeSettings(prev => ({ 
+                              ...prev, 
+                              manualCd: e.target.checked 
+                            }))}
+                            className="rounded"
+                          />
+                          <Label htmlFor="manualCd" className="text-xs">Manual Override</Label>
+                        </div>
+                      </div>
+                      
+                      {chokeSettings.manualCd ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.1"
+                          max="1.0"
+                          value={chokeSettings.cd}
+                          onChange={(e) => setChokeSettings(prev => ({ 
+                            ...prev, 
+                            cd: parseFloat(e.target.value) || 0.82 
+                          }))}
+                        />
+                      ) : (
+                        <div className="p-2 bg-muted rounded border">
+                          <div className="text-sm font-medium">
+                            Calculated Cd: {getCurrentCd().toFixed(3)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {chokeSettings.mode === 'fixed-bean' 
+                              ? `Based on ${(chokeSettings.size64ths / 64).toFixed(3)}" choke size`
+                              : `Based on ${chokeSettings.percentOpen}% opening`
+                            }
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-3 bg-muted rounded-lg">
@@ -759,12 +866,20 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                             Smaller choke size = Higher pressure drop = Lower flow rate
                             <br />
                             Current: {chokeSettings.size64ths}/64" = {(chokeSettings.size64ths / 64).toFixed(3)}"
+                            <br />
+                            Discharge Coefficient: {getCurrentCd().toFixed(3)} (auto-calculated)
+                            <br />
+                            Total Flow: {((fluidSpec.gasRate_m3_s || 0) + (fluidSpec.oilRate_m3_s || 0) + (fluidSpec.waterRate_m3_s || 0)).toFixed(3)} m³/s
                           </>
                         ) : (
                           <>
                             Lower % open = Higher pressure drop = Lower flow rate
                             <br />
                             Current: {chokeSettings.percentOpen}% open
+                            <br />
+                            Discharge Coefficient: {getCurrentCd().toFixed(3)} (auto-calculated)
+                            <br />
+                            Total Flow: {((fluidSpec.gasRate_m3_s || 0) + (fluidSpec.oilRate_m3_s || 0) + (fluidSpec.waterRate_m3_s || 0)).toFixed(3)} m³/s
                           </>
                         )}
                       </div>
