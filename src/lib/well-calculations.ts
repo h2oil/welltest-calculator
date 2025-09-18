@@ -1014,8 +1014,7 @@ const calculateNoisePolarRadii = (
     const windNoiseFactor = 1 + (windSpeed / 15) * windFactor; // Wind speed effect on noise
     
     // Base distance calculation (spherical spreading with air absorption)
-    // More realistic distance calculation for flare noise
-    const baseDistance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20) / 10;
+    const baseDistance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20) * 0.1;
     
     // Apply wind effect
     let adjustedDistance = baseDistance;
@@ -1037,7 +1036,7 @@ const calculateNoisePolarRadii = (
 
 const calculateMaxNoiseDistance = (level: number, soundPowerLevel: number, airAbsorption: number): number => {
   // Spherical spreading with air absorption
-  const distance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20) / 10;
+  const distance = Math.pow(10, (soundPowerLevel - level - 20 * Math.log10(4 * Math.PI)) / 20) * 0.1;
   
   return distance;
 };
