@@ -333,36 +333,65 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-96 w-full overflow-auto border rounded-lg bg-gray-50 dark:bg-gray-900 p-4">
-              <div className="relative" style={{ minHeight: '800px' }}>
+            <div className="h-[600px] w-full overflow-auto border rounded-lg bg-gray-50 dark:bg-gray-900 p-6">
+              <div className="relative" style={{ minHeight: '1200px' }}>
+                {/* Wellbore line */}
+                <div className="absolute left-8 top-0 w-1 bg-gray-400 dark:bg-gray-600 rounded-full" style={{ height: '1000px' }}></div>
+                
                 {completionSchematic.map((item, index) => {
                   const IconComponent = item.icon;
-                  const maxDepth = Math.max(...completionSchematic.map(i => (i.depth || 0) + (i.length || 0)));
-                  const depthPercent = maxDepth > 0 ? ((item.depth || 0) / maxDepth) * 100 : 0;
-                  const lengthPercent = maxDepth > 0 ? ((item.length || 0) / maxDepth) * 100 : 2;
+                  
+                  // Calculate max depth and auto-scale to nearest 1000ft below lowest device
+                  const deviceDepths = completionSchematic.map(i => (i.depth || 0) + (i.length || 0));
+                  const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
+                  
+                  // Round up to nearest 1000ft below the lowest device
+                  const schematicMaxDepth = Math.ceil(maxDeviceDepth / 1000) * 1000;
+                  
+                  const depthPixels = schematicMaxDepth > 0 ? ((item.depth || 0) / schematicMaxDepth) * 1000 : 0;
+                  const lengthPixels = schematicMaxDepth > 0 ? ((item.length || 0) / schematicMaxDepth) * 1000 : 40;
+                  
+                  // Add spacing to prevent overlapping - each item gets at least 80px vertical space
+                  const spacingOffset = index * 80;
                   
                   return (
                     <div
                       key={item.id}
-                      className="absolute left-4 flex items-start gap-3 group mb-4"
+                      className="absolute flex items-start gap-4 group"
                       style={{
-                        top: `${depthPercent}%`,
-                        minHeight: `${Math.max(lengthPercent, 8)}%`
+                        left: '120px',
+                        top: `${depthPixels + 20 + spacingOffset}px`,
+                        minHeight: `${Math.max(lengthPixels, 60)}px`
                       }}
                     >
+                      {/* Device icon on wellbore */}
                       <div 
-                        className="flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 mt-1"
+                        className="flex items-center justify-center w-10 h-10 rounded-full border-2 flex-shrink-0 mt-2 z-10"
                         style={{ 
                           backgroundColor: item.color + '20',
                           borderColor: item.color,
-                          color: item.color
+                          color: item.color,
+                          position: 'absolute',
+                          left: '-80px',
+                          top: '0px'
                         }}
                       >
-                        <IconComponent className="h-4 w-4" />
+                        <IconComponent className="h-5 w-5" />
                       </div>
-                      <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm border">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">{item.name}</span>
+                      
+                      {/* Arrow from device to info box */}
+                      <div 
+                        className="absolute left-[-60px] top-[20px] w-12 h-0.5 bg-gray-400 dark:bg-gray-500"
+                        style={{ transform: 'rotate(0deg)' }}
+                      ></div>
+                      <div 
+                        className="absolute left-[-12px] top-[16px] w-0 h-0 border-l-4 border-l-gray-400 dark:border-l-gray-500 border-t-2 border-t-transparent border-b-2 border-b-transparent"
+                      ></div>
+                      
+                      {/* Information box */}
+                      <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700 max-w-xs">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{item.name}</span>
                           {item.status && (
                             <Badge 
                               variant={item.status === 'active' ? 'default' : 'secondary'}
@@ -373,18 +402,33 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground space-y-1">
-                          <div>Depth: {Number((item.depth || 0).toFixed(1))} {getLengthUnit()}</div>
+                          <div className="flex justify-between">
+                            <span>Depth:</span>
+                            <span className="font-medium">{Number((item.depth || 0).toFixed(1))} {getLengthUnit()}</span>
+                          </div>
                           {(item.length || 0) > 0 && (
-                            <div>Length: {Number((item.length || 0).toFixed(1))} {getLengthUnit()}</div>
+                            <div className="flex justify-between">
+                              <span>Length:</span>
+                              <span className="font-medium">{Number((item.length || 0).toFixed(1))} {getLengthUnit()}</span>
+                            </div>
                           )}
                           {(item.diameter || 0) > 0 && (
-                            <div>ID: {Number((item.diameter || 0).toFixed(3))} {getDiameterUnit()}</div>
+                            <div className="flex justify-between">
+                              <span>ID:</span>
+                              <span className="font-medium">{Number((item.diameter || 0).toFixed(3))} {getDiameterUnit()}</span>
+                            </div>
                           )}
                           {item.density && (
-                            <div>{item.density} shots/ft</div>
+                            <div className="flex justify-between">
+                              <span>Density:</span>
+                              <span className="font-medium">{item.density} shots/ft</span>
+                            </div>
                           )}
                           {item.phasing && (
-                            <div>{item.phasing}° phasing</div>
+                            <div className="flex justify-between">
+                              <span>Phasing:</span>
+                              <span className="font-medium">{item.phasing}°</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -393,19 +437,23 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                 })}
                 
                 {/* Depth scale */}
-                <div className="absolute left-0 top-0 bottom-0 w-2 bg-gray-300 dark:bg-gray-700 rounded">
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const depths = completionSchematic.map(item => (item.depth || 0) + (item.length || 0));
-                    const maxDepth = depths.length > 0 ? Math.max(...depths) : 10000;
-                    const depth = (i / 9) * maxDepth;
+                <div className="absolute left-0 top-0 w-2 bg-gray-300 dark:bg-gray-700 rounded" style={{ height: '1000px' }}>
+                  {Array.from({ length: 11 }, (_, i) => {
+                    // Use the same auto-scaled depth as the schematic
+                    const deviceDepths = completionSchematic.map(item => (item.depth || 0) + (item.length || 0));
+                    const maxDeviceDepth = deviceDepths.length > 0 ? Math.max(...deviceDepths) : 0;
+                    const schematicMaxDepth = Math.ceil(maxDeviceDepth / 1000) * 1000;
+                    
+                    const depth = (i / 10) * schematicMaxDepth;
+                    const topPosition = (i / 10) * 1000;
                     return (
                       <div
                         key={i}
-                        className="absolute text-xs text-muted-foreground"
-                        style={{ top: `${(i / 9) * 100}%`, transform: 'translateY(-50%)' }}
+                        className="absolute text-xs text-muted-foreground flex items-center"
+                        style={{ top: `${topPosition}px`, transform: 'translateY(-50%)' }}
                       >
                         <div className="w-1 h-1 bg-gray-600 dark:bg-gray-400 rounded-full -ml-0.5"></div>
-                        <div className="ml-2 -mt-1">{Number(depth?.toFixed(0)) || 0} {getLengthUnit()}</div>
+                        <div className="ml-2 -mt-1 font-mono">{Number(depth?.toFixed(0)) || 0} {getLengthUnit()}</div>
                       </div>
                     );
                   })}
