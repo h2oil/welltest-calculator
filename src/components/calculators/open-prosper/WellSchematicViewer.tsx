@@ -130,8 +130,8 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
         console.warn('Backend not available, using fallback:', backendError);
       }
 
-      // Fallback: Generate simple schematic using Canvas API
-      generateFallbackSchematic();
+      // Fallback: Generate simple schematic using SVG
+      generateSVGSchematic();
       
     } catch (err) {
       setError(`Error generating schematic: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -140,151 +140,139 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
     }
   };
 
-  const generateFallbackSchematic = () => {
-    // Create a simple schematic using HTML5 Canvas
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = 1000;
-    canvas.height = 800;
-
-    // Background
-    ctx.fillStyle = '#f8f9fa';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+  const generateSVGSchematic = () => {
+    // Create SVG schematic
+    const svgWidth = 1000;
+    const svgHeight = 800;
+    
     // Wellbore dimensions
     const wellX = 150;
     const wellWidth = 40;
     const wellTop = 80;
-    const wellBottom = canvas.height - 80;
+    const wellBottom = svgHeight - 80;
+    const wellHeight = wellBottom - wellTop;
 
-    // Draw depth scale (left side)
-    ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(wellX - 50, wellTop);
-    ctx.lineTo(wellX - 50, wellBottom);
-    ctx.stroke();
-
-    // Add depth markers
-    ctx.fillStyle = '#374151';
-    ctx.font = '12px monospace';
+    // Generate depth markers
+    const depthMarkers = [];
     for (let i = 0; i <= 10; i++) {
-      const y = wellTop + (wellBottom - wellTop) * (i / 10);
-      const depth = totalDepth * (i / 10);
-      
-      // Depth tick marks
-      ctx.beginPath();
-      ctx.moveTo(wellX - 60, y);
-      ctx.lineTo(wellX - 40, y);
-      ctx.stroke();
-      
-      // Depth labels
-      ctx.fillText(`${Math.round(depth)} ${getLengthUnit()}`, wellX - 120, y + 4);
+      const y = wellTop + (wellHeight * i / 10);
+      const depth = Math.round(totalDepth * i / 10);
+      depthMarkers.push({
+        y,
+        depth,
+        id: `depth-${i}`
+      });
     }
 
-    // Draw wellbore (background)
-    ctx.fillStyle = '#e5e7eb';
-    ctx.fillRect(wellX, wellTop, wellWidth, wellBottom - wellTop);
-
-    // Draw wellbore outline
-    ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(wellX, wellTop, wellWidth, wellBottom - wellTop);
-
-    // Draw casings first (behind everything)
-    casings.forEach((casing, index) => {
+    // Generate casing elements
+    const casingElements = casings.map((casing, index) => {
       const topDepth = casing.top_depth || 0;
       const bottomDepth = casing.bottom_depth || topDepth + 100;
       
-      const topY = wellTop + (wellBottom - wellTop) * (topDepth / totalDepth);
-      const bottomY = wellTop + (wellBottom - wellTop) * (bottomDepth / totalDepth);
+      const topY = wellTop + (wellHeight * topDepth / totalDepth);
+      const bottomY = wellTop + (wellHeight * bottomDepth / totalDepth);
       
-      // Casing (thicker, darker)
       const casingWidth = Math.max(8, wellWidth * 0.8);
       const casingX = wellX + (wellWidth - casingWidth) / 2;
       
-      ctx.fillStyle = '#6b7280';
-      ctx.fillRect(casingX, topY, casingWidth, bottomY - topY);
-      
-      // Casing outline
-      ctx.strokeStyle = '#374151';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(casingX, topY, casingWidth, bottomY - topY);
-      
-      // Casing label
-      ctx.fillStyle = '#000';
-      ctx.font = 'bold 10px sans-serif';
-      ctx.fillText(casing.name || `Casing ${index + 1}`, wellX + wellWidth + 20, topY + 15);
+      return {
+        x: casingX,
+        y: topY,
+        width: casingWidth,
+        height: bottomY - topY,
+        name: casing.name || `Casing ${index + 1}`,
+        id: `casing-${index}`
+      };
     });
 
-    // Draw completions/devices inside the wellbore
-    completions.forEach((completion, index) => {
+    // Generate completion elements
+    const completionElements = completions.map((completion, index) => {
       const topDepth = completion.top_depth || 0;
       const bottomDepth = completion.bottom_depth || topDepth + 50;
       
-      const topY = wellTop + (wellBottom - wellTop) * (topDepth / totalDepth);
-      const bottomY = wellTop + (wellBottom - wellTop) * (bottomDepth / totalDepth);
+      const topY = wellTop + (wellHeight * topDepth / totalDepth);
+      const bottomY = wellTop + (wellHeight * bottomDepth / totalDepth);
       
-      // Device inside wellbore
       const deviceWidth = Math.max(6, wellWidth * 0.6);
       const deviceX = wellX + (wellWidth - deviceWidth) / 2;
       
-      // Different colors for different completion types
       const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-      ctx.fillStyle = colors[index % colors.length];
-      ctx.fillRect(deviceX, topY, deviceWidth, bottomY - topY);
       
-      // Device outline
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(deviceX, topY, deviceWidth, bottomY - topY);
-      
-      // Device label
-      ctx.fillStyle = '#000';
-      ctx.font = '10px sans-serif';
-      ctx.fillText(completion.name || `Device ${index + 1}`, wellX + wellWidth + 20, topY + 15);
+      return {
+        x: deviceX,
+        y: topY,
+        width: deviceWidth,
+        height: bottomY - topY,
+        name: completion.name || `Device ${index + 1}`,
+        color: colors[index % colors.length],
+        id: `completion-${index}`
+      };
     });
 
-    // Draw well name and title
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText(wellName, wellX, 50);
-    
-    ctx.font = '14px sans-serif';
-    ctx.fillText('Well Schematic', wellX, 70);
+    // Create SVG string
+    const svgContent = `
+      <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa"/>
+        
+        <!-- Depth scale line -->
+        <line x1="${wellX - 50}" y1="${wellTop}" x2="${wellX - 50}" y2="${wellBottom}" 
+              stroke="#374151" stroke-width="3"/>
+        
+        <!-- Depth markers -->
+        ${depthMarkers.map(marker => `
+          <line x1="${wellX - 60}" y1="${marker.y}" x2="${wellX - 40}" y2="${marker.y}" 
+                stroke="#374151" stroke-width="2"/>
+          <text x="${wellX - 120}" y="${marker.y + 4}" font-family="monospace" font-size="12" 
+                fill="#374151">${marker.depth} ${getLengthUnit()}</text>
+        `).join('')}
+        
+        <!-- Wellbore background -->
+        <rect x="${wellX}" y="${wellTop}" width="${wellWidth}" height="${wellHeight}" 
+              fill="#e5e7eb" stroke="#374151" stroke-width="2"/>
+        
+        <!-- Casings -->
+        ${casingElements.map(casing => `
+          <rect x="${casing.x}" y="${casing.y}" width="${casing.width}" height="${casing.height}" 
+                fill="#6b7280" stroke="#374151" stroke-width="1"/>
+          <text x="${wellX + wellWidth + 20}" y="${casing.y + 15}" font-family="sans-serif" 
+                font-size="10" font-weight="bold" fill="#000">${casing.name}</text>
+        `).join('')}
+        
+        <!-- Completions -->
+        ${completionElements.map(completion => `
+          <rect x="${completion.x}" y="${completion.y}" width="${completion.width}" 
+                height="${completion.height}" fill="${completion.color}" stroke="#000" stroke-width="1"/>
+          <text x="${wellX + wellWidth + 20}" y="${completion.y + 15}" font-family="sans-serif" 
+                font-size="10" fill="#000">${completion.name}</text>
+        `).join('')}
+        
+        <!-- Well name and title -->
+        <text x="${wellX}" y="50" font-family="sans-serif" font-size="18" font-weight="bold" fill="#000">${wellName}</text>
+        <text x="${wellX}" y="70" font-family="sans-serif" font-size="14" fill="#000">Well Schematic</text>
+        
+        <!-- Legend -->
+        <text x="${wellX + wellWidth + 200}" y="${wellTop}" font-family="sans-serif" 
+              font-size="12" font-weight="bold" fill="#000">Legend:</text>
+        
+        <!-- Casing legend -->
+        <rect x="${wellX + wellWidth + 200}" y="${wellTop + 15}" width="15" height="8" fill="#6b7280"/>
+        <text x="${wellX + wellWidth + 220}" y="${wellTop + 25}" font-family="sans-serif" 
+              font-size="10" fill="#000">Casing</text>
+        
+        <!-- Completion legend -->
+        ${completionElements.map((completion, index) => `
+          <rect x="${wellX + wellWidth + 200}" y="${wellTop + 35 + index * 20}" width="15" height="8" 
+                fill="${completion.color}"/>
+          <text x="${wellX + wellWidth + 220}" y="${wellTop + 45 + index * 20}" font-family="sans-serif" 
+                font-size="10" fill="#000">${completion.name}</text>
+        `).join('')}
+      </svg>
+    `;
 
-    // Add legend
-    const legendX = wellX + wellWidth + 200;
-    const legendY = wellTop;
-    
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillText('Legend:', legendX, legendY);
-    
-    let legendItemY = legendY + 25;
-    
-    // Casing legend
-    ctx.fillStyle = '#6b7280';
-    ctx.fillRect(legendX, legendItemY - 10, 15, 8);
-    ctx.fillStyle = '#000';
-    ctx.font = '10px sans-serif';
-    ctx.fillText('Casing', legendX + 20, legendItemY);
-    legendItemY += 20;
-    
-    // Completion legend
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-    colors.forEach((color, index) => {
-      ctx.fillStyle = color;
-      ctx.fillRect(legendX, legendItemY - 10, 15, 8);
-      ctx.fillStyle = '#000';
-      ctx.fillText(`Completion ${index + 1}`, legendX + 20, legendItemY);
-      legendItemY += 20;
-    });
-
-    // Convert to base64
-    const dataURL = canvas.toDataURL('image/png');
-    setSchematicImage(dataURL);
+    // Convert SVG to data URL
+    const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgContent)}`;
+    setSchematicImage(svgDataUrl);
   };
 
   const addCasing = () => {
