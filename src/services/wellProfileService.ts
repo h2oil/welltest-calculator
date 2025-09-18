@@ -1,7 +1,8 @@
 // Well Profile Service - Frontend API client for Python backend
 import { WellTrajectory, TrajectoryProfile, TrajectoryPoint } from '@/types/well-trajectory';
+import { config } from '@/lib/config';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = config.backendUrl;
 
 export interface TrajectoryRequest {
   profile: TrajectoryProfile;

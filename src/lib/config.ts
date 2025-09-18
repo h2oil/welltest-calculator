@@ -17,6 +17,9 @@ export const config = {
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
   
+  // Backend API URL - use localhost in development, production URL in production
+  backendUrl: import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://h2oil-backend.vercel.app'),
+  
   // Supabase configuration
   supabase: {
     url: import.meta.env.VITE_SUPABASE_URL || "https://woywfcpcbqgeeqcinwoz.supabase.co",

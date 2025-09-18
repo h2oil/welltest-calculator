@@ -22,6 +22,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 
+import { config } from '@/lib/config';
 import type { Completion, Device, PerforationInterval, DeviceType, UnitSystem } from '@/types/open-prosper';
 
 interface WellSchematicViewerProps {
@@ -102,36 +103,116 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = ({
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/well-schematics/generate-schematic', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          well_name: wellName,
-          total_depth: totalDepth,
-          casings: casings,
-          completions: completions,
-          open_holes: []
-        }),
-      });
+      // Try backend first
+      try {
+        const response = await fetch(`${config.backendUrl}/well-schematics/generate-schematic`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            well_name: wellName,
+            total_depth: totalDepth,
+            casings: casings,
+            completions: completions,
+            open_holes: []
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setSchematicImage(`data:image/png;base64,${result.image_base64}`);
+            return;
+          }
+        }
+      } catch (backendError) {
+        console.warn('Backend not available, using fallback:', backendError);
       }
 
-      const result = await response.json();
+      // Fallback: Generate simple schematic using Canvas API
+      generateFallbackSchematic();
       
-      if (result.success) {
-        setSchematicImage(`data:image/png;base64,${result.image_base64}`);
-      } else {
-        setError(result.message || 'Failed to generate schematic');
-      }
     } catch (err) {
       setError(`Error generating schematic: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateFallbackSchematic = () => {
+    // Create a simple schematic using HTML5 Canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = 800;
+    canvas.height = 600;
+
+    // Background
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Wellbore
+    const wellX = 100;
+    const wellWidth = 20;
+    const wellTop = 50;
+    const wellBottom = canvas.height - 50;
+
+    // Draw wellbore
+    ctx.fillStyle = '#6b7280';
+    ctx.fillRect(wellX, wellTop, wellWidth, wellBottom - wellTop);
+
+    // Draw depth scale
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(wellX - 30, wellTop);
+    ctx.lineTo(wellX - 30, wellBottom);
+    ctx.stroke();
+
+    // Add depth markers
+    ctx.fillStyle = '#374151';
+    ctx.font = '12px monospace';
+    for (let i = 0; i <= 10; i++) {
+      const y = wellTop + (wellBottom - wellTop) * (i / 10);
+      const depth = totalDepth * (i / 10);
+      
+      ctx.beginPath();
+      ctx.moveTo(wellX - 35, y);
+      ctx.lineTo(wellX - 25, y);
+      ctx.stroke();
+      
+      ctx.fillText(`${Math.round(depth)} ${getLengthUnit()}`, wellX - 80, y + 4);
+    }
+
+    // Draw devices
+    const allItems = [...completions, ...casings];
+    allItems.forEach((item, index) => {
+      const topDepth = item.top_depth || 0;
+      const bottomDepth = item.bottom_depth || topDepth + 100;
+      
+      const topY = wellTop + (wellBottom - wellTop) * (topDepth / totalDepth);
+      const bottomY = wellTop + (wellBottom - wellTop) * (bottomDepth / totalDepth);
+      
+      // Device rectangle
+      ctx.fillStyle = index % 2 === 0 ? '#3b82f6' : '#10b981';
+      ctx.fillRect(wellX + wellWidth + 10, topY, 30, bottomY - topY);
+      
+      // Device label
+      ctx.fillStyle = '#000';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(item.name || `Item ${index + 1}`, wellX + wellWidth + 50, topY + 15);
+    });
+
+    // Well name
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(wellName, wellX, 30);
+
+    // Convert to base64
+    const dataURL = canvas.toDataURL('image/png');
+    setSchematicImage(dataURL);
   };
 
   const addCasing = () => {
