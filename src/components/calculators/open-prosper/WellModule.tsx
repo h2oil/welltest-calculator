@@ -239,12 +239,21 @@ export const WellModule: React.FC<WellModuleProps> = ({
 
   const calculateWellPath = () => {
     // Calculate well path statistics
-    const totalMD = Math.max(...localDeviation.map(p => p.md));
-    const totalTVD = Math.max(...localDeviation.map(p => p.tvd));
-    const maxInc = Math.max(...localDeviation.map(p => p.inc));
+    if (!localDeviation || localDeviation.length === 0) {
+      return { totalMD: 0, totalTVD: 0, maxInc: 0, dogleg: 0 };
+    }
+    
+    const totalMD = Math.max(...localDeviation.map(p => p?.md || 0));
+    const totalTVD = Math.max(...localDeviation.map(p => p?.tvd || 0));
+    const maxInc = Math.max(...localDeviation.map(p => p?.inc || 0));
     const dogleg = calculateDogleg();
     
-    return { totalMD, totalTVD, maxInc, dogleg };
+    return { 
+      totalMD: isFinite(totalMD) ? totalMD : 0, 
+      totalTVD: isFinite(totalTVD) ? totalTVD : 0, 
+      maxInc: isFinite(maxInc) ? maxInc : 0, 
+      dogleg: isFinite(dogleg) ? dogleg : 0 
+    };
   };
 
   const calculateDogleg = () => {
@@ -320,25 +329,25 @@ export const WellModule: React.FC<WellModuleProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.totalMD.toFixed(0)}</div>
+            <div className="text-2xl font-bold">{wellPathStats.totalMD?.toFixed(0) ?? '0'}</div>
             <p className="text-sm text-muted-foreground">Total MD ({getLengthUnit()})</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.totalTVD.toFixed(0)}</div>
+            <div className="text-2xl font-bold">{wellPathStats.totalTVD?.toFixed(0) ?? '0'}</div>
             <p className="text-sm text-muted-foreground">Total TVD ({getLengthUnit()})</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.maxInc.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{wellPathStats.maxInc?.toFixed(1) ?? '0.0'}</div>
             <p className="text-sm text-muted-foreground">Max Inclination ({getAngleUnit()})</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{wellPathStats.dogleg.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{wellPathStats.dogleg?.toFixed(1) ?? '0.0'}</div>
             <p className="text-sm text-muted-foreground">Max Dogleg ({getAngleUnit()})</p>
           </CardContent>
         </Card>
@@ -369,11 +378,11 @@ export const WellModule: React.FC<WellModuleProps> = ({
                     label={{ value: `North-South Displacement (${getDistanceUnit()})`, angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip 
-                    formatter={(value, name) => [value.toFixed(2), name === 'x' ? 'East-West' : 'North-South']}
+                    formatter={(value, name) => [value?.toFixed(2) ?? '0.00', name === 'x' ? 'East-West' : 'North-South']}
                     labelFormatter={(label, payload) => {
                       if (payload && payload[0]) {
                         const data = payload[0].payload;
-                        return `MD: ${data.md.toFixed(1)} ${getDepthUnit()}, TVD: ${data.tvd.toFixed(1)} ${getDepthUnit()}`;
+                        return `MD: ${data.md?.toFixed(1) ?? '0.0'} ${getDepthUnit()}, TVD: ${data.tvd?.toFixed(1) ?? '0.0'} ${getDepthUnit()}`;
                       }
                       return '';
                     }}

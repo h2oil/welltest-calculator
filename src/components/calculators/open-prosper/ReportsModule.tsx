@@ -90,24 +90,24 @@ Total Depth: ${Math.max(...case_.deviation.map(d => d.md)).toFixed(0)} ${getLeng
 
 OPERATING POINT
 ===============
-Flow Rate: ${nodalResult.operating_point.rate.toFixed(1)} ${getFlowRateUnit()}
-Bottomhole Pressure: ${nodalResult.operating_point.pwf.toFixed(0)} ${getPressureUnit()}
-Wellhead Pressure: ${nodalResult.operating_point.whp.toFixed(0)} ${getPressureUnit()}
+Flow Rate: ${nodalResult.operating_point?.rate?.toFixed(1) ?? 'N/A'} ${getFlowRateUnit()}
+Bottomhole Pressure: ${nodalResult.operating_point?.pwf?.toFixed(0) ?? 'N/A'} ${getPressureUnit()}
+Wellhead Pressure: ${nodalResult.operating_point?.whp?.toFixed(0) ?? 'N/A'} ${getPressureUnit()}
 Convergence: ${nodalResult.convergence ? 'Yes' : 'No'}
 Iterations: ${nodalResult.iterations}
 
 IPR CURVE
 =========
 Model: ${case_.ipr.type}
-Max Rate: ${nodalResult.ipr_curve.max_rate.toFixed(1)} ${getFlowRateUnit()}
-Max Pressure: ${nodalResult.ipr_curve.max_pressure.toFixed(0)} ${getPressureUnit()}
+Max Rate: ${nodalResult.ipr_curve?.max_rate?.toFixed(1) ?? 'N/A'} ${getFlowRateUnit()}
+Max Pressure: ${nodalResult.ipr_curve?.max_pressure?.toFixed(0) ?? 'N/A'} ${getPressureUnit()}
 Data Points: ${nodalResult.ipr_curve.rates.length}
 
 VLP CURVE
 =========
 Correlation: ${case_.vlp.correlation}
-Max Rate: ${nodalResult.vlp_curve.max_rate.toFixed(1)} ${getFlowRateUnit()}
-Max Pressure: ${nodalResult.vlp_curve.max_pressure.toFixed(0)} ${getPressureUnit()}
+Max Rate: ${nodalResult.vlp_curve?.max_rate?.toFixed(1) ?? 'N/A'} ${getFlowRateUnit()}
+Max Pressure: ${nodalResult.vlp_curve?.max_pressure?.toFixed(0) ?? 'N/A'} ${getPressureUnit()}
 Data Points: ${nodalResult.vlp_curve.rates.length}
 
 COMPLETION DETAILS
@@ -205,9 +205,9 @@ END OF REPORT
 
     // Operating Point
     addText('OPERATING POINT', 12, true);
-    addText(`Flow Rate: ${nodalResult.operating_point.rate.toFixed(1)} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
-    addText(`Bottomhole Pressure: ${nodalResult.operating_point.pwf.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
-    addText(`Wellhead Pressure: ${nodalResult.operating_point.whp.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Flow Rate: ${nodalResult.operating_point?.rate?.toFixed(1) ?? 'N/A'} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
+    addText(`Bottomhole Pressure: ${nodalResult.operating_point?.pwf?.toFixed(0) ?? 'N/A'} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Wellhead Pressure: ${nodalResult.operating_point?.whp?.toFixed(0) ?? 'N/A'} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
     addText(`Convergence: ${nodalResult.convergence ? 'Yes' : 'No'}`, 10);
     addText(`Iterations: ${nodalResult.iterations}`, 10);
     addText('', 10);
@@ -215,16 +215,16 @@ END OF REPORT
     // IPR Curve
     addText('IPR CURVE', 12, true);
     addText(`Model: ${case_.ipr.type}`, 10);
-    addText(`Max Rate: ${nodalResult.ipr_curve.max_rate.toFixed(1)} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
-    addText(`Max Pressure: ${nodalResult.ipr_curve.max_pressure.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Max Rate: ${nodalResult.ipr_curve?.max_rate?.toFixed(1) ?? 'N/A'} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
+    addText(`Max Pressure: ${nodalResult.ipr_curve?.max_pressure?.toFixed(0) ?? 'N/A'} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
     addText(`Data Points: ${nodalResult.ipr_curve.rates.length}`, 10);
     addText('', 10);
 
     // VLP Curve
     addText('VLP CURVE', 12, true);
     addText(`Correlation: ${case_.vlp.correlation}`, 10);
-    addText(`Max Rate: ${nodalResult.vlp_curve.max_rate.toFixed(1)} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
-    addText(`Max Pressure: ${nodalResult.vlp_curve.max_pressure.toFixed(0)} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
+    addText(`Max Rate: ${nodalResult.vlp_curve?.max_rate?.toFixed(1) ?? 'N/A'} ${unitSystem === 'metric' ? 'm³/d' : 'bbl/d'}`, 10);
+    addText(`Max Pressure: ${nodalResult.vlp_curve?.max_pressure?.toFixed(0) ?? 'N/A'} ${unitSystem === 'metric' ? 'kPa' : 'psi'}`, 10);
     addText(`Data Points: ${nodalResult.vlp_curve.rates.length}`, 10);
     addText('', 10);
 
@@ -266,8 +266,8 @@ END OF REPORT
     // Show first 10 data points of IPR curve
     const iprDataPoints = Math.min(10, nodalResult.ipr_curve.rates.length);
     for (let i = 0; i < iprDataPoints; i++) {
-      const rate = nodalResult.ipr_curve.rates[i].toFixed(1);
-      const pressure = nodalResult.ipr_curve.pressures[i].toFixed(0);
+      const rate = nodalResult.ipr_curve?.rates?.[i]?.toFixed(1) ?? '0.0';
+      const pressure = nodalResult.ipr_curve?.pressures?.[i]?.toFixed(0) ?? '0';
       addText(`${rate.padStart(8)} | ${pressure.padStart(8)}`, 9);
     }
     
@@ -283,8 +283,8 @@ END OF REPORT
     // Show first 10 data points of VLP curve
     const vlpDataPoints = Math.min(10, nodalResult.vlp_curve.rates.length);
     for (let i = 0; i < vlpDataPoints; i++) {
-      const rate = nodalResult.vlp_curve.rates[i].toFixed(1);
-      const pressure = nodalResult.vlp_curve.pressures[i].toFixed(0);
+      const rate = nodalResult.vlp_curve?.rates?.[i]?.toFixed(1) ?? '0.0';
+      const pressure = nodalResult.vlp_curve?.pressures?.[i]?.toFixed(0) ?? '0';
       addText(`${rate.padStart(8)} | ${pressure.padStart(8)}`, 9);
     }
     
@@ -455,7 +455,7 @@ Formation Thickness,${case_.ipr.parameters.thickness},${unitSystem === 'metric' 
                 <span className="text-sm font-medium">Operating Point</span>
               </div>
               <div className="text-2xl font-bold">
-                {nodalResult.operating_point.rate.toFixed(1)}
+                {nodalResult.operating_point?.rate?.toFixed(1) ?? 'N/A'}
               </div>
               <p className="text-xs text-muted-foreground">
                 {getFlowRateUnit()}

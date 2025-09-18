@@ -247,17 +247,21 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
   }, [localCompletion]);
 
   const calculateCompletionStats = () => {
-    const totalPerforations = localCompletion.perforations.reduce(
-      (sum, perf) => sum + (perf.md_end - perf.md_start) * perf.density,
+    const perforations = localCompletion?.perforations || [];
+    const totalPerforations = perforations.reduce(
+      (sum, perf) => sum + ((perf?.md_end || 0) - (perf?.md_start || 0)) * (perf?.density || 0),
       0
     );
     
-    const totalPerforatedLength = localCompletion.perforations.reduce(
-      (sum, perf) => sum + (perf.md_end - perf.md_start),
+    const totalPerforatedLength = perforations.reduce(
+      (sum, perf) => sum + ((perf?.md_end || 0) - (perf?.md_start || 0)),
       0
     );
 
-    return { totalPerforations, totalPerforatedLength };
+    return { 
+      totalPerforations: totalPerforations || 0, 
+      totalPerforatedLength: totalPerforatedLength || 0 
+    };
   };
 
   const stats = calculateCompletionStats();
@@ -301,13 +305,13 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.totalPerforations.toFixed(0)}</div>
+            <div className="text-2xl font-bold">{stats.totalPerforations?.toFixed(0) ?? '0'}</div>
             <p className="text-sm text-muted-foreground">Total Perforations</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.totalPerforatedLength.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{stats.totalPerforatedLength?.toFixed(1) ?? '0.0'}</div>
             <p className="text-sm text-muted-foreground">Perforated Length ({getLengthUnit()})</p>
           </CardContent>
         </Card>
@@ -363,9 +367,9 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Depth: {item.depth.toFixed(1)} {getLengthUnit()}
-                          {item.length > 0 && ` • Length: ${item.length.toFixed(1)} ${getLengthUnit()}`}
-                          {item.diameter > 0 && ` • ID: ${item.diameter.toFixed(3)} ${getDiameterUnit()}`}
+                          Depth: {item.depth?.toFixed(1) ?? '0.0'} {getLengthUnit()}
+                          {item.length > 0 && ` • Length: ${item.length?.toFixed(1) ?? '0.0'} ${getLengthUnit()}`}
+                          {item.diameter > 0 && ` • ID: ${item.diameter?.toFixed(3) ?? '0.000'} ${getDiameterUnit()}`}
                           {item.density && ` • ${item.density} shots/ft`}
                           {item.phasing && ` • ${item.phasing}° phasing`}
                         </div>
@@ -386,7 +390,7 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                         style={{ top: `${(i / 9) * 100}%`, transform: 'translateY(-50%)' }}
                       >
                         <div className="w-1 h-1 bg-gray-600 dark:bg-gray-400 rounded-full -ml-0.5"></div>
-                        <div className="ml-2 -mt-1">{depth.toFixed(0)} {getLengthUnit()}</div>
+                        <div className="ml-2 -mt-1">{depth?.toFixed(0) ?? '0'} {getLengthUnit()}</div>
                       </div>
                     );
                   })}
@@ -818,9 +822,9 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                 <div>
                   <h3 className="font-semibold mb-2">Statistics</h3>
                   <div className="space-y-1 text-sm">
-                    <div>Total Perforations: {stats.totalPerforations.toFixed(0)}</div>
-                    <div>Perforated Length: {stats.totalPerforatedLength.toFixed(1)} {getLengthUnit()}</div>
-                    <div>Average Density: {stats.totalPerforatedLength > 0 ? (stats.totalPerforations / stats.totalPerforatedLength).toFixed(1) : 0} {getDensityUnit()}</div>
+                    <div>Total Perforations: {stats.totalPerforations?.toFixed(0) ?? '0'}</div>
+                    <div>Perforated Length: {stats.totalPerforatedLength?.toFixed(1) ?? '0.0'} {getLengthUnit()}</div>
+                    <div>Average Density: {stats.totalPerforatedLength > 0 ? ((stats.totalPerforations || 0) / (stats.totalPerforatedLength || 1)).toFixed(1) : '0.0'} {getDensityUnit()}</div>
                   </div>
                 </div>
               </div>

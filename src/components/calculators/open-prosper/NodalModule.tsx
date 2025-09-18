@@ -66,19 +66,19 @@ export const NodalModule: React.FC<NodalModuleProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-900">
-                    {nodalResult.operating_point.rate.toFixed(1)}
+                    {nodalResult.operating_point?.rate?.toFixed(1) ?? 'N/A'}
                   </div>
                   <p className="text-sm text-blue-700">Flow Rate ({getFlowRateUnit()})</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <div className="text-2xl font-bold text-green-900">
-                    {nodalResult.operating_point.pwf.toFixed(0)}
+                    {nodalResult.operating_point?.pwf?.toFixed(0) ?? 'N/A'}
                   </div>
                   <p className="text-sm text-green-700">Bottomhole Pressure ({getPressureUnit()})</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-lg">
                   <div className="text-2xl font-bold text-purple-900">
-                    {nodalResult.operating_point.whp.toFixed(0)}
+                    {nodalResult.operating_point?.whp?.toFixed(0) ?? 'N/A'}
                   </div>
                   <p className="text-sm text-purple-700">Wellhead Pressure ({getPressureUnit()})</p>
                 </div>
@@ -142,19 +142,19 @@ export const NodalModule: React.FC<NodalModuleProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">
-                    {nodalResult.ipr_curve.max_rate.toFixed(1)}
+                    {nodalResult.ipr_curve?.max_rate?.toFixed(1) ?? 'N/A'}
                   </div>
                   <p className="text-sm text-muted-foreground">Max Rate ({getFlowRateUnit()})</p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">
-                    {nodalResult.ipr_curve.max_pressure.toFixed(0)}
+                    {nodalResult.ipr_curve?.max_pressure?.toFixed(0) ?? 'N/A'}
                   </div>
                   <p className="text-sm text-muted-foreground">Max Pressure ({getPressureUnit()})</p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">
-                    {nodalResult.ipr_curve.rates.length}
+                    {nodalResult.ipr_curve?.rates?.length ?? 0}
                   </div>
                   <p className="text-sm text-muted-foreground">Data Points</p>
                 </div>
@@ -174,19 +174,19 @@ export const NodalModule: React.FC<NodalModuleProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">
-                    {nodalResult.vlp_curve.max_rate.toFixed(1)}
+                    {nodalResult.vlp_curve?.max_rate?.toFixed(1) ?? 'N/A'}
                   </div>
                   <p className="text-sm text-muted-foreground">Max Rate ({getFlowRateUnit()})</p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">
-                    {nodalResult.vlp_curve.max_pressure.toFixed(0)}
+                    {nodalResult.vlp_curve?.max_pressure?.toFixed(0) ?? 'N/A'}
                   </div>
                   <p className="text-sm text-muted-foreground">Max Pressure ({getPressureUnit()})</p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">
-                    {nodalResult.vlp_curve.rates.length}
+                    {nodalResult.vlp_curve?.rates?.length ?? 0}
                   </div>
                   <p className="text-sm text-muted-foreground">Data Points</p>
                 </div>
@@ -207,25 +207,27 @@ export const NodalModule: React.FC<NodalModuleProps> = ({
                     <div className="flex justify-between">
                       <span>Operating Rate:</span>
                       <span className="font-medium">
-                        {nodalResult.operating_point.rate.toFixed(1)} {getFlowRateUnit()}
+                        {nodalResult.operating_point?.rate?.toFixed(1) ?? 'N/A'} {getFlowRateUnit()}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>IPR Max Rate:</span>
                       <span className="font-medium">
-                        {nodalResult.ipr_curve.max_rate.toFixed(1)} {getFlowRateUnit()}
+                        {nodalResult.ipr_curve?.max_rate?.toFixed(1) ?? 'N/A'} {getFlowRateUnit()}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>VLP Max Rate:</span>
                       <span className="font-medium">
-                        {nodalResult.vlp_curve.max_rate.toFixed(1)} {getFlowRateUnit()}
+                        {nodalResult.vlp_curve?.max_rate?.toFixed(1) ?? 'N/A'} {getFlowRateUnit()}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Rate Utilization:</span>
                       <span className="font-medium">
-                        {((nodalResult.operating_point.rate / nodalResult.ipr_curve.max_rate) * 100).toFixed(1)}%
+                        {nodalResult.operating_point?.rate && nodalResult.ipr_curve?.max_rate 
+                          ? ((nodalResult.operating_point.rate / nodalResult.ipr_curve.max_rate) * 100).toFixed(1) + '%'
+                          : 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -237,25 +239,29 @@ export const NodalModule: React.FC<NodalModuleProps> = ({
                     <div className="flex justify-between">
                       <span>Operating BHP:</span>
                       <span className="font-medium">
-                        {nodalResult.operating_point.pwf.toFixed(0)} {getPressureUnit()}
+                        {nodalResult.operating_point?.pwf?.toFixed(0) ?? 'N/A'} {getPressureUnit()}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Operating WHP:</span>
                       <span className="font-medium">
-                        {nodalResult.operating_point.whp.toFixed(0)} {getPressureUnit()}
+                        {nodalResult.operating_point?.whp?.toFixed(0) ?? 'N/A'} {getPressureUnit()}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Pressure Drop:</span>
                       <span className="font-medium">
-                        {(nodalResult.operating_point.pwf - nodalResult.operating_point.whp).toFixed(0)} {getPressureUnit()}
+                        {nodalResult.operating_point?.pwf && nodalResult.operating_point?.whp
+                          ? (nodalResult.operating_point.pwf - nodalResult.operating_point.whp).toFixed(0) + ' ' + getPressureUnit()
+                          : 'N/A'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Pressure Ratio:</span>
                       <span className="font-medium">
-                        {(nodalResult.operating_point.whp / nodalResult.operating_point.pwf).toFixed(3)}
+                        {nodalResult.operating_point?.whp && nodalResult.operating_point?.pwf
+                          ? (nodalResult.operating_point.whp / nodalResult.operating_point.pwf).toFixed(3)
+                          : 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -283,7 +289,7 @@ export const NodalModule: React.FC<NodalModuleProps> = ({
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            Nodal analysis completed successfully. Operating point found at {nodalResult.operating_point.rate.toFixed(1)} {getFlowRateUnit()}
+            Nodal analysis completed successfully. Operating point found at {nodalResult.operating_point?.rate?.toFixed(1) ?? 'N/A'} {getFlowRateUnit()}
           </AlertDescription>
         </Alert>
       )}
