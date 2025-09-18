@@ -187,7 +187,21 @@ export const ftSToMs = (fts: number): number =>
 export const calculatePipeArea = (diameter: number): number => 
   Math.PI * Math.pow(diameter, 2) / 4;
 
-// Standard to actual volumetric flow conversion
+// Convert actual volumetric flow to standard conditions
+export const actualToStandardFlow = (
+  qActual: number,
+  pressure: number,
+  temperature: number,
+  Z: number,
+  standardConditions: { pressure: number; temperature: number }
+): number => {
+  const tempK = temperature + 273.15;
+  const tempStdK = standardConditions.temperature + 273.15;
+  
+  return qActual * (pressure / standardConditions.pressure) * (tempStdK / tempK) / Z;
+};
+
+// Convert standard volumetric flow to actual conditions
 export const standardToActualFlow = (
   qStd: number,
   pressure: number,

@@ -4,6 +4,7 @@ import {
   calculatePipeArea, 
   calculateGasDensity, 
   standardToActualFlow,
+  actualToStandardFlow,
   GAS_CONSTANT,
   STANDARD_CONDITIONS 
 } from './unit-conversions';
@@ -221,7 +222,7 @@ export const calculateDanielOrifice = (inputs: DanielOrificeInputs): DanielOrifi
   let standardFlow = 0;
   if (fluidType === 'gas') {
     try {
-      standardFlow = standardToActualFlow(
+      standardFlow = actualToStandardFlow(
         volumetricFlow,
         pressure_Pa,
         temperature_K,
@@ -369,7 +370,7 @@ export const calculateChokeRate = (inputs: ChokeInputs): ChokeOutputs => {
   
   let standardFlow = 0;
   if (fluidType === 'gas') {
-    standardFlow = standardToActualFlow(
+    standardFlow = actualToStandardFlow(
       volumetricFlow,
       upstreamPa,
       tempK,
@@ -438,7 +439,7 @@ export const calculateCriticalFlow = (inputs: CriticalFlowInputs): CriticalFlowO
   const density = calculateGasDensity(upstreamPa, tempK, MW, Z);
   const volumetricFlow = massFlow / density;
   
-  const standardFlow = standardToActualFlow(
+  const standardFlow = actualToStandardFlow(
     volumetricFlow,
     upstreamPa,
     tempK,
