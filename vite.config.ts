@@ -15,6 +15,10 @@ export default defineConfig(() => ({
     },
     dedupe: ['react', 'react-dom'],
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    force: true,
+  },
   build: {
     commonjsOptions: {
       include: [/node_modules/],
@@ -23,65 +27,8 @@ export default defineConfig(() => ({
     rollupOptions: {
       external: [],
       output: {
-        manualChunks: (id) => {
-          // Core calculation engines
-          if (id.includes('well-calculations') || id.includes('flow-assurance-engine') || id.includes('unit-conversions')) {
-            return 'calculation-engine';
-          }
-          // Three.js and 3D components
-          if (id.includes('three') || id.includes('@react-three')) {
-            return 'three-js';
-          }
-          // Radix UI components
-          if (id.includes('@radix-ui')) {
-            return 'radix-ui';
-          }
-          // Charts and visualization - split recharts into smaller chunks
-          if (id.includes('recharts')) {
-            if (id.includes('recharts/lib')) {
-              return 'recharts-core';
-            }
-            return 'charts';
-          }
-          // PDF utilities - split jspdf and html2canvas
-          if (id.includes('jspdf')) {
-            return 'jspdf';
-          }
-          if (id.includes('html2canvas')) {
-            return 'html2canvas';
-          }
-          // Large UI components
-          if (id.includes('Flare2DViewer') || id.includes('ProcessFlowDiagram')) {
-            return 'ui-components';
-          }
-          // OpenProsper calculator modules
-          if (id.includes('open-prosper') || id.includes('OpenProsperCalculator')) {
-            return 'open-prosper';
-          }
-          // Split large vendor libraries
-          if (id.includes('node_modules')) {
-            // Keep React and React-DOM together to avoid internals error
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react';
-            }
-            if (id.includes('lucide-react')) {
-              return 'lucide-icons';
-            }
-            if (id.includes('react-router')) {
-              return 'react-router';
-            }
-            if (id.includes('framer-motion')) {
-              return 'framer-motion';
-            }
-            if (id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge')) {
-              return 'utils';
-            }
-            // Other vendor libraries
-            return 'vendor';
-          }
-          // Default chunk for other modules
-          return undefined;
-        }
+        // Disable manual chunking to avoid React context issues
+        manualChunks: undefined,
       }
     },
     chunkSizeWarningLimit: 500,
