@@ -470,63 +470,83 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
       )}
 
       {/* Main Content */}
-      <div className="flex h-full">
+      <Tabs 
+        value={uiState.active_tab} 
+        onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
+        className="flex h-full"
+        orientation="vertical"
+      >
         {/* Left Sidebar Navigation */}
         <div className="w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <Tabs 
-            value={uiState.active_tab} 
-            onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
-            className="h-full"
-            orientation="vertical"
-          >
-            <TabsList className="flex flex-col h-full w-full bg-transparent p-2 space-y-1">
-              <TabsTrigger value="fluids" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('fluids')}
-                <span>Fluids</span>
-              </TabsTrigger>
-              <TabsTrigger value="well" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('well')}
-                <span>Well</span>
-              </TabsTrigger>
-              <TabsTrigger value="completion" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('completion')}
-                <span>Completion</span>
-              </TabsTrigger>
-              <TabsTrigger value="ipr" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('ipr')}
-                <span>IPR</span>
-              </TabsTrigger>
-              <TabsTrigger value="vlp" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('vlp')}
-                <span>VLP</span>
-              </TabsTrigger>
-              <TabsTrigger value="nodal" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('nodal')}
-                <span>Nodal</span>
-              </TabsTrigger>
-              <TabsTrigger value="matching" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('matching')}
-                <span>Matching</span>
-              </TabsTrigger>
-              <TabsTrigger value="sensitivity" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('sensitivity')}
-                <span>Sensitivity</span>
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="flex items-center gap-3 justify-start w-full h-12 px-4">
-                {getTabIcon('reports')}
-                <span>Reports</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <TabsList className="flex flex-col h-full w-full bg-transparent p-2 space-y-1">
+            <TabsTrigger 
+              value="fluids" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('fluids')}
+              <span>Fluids</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="well" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('well')}
+              <span>Well</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="completion" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('completion')}
+              <span>Completion</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="ipr" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('ipr')}
+              <span>IPR</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="vlp" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('vlp')}
+              <span>VLP</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="nodal" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('nodal')}
+              <span>Nodal</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="matching" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('matching')}
+              <span>Matching</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sensitivity" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('sensitivity')}
+              <span>Sensitivity</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="reports" 
+              className="flex items-center gap-3 justify-start w-full h-12 px-4 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
+            >
+              {getTabIcon('reports')}
+              <span>Reports</span>
+            </TabsTrigger>
+          </TabsList>
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-auto">
-          <Tabs 
-            value={uiState.active_tab} 
-            onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
-            className="h-full"
-          >
+        <div className="flex-1 overflow-auto p-6">
 
         {/* Tab Contents */}
         <TabsContent value="fluids" className="space-y-4">
@@ -610,9 +630,8 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
             unitSystem={uiState.unit_system}
           />
         </TabsContent>
-          </Tabs>
         </div>
-      </div>
+      </Tabs>
     </div>
   );
 };
