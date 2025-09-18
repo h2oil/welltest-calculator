@@ -425,75 +425,78 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
   };
 
   return (
-    <div className="space-y-6 h-screen flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">H2Oil COMPLETE</h1>
-          <p className="text-muted-foreground">
-            Completion & Well Modelling (IPR×VLP, Visual)
-          </p>
+    <div className="h-screen flex">
+      {/* Left Sidebar Navigation */}
+      <div className="w-64 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-700">
+          <div>
+            <h1 className="text-xl font-bold text-white">H2Oil COMPLETE</h1>
+            <p className="text-sm text-gray-300">
+              Completion & Well Modelling
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <Badge variant="outline" className="text-xs bg-gray-800 text-gray-300">
+              v1.0.0
+            </Badge>
+            <Button variant="outline" size="sm" onClick={exportProject} className="text-xs">
+              <Download className="h-3 w-3 mr-1" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm" asChild className="text-xs">
+              <label>
+                <Upload className="h-3 w-3 mr-1" />
+                Import
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={importProject}
+                  className="hidden"
+                />
+              </label>
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            v1.0.0
-          </Badge>
-          <Button variant="outline" size="sm" onClick={exportProject}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <label>
-              <Upload className="h-4 w-4 mr-2" />
-              Import
-              <input
-                type="file"
-                accept=".json"
-                onChange={importProject}
-                className="hidden"
-              />
-            </label>
-          </Button>
-        </div>
-      </div>
 
-      {/* Status and Errors */}
-      {errors.length > 0 && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <ul className="list-disc list-inside">
-              {errors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+        {/* Status and Errors */}
+        {(errors.length > 0 || warnings.length > 0) && (
+          <div className="p-4 border-b border-gray-700">
+            {errors.length > 0 && (
+              <Alert variant="destructive" className="mb-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <ul className="list-disc list-inside">
+                    {errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+            {warnings.length > 0 && (
+              <Alert className="mb-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <ul className="list-disc list-inside">
+                    {warnings.map((warning, index) => (
+                      <li key={index}>{warning}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
 
-      {warnings.length > 0 && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <ul className="list-disc list-inside">
-              {warnings.map((warning, index) => (
-                <li key={index}>{warning}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Main Content */}
-      <Tabs 
-        value={uiState.active_tab} 
-        onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
-        className="flex flex-1 min-h-0"
-        orientation="vertical"
-      >
-        {/* Left Sidebar Navigation */}
-        <div className="w-64 bg-gray-900 dark:bg-gray-800 border-r border-gray-700 dark:border-gray-700 flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
-          <TabsList className="flex flex-col w-full bg-gray-900 dark:bg-gray-800 p-2 space-y-1">
+        {/* Navigation Tabs */}
+        <Tabs 
+          value={uiState.active_tab} 
+          onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
+          className="flex-1 flex flex-col"
+          orientation="vertical"
+        >
+          <TabsList className="flex flex-col w-full bg-gray-900 dark:bg-gray-800 p-2 space-y-1 flex-1">
             <TabsTrigger 
               value="fluids" 
               className="flex items-center gap-3 justify-start w-full h-12 px-4 text-gray-300 hover:text-white hover:bg-gray-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md transition-colors"
@@ -558,13 +561,19 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
               <span>Reports</span>
             </TabsTrigger>
           </TabsList>
-        </div>
+        </Tabs>
+      </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-auto p-6">
-
-        {/* Tab Contents */}
-        <TabsContent value="fluids" className="space-y-4">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <Tabs 
+          value={uiState.active_tab} 
+          onValueChange={(value) => setUIState(prev => ({ ...prev, active_tab: value as any }))}
+          className="flex-1 flex flex-col"
+          orientation="vertical"
+        >
+          {/* Tab Contents */}
+          <TabsContent value="fluids" className="flex-1 overflow-auto p-6 space-y-4">
           <FluidsModule
             fluid={currentCase?.fluid}
             unitSystem={uiState.unit_system}
@@ -572,7 +581,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="well" className="space-y-4">
+        <TabsContent value="well" className="flex-1 overflow-auto p-6 space-y-4">
           <WellModule
             deviation={currentCase?.deviation}
             unitSystem={uiState.unit_system}
@@ -580,7 +589,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="completion" className="space-y-4">
+        <TabsContent value="completion" className="flex-1 overflow-auto p-6 space-y-4">
           <CompletionModule
             completion={currentCase?.completion}
             unitSystem={uiState.unit_system}
@@ -588,7 +597,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="ipr" className="space-y-4">
+        <TabsContent value="ipr" className="flex-1 overflow-auto p-6 space-y-4">
           <IPRModule
             ipr={currentCase?.ipr}
             fluid={currentCase?.fluid}
@@ -597,7 +606,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="vlp" className="space-y-4">
+        <TabsContent value="vlp" className="flex-1 overflow-auto p-6 space-y-4">
           <VLPModule
             vlp={currentCase?.vlp}
             fluid={currentCase?.fluid}
@@ -608,7 +617,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="nodal" className="space-y-4">
+        <TabsContent value="nodal" className="flex-1 overflow-auto p-6 space-y-4">
           <NodalModule
             nodalResult={nodalResult}
             isCalculating={isCalculating}
@@ -617,7 +626,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="matching" className="space-y-4">
+        <TabsContent value="matching" className="flex-1 overflow-auto p-6 space-y-4">
           <MatchingModule
             testPoints={currentCase?.test_points || []}
             vlp={currentCase?.vlp}
@@ -629,7 +638,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="sensitivity" className="space-y-4">
+        <TabsContent value="sensitivity" className="flex-1 overflow-auto p-6 space-y-4">
           <SensitivityModule
             case_={currentCase}
             nodalResult={nodalResult}
@@ -637,7 +646,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
           />
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-4">
+        <TabsContent value="reports" className="flex-1 overflow-auto p-6 space-y-4">
           <ReportsModule
             case_={currentCase}
             nodalResult={nodalResult}
@@ -645,8 +654,8 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
             unitSystem={uiState.unit_system}
           />
         </TabsContent>
-        </div>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 };
