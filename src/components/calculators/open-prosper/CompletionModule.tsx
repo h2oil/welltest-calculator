@@ -142,6 +142,55 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
   const getDensityUnit = () => 'shots/ft';
   const getAngleUnit = () => '°';
 
+  // Helper functions for device information
+  const getDeviceName = (type: DeviceType): string => {
+    const names = {
+      'tubing': 'Tubing',
+      'casing': 'Casing',
+      'liner': 'Liner',
+      'sssv': 'SSSV',
+      'packer': 'Packer',
+      'ssd': 'SSD',
+      'icd': 'ICD',
+      'icv': 'ICV',
+      'gravel_pack': 'Gravel Pack',
+      'screen': 'Screen'
+    };
+    return names[type] || type;
+  };
+
+  const getDeviceColor = (type: DeviceType): string => {
+    const colors = {
+      'tubing': '#3b82f6',
+      'casing': '#6b7280',
+      'liner': '#9ca3af',
+      'sssv': '#f59e0b',
+      'packer': '#8b5cf6',
+      'ssd': '#10b981',
+      'icd': '#06b6d4',
+      'icv': '#84cc16',
+      'gravel_pack': '#f97316',
+      'screen': '#ec4899'
+    };
+    return colors[type] || '#6b7280';
+  };
+
+  const getDeviceIcon = (type: DeviceType) => {
+    const icons = {
+      'tubing': Circle,
+      'casing': Circle,
+      'liner': Circle,
+      'sssv': Square,
+      'packer': Square,
+      'ssd': Triangle,
+      'icd': Triangle,
+      'icv': Triangle,
+      'gravel_pack': Layers,
+      'screen': Layers
+    };
+    return icons[type] || Circle;
+  };
+
   // Calculate completion schematic data
   const completionSchematic = useMemo(() => {
     const items = [];
@@ -196,54 +245,6 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
     // Sort by depth
     return items.sort((a, b) => a.depth - b.depth);
   }, [localCompletion]);
-
-  const getDeviceName = (type: DeviceType): string => {
-    const names = {
-      'tubing': 'Tubing',
-      'casing': 'Casing',
-      'liner': 'Liner',
-      'sssv': 'SSSV',
-      'packer': 'Packer',
-      'ssd': 'SSD',
-      'icd': 'ICD',
-      'icv': 'ICV',
-      'gravel_pack': 'Gravel Pack',
-      'screen': 'Screen'
-    };
-    return names[type] || type;
-  };
-
-  const getDeviceColor = (type: DeviceType): string => {
-    const colors = {
-      'tubing': '#3b82f6',
-      'casing': '#6b7280',
-      'liner': '#9ca3af',
-      'sssv': '#f59e0b',
-      'packer': '#8b5cf6',
-      'ssd': '#10b981',
-      'icd': '#06b6d4',
-      'icv': '#84cc16',
-      'gravel_pack': '#f97316',
-      'screen': '#ec4899'
-    };
-    return colors[type] || '#6b7280';
-  };
-
-  const getDeviceIcon = (type: DeviceType) => {
-    const icons = {
-      'tubing': Circle,
-      'casing': Circle,
-      'liner': Circle,
-      'sssv': Square,
-      'packer': Square,
-      'ssd': Triangle,
-      'icd': Triangle,
-      'icv': Triangle,
-      'gravel_pack': Layers,
-      'screen': Layers
-    };
-    return icons[type] || Circle;
-  };
 
   const calculateCompletionStats = () => {
     const totalPerforations = localCompletion.perforations.reduce(
