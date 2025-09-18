@@ -15,6 +15,7 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import { H2OilCompleteEngine } from '@/lib/open-prosper-engine';
 import type { IPRModel, Fluid, UnitSystem, IPRResult } from '@/types/open-prosper';
@@ -448,6 +449,45 @@ export const IPRModule: React.FC<IPRModuleProps> = ({
                     <div className="p-4 bg-muted rounded-lg">
                       <div className="text-2xl font-bold">{iprResult.rates.length}</div>
                       <p className="text-sm text-muted-foreground">Data Points</p>
+                    </div>
+                  </div>
+
+                  {/* IPR Curve Graph */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">IPR Curve</h4>
+                    <div className="h-80 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={iprResult.rates.map((rate, index) => ({
+                            rate: rate.toFixed(1),
+                            pressure: iprResult.pressures[index].toFixed(0),
+                            name: `Point ${index + 1}`
+                          }))}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="rate" 
+                            label={{ value: `Flow Rate (${getFlowRateUnit()})`, position: 'insideBottom', offset: -10 }}
+                          />
+                          <YAxis 
+                            label={{ value: `Pressure (${getPressureUnit()})`, angle: -90, position: 'insideLeft' }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [value, name === 'pressure' ? 'Pressure' : 'Rate']}
+                            labelFormatter={(label) => `Flow Rate: ${label} ${getFlowRateUnit()}`}
+                          />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="pressure" 
+                            stroke="#8884d8" 
+                            strokeWidth={2}
+                            dot={{ fill: '#8884d8', strokeWidth: 2, r: 4 }}
+                            name="Bottomhole Pressure"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
 
