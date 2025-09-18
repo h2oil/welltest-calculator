@@ -17,6 +17,7 @@ const GasVelocityCalculatorV2 = lazy(() => import('./calculators/GasVelocityCalc
 const APIGravityCalculator = lazy(() => import('./calculators/APIGravityCalculator'));
 const FlareRadiationCalculatorEnhanced = lazy(() => import('./calculators/FlareRadiationCalculatorEnhanced'));
 const FlowAssuranceCalculator = lazy(() => import('./calculators/FlowAssuranceCalculator'));
+const OpenProsperCalculator = lazy(() => import('./calculators/OpenProsperCalculator'));
 const UnitConverter = lazy(() => import('./calculators/UnitConverter'));
 
 import { getStoredUnitSystem, storeUnitSystem, getStoredSession, storeSession, exportSessionToJSON, importSessionFromJSON, clearAllStoredData } from '@/lib/storage';
@@ -257,7 +258,7 @@ const WellTestingApp = () => {
       <div className="container mx-auto px-6 py-8">
         <Card className="bg-gradient-card shadow-card">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-9 bg-secondary/50">
+            <TabsList className="grid w-full grid-cols-10 bg-secondary/50">
               <TabsTrigger value="daniel-orifice" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Daniel Orifice
               </TabsTrigger>
@@ -281,6 +282,9 @@ const WellTestingApp = () => {
               </TabsTrigger>
               <TabsTrigger value="flow-assurance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Flow Assurance
+              </TabsTrigger>
+              <TabsTrigger value="open-prosper" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+                OPEN-PROSPER
               </TabsTrigger>
               <TabsTrigger value="unit-converter" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Unit Converter
@@ -333,6 +337,12 @@ const WellTestingApp = () => {
               <TabsContent value="flow-assurance" className="space-y-6">
                 <Suspense fallback={<CalculatorSkeleton />}>
                   <FlowAssuranceCalculator unitSystem={unitSystem} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="open-prosper" className="space-y-6">
+                <Suspense fallback={<CalculatorSkeleton />}>
+                  <OpenProsperCalculator unitSystem={unitSystem} />
                 </Suspense>
               </TabsContent>
 

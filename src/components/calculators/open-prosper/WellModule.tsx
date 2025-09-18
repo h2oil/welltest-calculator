@@ -1,0 +1,425 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  BarChart3, 
+  Plus, 
+  Trash2, 
+  Download, 
+  Upload,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react';
+
+import type { DeviationSurvey, DeviationPoint, UnitSystem } from '@/types/open-prosper';
+
+interface WellModuleProps {
+  deviation: DeviationSurvey | undefined;
+  unitSystem: UnitSystem;
+  onUpdate: (deviation: DeviationSurvey) => void;
+}
+
+export const WellModule: React.FC<WellModuleProps> = ({
+  deviation,
+  unitSystem,
+  onUpdate
+}) => {
+  const [localDeviation, setLocalDeviation] = useState<DeviationSurvey>(
+    deviation || [
+      { md: 0, tvd: 0, inc: 0, azi: 0 },
+      { md: 1000, tvd: 1000, inc: 0, azi: 0 },
+      { md: 2000, tvd: 2000, inc: 0, azi: 0 }
+    ]
+  );
+
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [newPoint, setNewPoint] = useState<DeviationPoint>({
+    md: 0,
+    tvd: 0,
+    inc: 0,
+    azi: 0
+  });
+
+  const [errors, setErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (deviation) {
+      setLocalDeviation(deviation);
+    }
+  }, [deviation]);
+
+  const validateDeviation = (dev: DeviationSurvey): string[] => {
+    const errors: string[] = [];
+    
+    if (dev.length < 2) {
+      errors.push('At least 2 deviation points are required');
+      return errors;
+    }
+
+    // Check for increasing MD
+    for (let i = 1; i < dev.length; i++) {
+      if (dev[i].md <= dev[i-1].md) {
+        errors.push(`MD must be increasing (row ${i+1})`);
+      }
+    }
+
+    // Check for reasonable values
+    for (let i = 0; i < dev.length; i++) {
+      const point = dev[i];
+      if (point.md < 0) errors.push(`MD must be positive (row ${i+1})`);
+      if (point.tvd < 0) errors.push(`TVD must be positive (row ${i+1})`);
+      if (point.inc < 0 || point.inc > 90) errors.push(`Inclination must be 0-90° (row ${i+1})`);
+      if (point.azi < 0 || point.azi >= 360) errors.push(`Azimuth must be 0-360° (row ${i+1})`);
+    }
+
+    return errors;
+  };
+
+  const handleDeviationUpdate = (newDeviation: DeviationSurvey) => {
+    const validationErrors = validateDeviation(newDeviation);
+    setErrors(validationErrors);
+    
+    if (validationErrors.length === 0) {
+      setLocalDeviation(newDeviation);
+      onUpdate(newDeviation);
+    }
+  };
+
+  const addPoint = () => {
+    const lastPoint = localDeviation[localDeviation.length - 1];
+    const newPointData = {
+      ...newPoint,
+      md: newPoint.md || lastPoint.md + 100
+    };
+    
+    const newDeviation = [...localDeviation, newPointData].sort((a, b) => a.md - b.md);
+    handleDeviationUpdate(newDeviation);
+    setNewPoint({ md: 0, tvd: 0, inc: 0, azi: 0 });
+  };
+
+  const updatePoint = (index: number, field: keyof DeviationPoint, value: number) => {
+    const newDeviation = [...localDeviation];
+    newDeviation[index] = { ...newDeviation[index], [field]: value };
+    handleDeviationUpdate(newDeviation);
+  };
+
+  const deletePoint = (index: number) => {
+    if (localDeviation.length <= 2) {
+      setErrors(['At least 2 deviation points are required']);
+      return;
+    }
+    
+    const newDeviation = localDeviation.filter((_, i) => i !== index);
+    handleDeviationUpdate(newDeviation);
+  };
+
+  const importDeviation = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        const importedDeviation: DeviationPoint[] = [];
+
+        for (const line of lines) {
+          const values = line.split(',').map(v => parseFloat(v.trim()));
+          if (values.length >= 4 && values.every(v => !isNaN(v))) {
+            importedDeviation.push({
+              md: values[0],
+              tvd: values[1],
+              inc: values[2],
+              azi: values[3]
+            });
+          }
+        }
+
+        if (importedDeviation.length >= 2) {
+          handleDeviationUpdate(importedDeviation);
+        } else {
+          setErrors(['Invalid file format or insufficient data points']);
+        }
+      } catch (error) {
+        setErrors(['Failed to import deviation data']);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const exportDeviation = () => {
+    const csvContent = localDeviation
+      .map(point => `${point.md},${point.tvd},${point.inc},${point.azi}`)
+      .join('\n');
+    
+    const blob = new Blob([`MD,TVD,Inc,Azi\n${csvContent}`], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'deviation-survey.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const getLengthUnit = () => unitSystem === 'metric' ? 'm' : 'ft';
+  const getAngleUnit = () => '°';
+
+  const calculateWellPath = () => {
+    // Calculate well path statistics
+    const totalMD = Math.max(...localDeviation.map(p => p.md));
+    const totalTVD = Math.max(...localDeviation.map(p => p.tvd));
+    const maxInc = Math.max(...localDeviation.map(p => p.inc));
+    const dogleg = calculateDogleg();
+    
+    return { totalMD, totalTVD, maxInc, dogleg };
+  };
+
+  const calculateDogleg = () => {
+    let maxDogleg = 0;
+    for (let i = 1; i < localDeviation.length; i++) {
+      const prev = localDeviation[i-1];
+      const curr = localDeviation[i];
+      
+      const deltaMD = curr.md - prev.md;
+      const deltaInc = curr.inc - prev.inc;
+      const deltaAzi = curr.azi - prev.azi;
+      
+      const dogleg = Math.acos(
+        Math.cos(deltaInc * Math.PI / 180) * Math.cos(prev.inc * Math.PI / 180) * Math.cos(curr.inc * Math.PI / 180) +
+        Math.sin(prev.inc * Math.PI / 180) * Math.sin(curr.inc * Math.PI / 180) * Math.cos(deltaAzi * Math.PI / 180)
+      ) * 180 / Math.PI;
+      
+      maxDogleg = Math.max(maxDogleg, dogleg);
+    }
+    return maxDogleg;
+  };
+
+  const wellPathStats = calculateWellPath();
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            Well Deviation Survey
+          </h2>
+          <p className="text-muted-foreground">
+            Define well trajectory and deviation survey data
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportDeviation}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <label>
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
+              <input
+                type="file"
+                accept=".csv"
+                onChange={importDeviation}
+                className="hidden"
+              />
+            </label>
+          </Button>
+        </div>
+      </div>
+
+      {/* Errors */}
+      {errors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <ul className="list-disc list-inside">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Well Path Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">{wellPathStats.totalMD.toFixed(0)}</div>
+            <p className="text-sm text-muted-foreground">Total MD ({getLengthUnit()})</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">{wellPathStats.totalTVD.toFixed(0)}</div>
+            <p className="text-sm text-muted-foreground">Total TVD ({getLengthUnit()})</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">{wellPathStats.maxInc.toFixed(1)}</div>
+            <p className="text-sm text-muted-foreground">Max Inclination ({getAngleUnit()})</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">{wellPathStats.dogleg.toFixed(1)}</div>
+            <p className="text-sm text-muted-foreground">Max Dogleg ({getAngleUnit()})</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Deviation Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Deviation Survey Data</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Point</TableHead>
+                  <TableHead>MD ({getLengthUnit()})</TableHead>
+                  <TableHead>TVD ({getLengthUnit()})</TableHead>
+                  <TableHead>Inclination ({getAngleUnit()})</TableHead>
+                  <TableHead>Azimuth ({getAngleUnit()})</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {localDeviation.map((point, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={point.md}
+                        onChange={(e) => updatePoint(index, 'md', parseFloat(e.target.value) || 0)}
+                        className="w-20"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={point.tvd}
+                        onChange={(e) => updatePoint(index, 'tvd', parseFloat(e.target.value) || 0)}
+                        className="w-20"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={point.inc}
+                        onChange={(e) => updatePoint(index, 'inc', parseFloat(e.target.value) || 0)}
+                        className="w-20"
+                        min="0"
+                        max="90"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={point.azi}
+                        onChange={(e) => updatePoint(index, 'azi', parseFloat(e.target.value) || 0)}
+                        className="w-20"
+                        min="0"
+                        max="360"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deletePoint(index)}
+                        disabled={localDeviation.length <= 2}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Add New Point */}
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="new-md">MD:</Label>
+                  <Input
+                    id="new-md"
+                    type="number"
+                    value={newPoint.md}
+                    onChange={(e) => setNewPoint(prev => ({ ...prev, md: parseFloat(e.target.value) || 0 }))}
+                    className="w-20"
+                    placeholder="MD"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="new-tvd">TVD:</Label>
+                  <Input
+                    id="new-tvd"
+                    type="number"
+                    value={newPoint.tvd}
+                    onChange={(e) => setNewPoint(prev => ({ ...prev, tvd: parseFloat(e.target.value) || 0 }))}
+                    className="w-20"
+                    placeholder="TVD"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="new-inc">Inc:</Label>
+                  <Input
+                    id="new-inc"
+                    type="number"
+                    value={newPoint.inc}
+                    onChange={(e) => setNewPoint(prev => ({ ...prev, inc: parseFloat(e.target.value) || 0 }))}
+                    className="w-20"
+                    placeholder="Inc"
+                    min="0"
+                    max="90"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="new-azi">Azi:</Label>
+                  <Input
+                    id="new-azi"
+                    type="number"
+                    value={newPoint.azi}
+                    onChange={(e) => setNewPoint(prev => ({ ...prev, azi: parseFloat(e.target.value) || 0 }))}
+                    className="w-20"
+                    placeholder="Azi"
+                    min="0"
+                    max="360"
+                  />
+                </div>
+                <Button onClick={addPoint}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Point
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Validation Status */}
+      {errors.length === 0 && localDeviation.length >= 2 && (
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>
+            Deviation survey is valid with {localDeviation.length} points
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+};
