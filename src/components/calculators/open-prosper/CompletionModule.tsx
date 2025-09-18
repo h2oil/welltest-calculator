@@ -246,8 +246,10 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
       items.push(perfInfo);
     });
 
-    // Sort by depth
-    return items.sort((a, b) => a.depth - b.depth);
+    // Sort by depth and ensure all items have valid depths
+    return items
+      .filter(item => item.depth !== undefined && item.depth !== null)
+      .sort((a, b) => (a.depth || 0) - (b.depth || 0));
   }, [localCompletion]);
 
   const calculateCompletionStats = () => {
@@ -332,24 +334,24 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
           </CardHeader>
           <CardContent>
             <div className="h-96 w-full overflow-auto border rounded-lg bg-gray-50 dark:bg-gray-900 p-4">
-              <div className="relative min-h-full">
+              <div className="relative" style={{ minHeight: '800px' }}>
                 {completionSchematic.map((item, index) => {
                   const IconComponent = item.icon;
-                  const maxDepth = Math.max(...completionSchematic.map(i => i.depth + i.length));
-                  const depthPercent = maxDepth > 0 ? (item.depth / maxDepth) * 100 : 0;
-                  const lengthPercent = maxDepth > 0 ? (item.length / maxDepth) * 100 : 2;
+                  const maxDepth = Math.max(...completionSchematic.map(i => (i.depth || 0) + (i.length || 0)));
+                  const depthPercent = maxDepth > 0 ? ((item.depth || 0) / maxDepth) * 100 : 0;
+                  const lengthPercent = maxDepth > 0 ? ((item.length || 0) / maxDepth) * 100 : 2;
                   
                   return (
                     <div
                       key={item.id}
-                      className="absolute left-4 flex items-center gap-3 group"
+                      className="absolute left-4 flex items-start gap-3 group mb-4"
                       style={{
                         top: `${depthPercent}%`,
-                        height: `${Math.max(lengthPercent, 2)}%`
+                        minHeight: `${Math.max(lengthPercent, 8)}%`
                       }}
                     >
                       <div 
-                        className="flex items-center justify-center w-8 h-8 rounded-full border-2"
+                        className="flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 mt-1"
                         style={{ 
                           backgroundColor: item.color + '20',
                           borderColor: item.color,
@@ -358,8 +360,8 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                       >
                         <IconComponent className="h-4 w-4" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm border">
+                        <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">{item.name}</span>
                           {item.status && (
                             <Badge 
@@ -370,12 +372,20 @@ export const CompletionModule: React.FC<CompletionModuleProps> = ({
                             </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Depth: {item.depth?.toFixed(1) ?? '0.0'} {getLengthUnit()}
-                          {item.length > 0 && ` • Length: ${item.length?.toFixed(1) ?? '0.0'} ${getLengthUnit()}`}
-                          {item.diameter > 0 && ` • ID: ${item.diameter?.toFixed(3) ?? '0.000'} ${getDiameterUnit()}`}
-                          {item.density && ` • ${item.density} shots/ft`}
-                          {item.phasing && ` • ${item.phasing}° phasing`}
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <div>Depth: {(item.depth || 0).toFixed(1)} {getLengthUnit()}</div>
+                          {(item.length || 0) > 0 && (
+                            <div>Length: {(item.length || 0).toFixed(1)} {getLengthUnit()}</div>
+                          )}
+                          {(item.diameter || 0) > 0 && (
+                            <div>ID: {(item.diameter || 0).toFixed(3)} {getDiameterUnit()}</div>
+                          )}
+                          {item.density && (
+                            <div>{item.density} shots/ft</div>
+                          )}
+                          {item.phasing && (
+                            <div>{item.phasing}° phasing</div>
+                          )}
                         </div>
                       </div>
                     </div>
