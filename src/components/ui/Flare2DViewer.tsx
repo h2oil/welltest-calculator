@@ -907,7 +907,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
     const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
     
     // Check if hovering over a contour
-    const { radiationData, noiseData } = processContours();
+    const { radiationData, noiseData } = processedContours;
     const currentZoom = viewType === 'top' ? topZoom : sideZoom;
     const scale = Math.min(canvas.clientWidth, canvas.clientHeight) / 200 * currentZoom;
     
@@ -938,7 +938,7 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
     }
     
     setHoveredContour(null);
-  }, [processContours, topZoom, sideZoom, getLengthFactor]);
+  }, [processedContours, topZoom, sideZoom, getLengthFactor]);
 
   // Redraw canvases when data changes
   useEffect(() => {
