@@ -1,4 +1,4 @@
-// OPEN-PROSPER Calculation Engine
+// H2Oil COMPLETE Calculation Engine
 // Core mathematical engine for single-well performance analysis
 
 import type {
@@ -658,7 +658,7 @@ export class Validator {
 }
 
 // Export main calculation functions
-export const OpenProsperEngine = {
+export const H2OilCompleteEngine = {
   PVTCalculator,
   IPRCalculator,
   VLPCalculator,

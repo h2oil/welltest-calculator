@@ -17,7 +17,7 @@ const GasVelocityCalculatorV2 = lazy(() => import('./calculators/GasVelocityCalc
 const APIGravityCalculator = lazy(() => import('./calculators/APIGravityCalculator'));
 const FlareRadiationCalculatorEnhanced = lazy(() => import('./calculators/FlareRadiationCalculatorEnhanced'));
 const FlowAssuranceCalculator = lazy(() => import('./calculators/FlowAssuranceCalculator'));
-const OpenProsperCalculator = lazy(() => import('./calculators/OpenProsperCalculator'));
+const H2OilCompleteCalculator = lazy(() => import('./calculators/OpenProsperCalculator'));
 const UnitConverter = lazy(() => import('./calculators/UnitConverter'));
 
 import { getStoredUnitSystem, storeUnitSystem, getStoredSession, storeSession, exportSessionToJSON, importSessionFromJSON, clearAllStoredData } from '@/lib/storage';
@@ -283,8 +283,8 @@ const WellTestingApp = () => {
               <TabsTrigger value="flow-assurance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Flow Assurance
               </TabsTrigger>
-              <TabsTrigger value="open-prosper" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
-                OPEN-PROSPER
+              <TabsTrigger value="h2oil-complete" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+                H2Oil COMPLETE
               </TabsTrigger>
               <TabsTrigger value="unit-converter" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
                 Unit Converter
@@ -340,9 +340,9 @@ const WellTestingApp = () => {
                 </Suspense>
               </TabsContent>
 
-              <TabsContent value="open-prosper" className="space-y-6">
+              <TabsContent value="h2oil-complete" className="space-y-6">
                 <Suspense fallback={<CalculatorSkeleton />}>
-                  <OpenProsperCalculator unitSystem={unitSystem} />
+                  <H2OilCompleteCalculator unitSystem={unitSystem} />
                 </Suspense>
               </TabsContent>
 

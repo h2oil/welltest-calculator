@@ -17,7 +17,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-import { OpenProsperEngine } from '@/lib/open-prosper-engine';
+import { H2OilCompleteEngine } from '@/lib/open-prosper-engine';
 import type { 
   TestPoint, 
   VLPSettings, 
@@ -112,7 +112,7 @@ export const MatchingModule: React.FC<MatchingModuleProps> = ({
     setErrors([]);
 
     try {
-      const { DataMatcher } = OpenProsperEngine;
+      const { DataMatcher } = H2OilCompleteEngine;
       
       const result = DataMatcher.matchVLPToTestPoints(
         vlp,

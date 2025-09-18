@@ -16,7 +16,7 @@ import {
   Settings
 } from 'lucide-react';
 
-import { OpenProsperEngine } from '@/lib/open-prosper-engine';
+import { H2OilCompleteEngine } from '@/lib/open-prosper-engine';
 import type { IPRModel, Fluid, UnitSystem, IPRResult } from '@/types/open-prosper';
 
 interface IPRModuleProps {
@@ -79,7 +79,7 @@ export const IPRModule: React.FC<IPRModuleProps> = ({
     setErrors([]);
 
     try {
-      const { IPRCalculator } = OpenProsperEngine;
+      const { IPRCalculator } = H2OilCompleteEngine;
       
       // Generate rate array
       const maxRate = 1000; // m³/d

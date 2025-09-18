@@ -16,7 +16,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-import { OpenProsperEngine } from '@/lib/open-prosper-engine';
+import { H2OilCompleteEngine } from '@/lib/open-prosper-engine';
 import type { Fluid, FluidKind, UnitSystem } from '@/types/open-prosper';
 
 interface FluidsModuleProps {
@@ -66,7 +66,7 @@ export const FluidsModule: React.FC<FluidsModuleProps> = ({
 
     setIsCalculating(true);
     try {
-      const { PVTCalculator } = OpenProsperEngine;
+      const { PVTCalculator } = H2OilCompleteEngine;
       
       // Calculate oil properties if oil well
       if (localFluid.kind === 'oil' || localFluid.kind === 'oil-gas') {

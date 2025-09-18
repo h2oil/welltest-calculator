@@ -19,7 +19,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-import { OpenProsperEngine } from '@/lib/open-prosper-engine';
+import { H2OilCompleteEngine } from '@/lib/open-prosper-engine';
 import type { 
   OpenProsperCase, 
   OpenProsperProject, 
@@ -44,15 +44,15 @@ import { MatchingModule } from './open-prosper/MatchingModule';
 import { SensitivityModule } from './open-prosper/SensitivityModule';
 import { ReportsModule } from './open-prosper/ReportsModule';
 
-interface OpenProsperCalculatorProps {
+interface H2OilCompleteCalculatorProps {
   unitSystem: UnitSystem;
 }
 
-const OpenProsperCalculator: React.FC<OpenProsperCalculatorProps> = ({ unitSystem }) => {
+const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitSystem }) => {
   // State management
   const [project, setProject] = useState<OpenProsperProject>({
     id: 'default-project',
-    name: 'OPEN-PROSPER Project',
+    name: 'H2Oil COMPLETE Project',
     description: 'Single-well performance analysis project',
     cases: [],
     created_at: new Date(),
@@ -183,7 +183,7 @@ const OpenProsperCalculator: React.FC<OpenProsperCalculatorProps> = ({ unitSyste
 
     try {
       // Validate case first
-      const validation = OpenProsperEngine.Validator.validateCase(currentCase);
+      const validation = H2OilCompleteEngine.Validator.validateCase(currentCase);
       
       if (!validation.valid) {
         setErrors(validation.errors.map(e => e.message));
@@ -192,7 +192,7 @@ const OpenProsperCalculator: React.FC<OpenProsperCalculatorProps> = ({ unitSyste
       }
 
       // Perform nodal analysis
-      const result = OpenProsperEngine.NodalAnalyzer.performNodalAnalysis(
+      const result = H2OilCompleteEngine.NodalAnalyzer.performNodalAnalysis(
         currentCase.ipr,
         currentCase.vlp,
         currentCase.fluid,
@@ -279,7 +279,7 @@ const OpenProsperCalculator: React.FC<OpenProsperCalculatorProps> = ({ unitSyste
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">OPEN-PROSPER</h1>
+          <h1 className="text-3xl font-bold">H2Oil COMPLETE</h1>
           <p className="text-muted-foreground">
             Completion & Well Modelling (IPR×VLP, Visual)
           </p>
@@ -466,4 +466,4 @@ const OpenProsperCalculator: React.FC<OpenProsperCalculatorProps> = ({ unitSyste
   );
 };
 
-export default OpenProsperCalculator;
+export default H2OilCompleteCalculator;

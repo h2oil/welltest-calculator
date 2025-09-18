@@ -1,4 +1,4 @@
-// OPEN-PROSPER Types - Completion & Well Modelling
+// H2Oil COMPLETE Types - Completion & Well Modelling
 // Single-well performance analysis with IPR×VLP modeling
 
 export type UnitSystem = 'metric' | 'field';

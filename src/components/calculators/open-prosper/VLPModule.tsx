@@ -17,7 +17,7 @@ import {
   Thermometer
 } from 'lucide-react';
 
-import { OpenProsperEngine } from '@/lib/open-prosper-engine';
+import { H2OilCompleteEngine } from '@/lib/open-prosper-engine';
 import type { VLPSettings, Fluid, DeviationSurvey, Completion, UnitSystem, VLPResult } from '@/types/open-prosper';
 
 interface VLPModuleProps {
@@ -73,7 +73,7 @@ export const VLPModule: React.FC<VLPModuleProps> = ({
     setErrors([]);
 
     try {
-      const { VLPCalculator } = OpenProsperEngine;
+      const { VLPCalculator } = H2OilCompleteEngine;
       
       // Generate rate array
       const maxRate = 1000; // m³/d
