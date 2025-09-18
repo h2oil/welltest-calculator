@@ -190,6 +190,20 @@ export interface TestPoint {
   notes?: string;
 }
 
+// Measured Data Points
+export interface MeasuredDataPoint {
+  id: string;
+  q_oil: number; // Oil rate
+  q_gas: number; // Gas rate
+  q_water: number; // Water rate
+  pwf: number; // Bottomhole pressure
+  whp: number; // Wellhead pressure
+  gor: number; // Gas-oil ratio
+  wct: number; // Water cut
+  date: Date;
+  test_type: 'production' | 'injection' | 'build-up' | 'drawdown';
+}
+
 // Main Case Definition
 export interface OpenProsperCase {
   id: string;
@@ -203,6 +217,7 @@ export interface OpenProsperCase {
   choke?: Choke;
   constraints?: Constraints;
   test_points?: TestPoint[];
+  measured_data?: MeasuredDataPoint[];
   created_at: Date;
   updated_at: Date;
 }

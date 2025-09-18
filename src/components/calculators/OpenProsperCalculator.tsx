@@ -105,22 +105,22 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
   const createDefaultCase = (): OpenProsperCase => {
     return {
       id: 'case-1',
-      name: 'Default Well Case',
-      description: 'Default single-well performance analysis case',
+      name: 'Typical Oil Well - Permian Basin',
+      description: 'Realistic oil well with typical completion design and flow data',
       fluid: {
         kind: 'oil',
         pvt: {
-          Rs: 50, // scf/stb
-          Bo: 1.2, // rb/stb
-          mu_o: 2.0, // cp
-          rho_o: 800, // kg/m³
-          rho_g: 1.2, // kg/m³
-          mu_g: 0.02 // cp
+          Rs: 150, // scf/stb - typical for Permian
+          Bo: 1.35, // rb/stb
+          mu_o: 1.8, // cp
+          rho_o: 850, // kg/m³ (35° API)
+          rho_g: 0.85, // kg/m³ (0.7 SG)
+          mu_g: 0.015 // cp
         },
-        gor: 50,
-        wct: 0,
-        temperature: 80, // °C
-        pressure: 2000, // psi
+        gor: 150,
+        wct: 5, // 5% water cut
+        temperature: 95, // °C (203°F)
+        pressure: 3500, // psi
         standardConditions: {
           pressure: 14.7, // psi
           temperature: 60 // °F
@@ -128,47 +128,182 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
       },
       deviation: [
         { md: 0, tvd: 0, inc: 0, azi: 0 },
+        { md: 500, tvd: 500, inc: 0, azi: 0 },
         { md: 1000, tvd: 1000, inc: 0, azi: 0 },
-        { md: 2000, tvd: 2000, inc: 0, azi: 0 }
+        { md: 1500, tvd: 1500, inc: 0, azi: 0 },
+        { md: 2000, tvd: 2000, inc: 0, azi: 0 },
+        { md: 2500, tvd: 2500, inc: 0, azi: 0 },
+        { md: 3000, tvd: 3000, inc: 0, azi: 0 },
+        { md: 3500, tvd: 3500, inc: 0, azi: 0 },
+        { md: 4000, tvd: 4000, inc: 0, azi: 0 },
+        { md: 4500, tvd: 4500, inc: 0, azi: 0 },
+        { md: 5000, tvd: 5000, inc: 0, azi: 0 },
+        { md: 5500, tvd: 5500, inc: 0, azi: 0 },
+        { md: 6000, tvd: 6000, inc: 0, azi: 0 },
+        { md: 6500, tvd: 6500, inc: 0, azi: 0 },
+        { md: 7000, tvd: 7000, inc: 0, azi: 0 },
+        { md: 7500, tvd: 7500, inc: 0, azi: 0 },
+        { md: 8000, tvd: 8000, inc: 0, azi: 0 },
+        { md: 8500, tvd: 8500, inc: 0, azi: 0 },
+        { md: 9000, tvd: 9000, inc: 0, azi: 0 },
+        { md: 9500, tvd: 9500, inc: 0, azi: 0 },
+        { md: 10000, tvd: 10000, inc: 0, azi: 0 }
       ],
       completion: {
-        tubing_id: 0.0625, // 2.5" tubing
+        tubing_id: 0.073, // 2.875" tubing (2.441" ID)
         tubing_roughness: 0.00015, // m
-        devices: [],
-        perforations: [{
-          id: 'perf-1',
-          md_start: 1950,
-          md_end: 2000,
-          density: 12, // shots/ft
-          phasing: 60, // degrees
-          diameter: 0.5, // inches
-          skin: 0,
-          crushed_zone_skin: 0,
-          compaction_skin: 0
-        }],
-        packer_depth: 1950,
-        ssd_depths: []
+        devices: [
+          {
+            id: 'sssv-1',
+            type: 'sssv',
+            depth: 200, // m
+            diameter: 0.073, // m
+            status: 'open'
+          },
+          {
+            id: 'packer-1',
+            type: 'packer',
+            depth: 2800, // m (9,200 ft)
+            diameter: 0.178, // m (7" casing)
+            status: 'set'
+          },
+          {
+            id: 'ssd-1',
+            type: 'ssd',
+            depth: 2900, // m (9,500 ft)
+            diameter: 0.073, // m
+            status: 'open'
+          },
+          {
+            id: 'ssd-2',
+            type: 'ssd',
+            depth: 3000, // m (9,850 ft)
+            diameter: 0.073, // m
+            status: 'open'
+          },
+          {
+            id: 'ssd-3',
+            type: 'ssd',
+            depth: 3100, // m (10,200 ft)
+            diameter: 0.073, // m
+            status: 'open'
+          }
+        ],
+        perforations: [
+          {
+            id: 'perf-1',
+            md_start: 3200, // m (10,500 ft)
+            md_end: 3250, // m (10,650 ft)
+            density: 12, // shots/ft
+            phasing: 60, // degrees
+            diameter: 0.5, // inches
+            skin: 2.5,
+            crushed_zone_skin: 1.5,
+            compaction_skin: 1.0
+          },
+          {
+            id: 'perf-2',
+            md_start: 3250, // m (10,650 ft)
+            md_end: 3300, // m (10,800 ft)
+            density: 12, // shots/ft
+            phasing: 60, // degrees
+            diameter: 0.5, // inches
+            skin: 2.5,
+            crushed_zone_skin: 1.5,
+            compaction_skin: 1.0
+          }
+        ],
+        packer_depth: 2800, // m (9,200 ft)
+        ssd_depths: [2900, 3000, 3100] // m
       },
       ipr: {
         type: 'vogel',
         parameters: {
-          reservoir_pressure: 2000, // psi
-          skin: 0,
-          permeability: 100, // md
-          thickness: 50, // ft
-          drainage_radius: 1000, // ft
+          reservoir_pressure: 3500, // psi
+          skin: 5.0, // total skin including perforation damage
+          permeability: 0.5, // md (tight oil)
+          thickness: 100, // ft
+          drainage_radius: 2000, // ft
           wellbore_radius: 0.25, // ft
-          bubble_point_pressure: 1000, // psi
-          pi: 1.0 // bbl/d/psi
+          bubble_point_pressure: 1200, // psi
+          pi: 0.8 // bbl/d/psi
         }
       },
       vlp: {
         correlation: 'beggs-brill',
         temperature_model: 'simple',
-        temperature_gradient: 0.02, // °C/m
+        temperature_gradient: 0.025, // °C/m (1.4°F/100ft)
         roughness_factor: 1.0,
         holdup_tuning: 1.0
       },
+      constraints: {
+        whp_limit: 500, // psi
+        drawdown_max: 1000, // psi
+        pwf_min: 500, // psi
+        q_max: 2000 // bbl/d
+      },
+      measured_data: [
+        {
+          id: 'test-1',
+          q_oil: 100, // bbl/d
+          q_gas: 15000, // scf/d
+          q_water: 5, // bbl/d
+          pwf: 3200, // psi
+          whp: 450, // psi
+          gor: 150, // scf/stb
+          wct: 5, // %
+          date: new Date('2024-01-15'),
+          test_type: 'production'
+        },
+        {
+          id: 'test-2',
+          q_oil: 200, // bbl/d
+          q_gas: 30000, // scf/d
+          q_water: 10, // bbl/d
+          pwf: 3000, // psi
+          whp: 420, // psi
+          gor: 150, // scf/stb
+          wct: 5, // %
+          date: new Date('2024-01-20'),
+          test_type: 'production'
+        },
+        {
+          id: 'test-3',
+          q_oil: 300, // bbl/d
+          q_gas: 45000, // scf/d
+          q_water: 15, // bbl/d
+          pwf: 2800, // psi
+          whp: 400, // psi
+          gor: 150, // scf/stb
+          wct: 5, // %
+          date: new Date('2024-01-25'),
+          test_type: 'production'
+        },
+        {
+          id: 'test-4',
+          q_oil: 400, // bbl/d
+          q_gas: 60000, // scf/d
+          q_water: 20, // bbl/d
+          pwf: 2600, // psi
+          whp: 380, // psi
+          gor: 150, // scf/stb
+          wct: 5, // %
+          date: new Date('2024-01-30'),
+          test_type: 'production'
+        },
+        {
+          id: 'test-5',
+          q_oil: 500, // bbl/d
+          q_gas: 75000, // scf/d
+          q_water: 25, // bbl/d
+          pwf: 2400, // psi
+          whp: 360, // psi
+          gor: 150, // scf/stb
+          wct: 5, // %
+          date: new Date('2024-02-05'),
+          test_type: 'production'
+        }
+      ],
       created_at: new Date(),
       updated_at: new Date()
     };
