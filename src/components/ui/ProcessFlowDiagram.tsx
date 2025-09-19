@@ -52,14 +52,14 @@ const ProcessFlowDiagram = ({
 
   // Update node status based on outputs
   useEffect(() => {
-    if (outputs) {
+    if (outputs && outputs.nodes && outputs.nodes.length > 0) {
       setEquipmentNodes(prevNodes => 
         prevNodes.map((node, index) => {
           if (index < outputs.nodes.length) {
             const nodeData = outputs.nodes[index];
             return {
               ...node,
-              status: nodeData.warnings.length > 0 ? 'warning' : 'normal'
+              status: (nodeData.warnings && nodeData.warnings.length > 0) ? 'warning' : 'normal'
             };
           }
           return node;
@@ -79,7 +79,7 @@ const ProcessFlowDiagram = ({
   };
 
   const getNodeData = (nodeId: string): NodeState | null => {
-    if (!outputs) return null;
+    if (!outputs || !outputs.nodes || outputs.nodes.length === 0) return null;
     const nodeIndex = equipmentNodes.findIndex(node => node.id === nodeId);
     return nodeIndex >= 0 && nodeIndex < outputs.nodes.length ? outputs.nodes[nodeIndex] : null;
   };
@@ -137,7 +137,7 @@ const ProcessFlowDiagram = ({
             const nodeData = getNodeData(node.id);
             const isSelected = selectedNode === node.id;
             const isHovered = hoveredNode === node.id;
-            const hasWarnings = nodeData?.warnings.length > 0;
+            const hasWarnings = nodeData?.warnings && nodeData.warnings.length > 0;
 
             return (
               <g key={node.id}>
@@ -335,7 +335,7 @@ const ProcessFlowDiagram = ({
                     </div>
                   </div>
 
-                  {nodeData.warnings.length > 0 && (
+                  {nodeData.warnings && nodeData.warnings.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-orange-600">Warnings:</p>
                       <ul className="space-y-1">

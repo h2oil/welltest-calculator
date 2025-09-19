@@ -945,8 +945,8 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold text-red-500">
-                          {networkResult.nodes.filter(n => n.erosional_check.is_erosional).length + 
-                           networkResult.segments.filter(s => s.erosional_check.is_erosional).length}
+                          {networkResult.nodes.filter(n => n.erosional_check?.is_erosional).length + 
+                           networkResult.segments.filter(s => s.erosional_check?.is_erosional).length}
                         </div>
                       </CardContent>
                     </Card>
@@ -979,7 +979,7 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                                 <td className="p-2">{node.velocity_m_s?.toFixed(2) || 'N/A'}</td>
                                 <td className="p-2">{node.density_kg_m3.toFixed(2)}</td>
                                 <td className="p-2">
-                                  {node.warnings.length > 0 ? (
+                                  {node.warnings && node.warnings.length > 0 ? (
                                     <Badge variant="destructive" className="text-xs">
                                       {node.warnings.length} warning{node.warnings.length > 1 ? 's' : ''}
                                     </Badge>
@@ -1022,9 +1022,9 @@ const FlowAssuranceEnhanced = ({ unitSystem }: Props) => {
                                 <td className="p-2">{segment.mach.toFixed(3)}</td>
                                 <td className="p-2">{segment.reynolds.toFixed(0)}</td>
                                 <td className="p-2">
-                                  {segment.erosional_check.is_erosional || segment.erosional_check.mach_limit_exceeded ? (
+                                  {segment.erosional_check?.is_erosional || segment.erosional_check?.mach_limit_exceeded ? (
                                     <Badge variant="destructive" className="text-xs">
-                                      {segment.erosional_check.is_erosional ? 'Erosional' : 'Mach > 0.3'}
+                                      {segment.erosional_check?.is_erosional ? 'Erosional' : 'Mach > 0.3'}
                                     </Badge>
                                   ) : (
                                     <Badge variant="secondary" className="text-xs">OK</Badge>
