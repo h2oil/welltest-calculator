@@ -2,7 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -13,16 +13,17 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  showDetails: boolean;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, showDetails: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, showDetails: false };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -31,7 +32,31 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined, showDetails: false });
+  };
+
+  toggleDetails = () => {
+    this.setState(prev => ({ showDetails: !prev.showDetails }));
+  };
+
+  copyErrorDetails = () => {
+    const errorDetails = `
+Error: ${this.state.error?.message || 'Unknown error'}
+Stack: ${this.state.error?.stack || 'No stack trace'}
+Component Stack: ${this.state.errorInfo?.componentStack || 'No component stack'}
+    `.trim();
+    
+    navigator.clipboard.writeText(errorDetails).then(() => {
+      // You could add a toast notification here if needed
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = errorDetails;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    });
   };
 
   render() {
@@ -57,14 +82,52 @@ class ErrorBoundary extends Component<Props, State> {
                 </AlertDescription>
               </Alert>
               
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="text-sm">
-                  <summary className="cursor-pointer font-medium">Error Details</summary>
-                  <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
-                    {this.state.error.toString()}
-                    {this.state.errorInfo?.componentStack}
-                  </pre>
-                </details>
+              {this.state.error && (
+                <div className="space-y-2">
+                  <Button
+                    onClick={this.toggleDetails}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    {this.state.showDetails ? (
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 mr-2" />
+                    )}
+                    {this.state.showDetails ? 'Hide' : 'Show'} Error Details
+                  </Button>
+                  
+                  {this.state.showDetails && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Error Information:</span>
+                        <Button
+                          onClick={this.copyErrorDetails}
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                      <pre className="p-3 bg-muted rounded text-xs overflow-auto max-h-64 border">
+                        <div className="font-semibold text-red-600">Error Message:</div>
+                        <div className="mb-2">{this.state.error.message || 'Unknown error'}</div>
+                        
+                        <div className="font-semibold text-red-600">Stack Trace:</div>
+                        <div className="mb-2 whitespace-pre-wrap">{this.state.error.stack || 'No stack trace available'}</div>
+                        
+                        {this.state.errorInfo?.componentStack && (
+                          <>
+                            <div className="font-semibold text-red-600">Component Stack:</div>
+                            <div className="whitespace-pre-wrap">{this.state.errorInfo.componentStack}</div>
+                          </>
+                        )}
+                      </pre>
+                    </div>
+                  )}
+                </div>
               )}
               
               <div className="flex gap-2">

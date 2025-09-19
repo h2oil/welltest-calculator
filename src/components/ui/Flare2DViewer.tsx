@@ -267,10 +267,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
         // Draw contour using polar radii for wind effects
         if (contour.polarRadii && contour.polarRadii.length > 0) {
           ctx.beginPath();
-          const numPoints = contour.polarRadii.length;
+          const numPoints = contour.polarRadii?.length || 0;
           for (let i = 0; i < numPoints; i++) {
             const angle = (i * 2 * Math.PI) / numPoints;
-            const distance = contour.polarRadii[i] * scale;
+            const distance = (contour.polarRadii[i] || 0) * scale;
             const x = centerX + distance * Math.cos(angle);
             const y = centerY + distance * Math.sin(angle);
             
@@ -363,10 +363,10 @@ const Flare2DViewer: React.FC<Flare2DViewerProps> = React.memo(({
         // Draw contour using polar radii for wind effects
         if (contour.polarRadii && contour.polarRadii.length > 0) {
           ctx.beginPath();
-          const numPoints = contour.polarRadii.length;
+          const numPoints = contour.polarRadii?.length || 0;
           for (let i = 0; i < numPoints; i++) {
             const angle = (i * 2 * Math.PI) / numPoints;
-            const distance = contour.polarRadii[i] * scale;
+            const distance = (contour.polarRadii[i] || 0) * scale;
             const x = centerX + distance * Math.cos(angle);
             const y = centerY + distance * Math.sin(angle);
             
