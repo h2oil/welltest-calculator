@@ -23,8 +23,8 @@ interface Props {
 const DanielOrificeCalculator = ({ unitSystem }: Props) => {
   const { toast } = useToast();
   const [inputs, setInputs] = useState<DanielOrificeInputs>({
-    pipeID: 0.146, // 5.761 inches in meters
-    orificeD: 0.0508, // 2 inches in meters
+    pipeID: 5.761, // 5.761 inches
+    orificeD: 2.0, // 2.0 inches
     deltaP: 200, // inwg
     density: 1.2, // kg/m³
     pressure: 750, // psig
@@ -60,13 +60,19 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
   useEffect(() => {
     if (validateInputs()) {
       try {
-        const result = calculateDanielOrifice(inputs);
+        // Convert inputs to SI units for calculation
+        const siInputs = {
+          ...inputs,
+          pipeID: unitSystem === 'metric' ? inputs.pipeID / 1000 : inputs.pipeID * 0.0254, // Convert to meters
+          orificeD: unitSystem === 'metric' ? inputs.orificeD / 1000 : inputs.orificeD * 0.0254, // Convert to meters
+        };
+        const result = calculateDanielOrifice(siInputs);
         setOutputs(result);
       } catch (error) {
         setOutputs(null);
       }
     }
-  }, [inputs]);
+  }, [inputs, unitSystem]);
 
   const validateInputs = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -110,8 +116,8 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
 
   const handleReset = () => {
     setInputs({
-      pipeID: 0.146, // 5.761 inches in meters
-      orificeD: 0.0508, // 2 inches in meters
+      pipeID: 5.761, // 5.761 inches
+      orificeD: 2.0, // 2.0 inches
       deltaP: 200, // inwg
       density: 1.2, // kg/m³
       pressure: 750, // psig
@@ -171,8 +177,10 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
     
     // Input Parameters
     addText('INPUT PARAMETERS', 12, true);
-    addText(`Pipe Internal Diameter: ${inputs.pipeID.toFixed(3)} m (${(inputs.pipeID * 39.37).toFixed(3)} inches)`, 10);
-    addText(`Orifice Diameter: ${inputs.orificeD.toFixed(3)} m (${(inputs.orificeD * 39.37).toFixed(3)} inches)`, 10);
+    const pipeID_m = unitSystem === 'metric' ? inputs.pipeID / 1000 : inputs.pipeID * 0.0254;
+    const orificeD_m = unitSystem === 'metric' ? inputs.orificeD / 1000 : inputs.orificeD * 0.0254;
+    addText(`Pipe Internal Diameter: ${pipeID_m.toFixed(3)} m (${inputs.pipeID.toFixed(3)} ${unitSystem === 'metric' ? 'mm' : 'in'})`, 10);
+    addText(`Orifice Diameter: ${orificeD_m.toFixed(3)} m (${inputs.orificeD.toFixed(3)} ${unitSystem === 'metric' ? 'mm' : 'in'})`, 10);
     addText(`Differential Pressure: ${inputs.deltaP} ${inputs.deltaPUnit}`, 10);
     addText(`Line Pressure: ${inputs.pressure} ${inputs.pressureUnit}`, 10);
     addText(`Temperature: ${inputs.temperature}°${inputs.temperatureUnit === 'fahrenheit' ? 'F' : 'C'}`, 10);
@@ -243,10 +251,13 @@ const DanielOrificeCalculator = ({ unitSystem }: Props) => {
   const exportToCSV = () => {
     if (!outputs) return;
 
+    const pipeID_m = unitSystem === 'metric' ? inputs.pipeID / 1000 : inputs.pipeID * 0.0254;
+    const orificeD_m = unitSystem === 'metric' ? inputs.orificeD / 1000 : inputs.orificeD * 0.0254;
+
     const csvContent = [
       'Parameter,Value,Unit,Notes',
-      `Pipe Internal Diameter,${inputs.pipeID},m,${(inputs.pipeID * 39.37).toFixed(3)} inches`,
-      `Orifice Diameter,${inputs.orificeD},m,${(inputs.orificeD * 39.37).toFixed(3)} inches`,
+      `Pipe Internal Diameter,${inputs.pipeID},${unitSystem === 'metric' ? 'mm' : 'in'},${pipeID_m.toFixed(3)} m`,
+      `Orifice Diameter,${inputs.orificeD},${unitSystem === 'metric' ? 'mm' : 'in'},${orificeD_m.toFixed(3)} m`,
       `Differential Pressure,${inputs.deltaP},${inputs.deltaPUnit},`,
       `Line Pressure,${inputs.pressure},${inputs.pressureUnit},`,
       `Temperature,${inputs.temperature},°${inputs.temperatureUnit === 'fahrenheit' ? 'F' : 'C'},`,
