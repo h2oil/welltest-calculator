@@ -34,6 +34,7 @@ export const UNIT_DEFINITIONS: Record<string, UnitDefinition> = {
   'm3s': { name: 'Cubic Meters per Second', symbol: 'm³/s', factor: 1 },
   'ft3s': { name: 'Cubic Feet per Second', symbol: 'ft³/s', factor: 0.0283168 },
   'MMSCFD': { name: 'Million Standard Cubic Feet per Day', symbol: 'MMSCFD', factor: 0.32774128 },
+  'MSCFD': { name: 'Thousand Standard Cubic Feet per Day', symbol: 'MSCFD', factor: 0.00032774128 },
   'MSCMD': { name: 'Million Standard Cubic Meters per Day', symbol: 'MSCMD', factor: 11.574074 },
   
   // Velocity
@@ -63,7 +64,7 @@ export const UNIT_GROUPS = {
   length: ['m', 'ft', 'in'],
   pressure: ['Pa', 'kPa', 'bar', 'psia', 'psig'],
   temperature: ['K', 'C', 'F'],
-  flowRate: ['m3s', 'ft3s', 'MMSCFD', 'MSCMD'],
+  flowRate: ['m3s', 'ft3s', 'MMSCFD', 'MSCFD', 'MSCMD'],
   velocity: ['ms', 'fts', 'mph'],
   power: ['W', 'kW', 'MW'],
   soundLevel: ['dB', 'dBA'],

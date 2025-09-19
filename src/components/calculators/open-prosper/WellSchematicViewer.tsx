@@ -3,9 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
   Trash2, 
@@ -211,7 +210,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
       text.setAttribute('font-family', 'monospace');
       text.setAttribute('font-size', '12');
       text.setAttribute('fill', '#374151');
-      text.textContent = `${depth} ${getLengthUnit()}`;
+      text.textContent = `${depth} ${getLengthUnit}`;
       svg.appendChild(text);
     }
 
@@ -262,7 +261,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
 
     // Completions
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-    completions.forEach((completion, index) => {
+    completions.forEach((completion, index: number) => {
       const topDepth = completion.top_depth || 0;
       const bottomDepth = completion.bottom_depth || topDepth + 50;
       
@@ -278,7 +277,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
       completionRect.setAttribute('y', topY.toString());
       completionRect.setAttribute('width', deviceWidth.toString());
       completionRect.setAttribute('height', (bottomY - topY).toString());
-      completionRect.setAttribute('fill', colors[index % colors.length]);
+      completionRect.setAttribute('fill', colors[index % colors.length] || '#3b82f6');
       completionRect.setAttribute('stroke', '#000');
       completionRect.setAttribute('stroke-width', '1');
       svg.appendChild(completionRect);
@@ -344,13 +343,13 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
     svg.appendChild(casingLegendText);
 
     // Completion legend
-    completions.forEach((completion, index) => {
+    completions.forEach((completion, index: number) => {
       const legendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       legendRect.setAttribute('x', (wellX + wellWidth + 200).toString());
       legendRect.setAttribute('y', (wellTop + 35 + index * 20).toString());
       legendRect.setAttribute('width', '15');
       legendRect.setAttribute('height', '8');
-      legendRect.setAttribute('fill', colors[index % colors.length]);
+      legendRect.setAttribute('fill', colors[index % colors.length] || '#3b82f6');
       svg.appendChild(legendRect);
 
       const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -391,7 +390,9 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
   const updateCasing = useCallback((index: number, field: keyof CasingData, value: string | number) => {
     setCasings(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: value };
+      }
       return updated;
     });
   }, []);
@@ -428,7 +429,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
                   />
                 </div>
                 <div>
-                  <Label htmlFor="total-depth">Total Depth ({getLengthUnit()})</Label>
+                  <Label htmlFor="total-depth">Total Depth ({getLengthUnit})</Label>
                   <Input
                     id="total-depth"
                     type="number"
@@ -478,7 +479,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
                           />
                         </div>
                         <div>
-                          <Label>Top Depth ({getLengthUnit()})</Label>
+                          <Label>Top Depth ({getLengthUnit})</Label>
                           <Input
                             type="number"
                             value={casing.top_depth}
@@ -486,7 +487,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
                           />
                         </div>
                         <div>
-                          <Label>Bottom Depth ({getLengthUnit()})</Label>
+                          <Label>Bottom Depth ({getLengthUnit})</Label>
                           <Input
                             type="number"
                             value={casing.bottom_depth}
@@ -494,7 +495,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
                           />
                         </div>
                         <div>
-                          <Label>OD ({getDiameterUnit()})</Label>
+                          <Label>OD ({getDiameterUnit})</Label>
                           <Input
                             type="number"
                             step="0.001"
@@ -503,7 +504,7 @@ export const WellSchematicViewer: React.FC<WellSchematicViewerProps> = React.mem
                           />
                         </div>
                         <div>
-                          <Label>ID ({getDiameterUnit()})</Label>
+                          <Label>ID ({getDiameterUnit})</Label>
                           <Input
                             type="number"
                             step="0.001"
