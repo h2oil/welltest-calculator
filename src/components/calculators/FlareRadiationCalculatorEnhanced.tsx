@@ -857,9 +857,9 @@ const FlareRadiationCalculatorEnhanced = memo(({ unitSystem }: Props) => {
                   </div>
 
                   {/* Warnings and Notes */}
-                  {(outputs.warnings.length > 0 || outputs.notes.length > 0) && (
+                  {((outputs.warnings && outputs.warnings.length > 0) || (outputs.notes && outputs.notes.length > 0)) && (
                     <div className="space-y-4">
-                      {outputs.warnings.length > 0 && (
+                      {outputs.warnings && outputs.warnings.length > 0 && (
                         <Alert variant="destructive">
                           <AlertTriangle className="h-4 w-4" />
                           <AlertDescription>
@@ -875,7 +875,7 @@ const FlareRadiationCalculatorEnhanced = memo(({ unitSystem }: Props) => {
                         </Alert>
                       )}
 
-                      {outputs.notes.length > 0 && (
+                      {outputs.notes && outputs.notes.length > 0 && (
                         <Alert>
                           <Info className="h-4 w-4" />
                           <AlertDescription>

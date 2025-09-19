@@ -71,7 +71,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
 
   // Create default case if none exists
   useEffect(() => {
-    if (project.cases.length === 0) {
+    if (project.cases && project.cases.length === 0) {
       const defaultCase = createDefaultCase();
       setProject(prev => ({
         ...prev,
@@ -79,7 +79,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
       }));
       setCurrentCase(defaultCase);
     }
-  }, [project.cases.length]);
+  }, [project.cases?.length]);
 
   // Update unit system when prop changes
   useEffect(() => {
@@ -368,7 +368,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
     
     setProject(prev => ({
       ...prev,
-      cases: prev.cases.map(c => c.id === updatedCase.id ? updatedCase : c),
+      cases: (prev.cases || []).map(c => c.id === updatedCase.id ? updatedCase : c),
       updated_at: new Date()
     }));
   };
@@ -393,7 +393,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
       try {
         const importedProject = JSON.parse(e.target?.result as string);
         setProject(importedProject);
-        if (importedProject.cases.length > 0) {
+        if (importedProject.cases && importedProject.cases.length > 0) {
           setCurrentCase(importedProject.cases[0]);
         }
       } catch (error) {
@@ -454,9 +454,9 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
         </div>
 
         {/* Status and Errors */}
-        {(errors.length > 0 || warnings.length > 0) && (
+        {((errors && errors.length > 0) || (warnings && warnings.length > 0)) && (
           <div className="p-4 border-b border-border">
-            {errors.length > 0 && (
+            {errors && errors.length > 0 && (
               <Alert variant="destructive" className="mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
@@ -468,7 +468,7 @@ const H2OilCompleteCalculator: React.FC<H2OilCompleteCalculatorProps> = ({ unitS
                 </AlertDescription>
               </Alert>
             )}
-            {warnings.length > 0 && (
+            {warnings && warnings.length > 0 && (
               <Alert className="mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
