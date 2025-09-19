@@ -36,8 +36,8 @@ const ProcessFlowDiagram = ({
 }: ProcessFlowDiagramProps) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
-  // Equipment configuration
-  const equipmentNodes: EquipmentNode[] = [
+  // Base equipment configuration
+  const baseEquipmentNodes: EquipmentNode[] = [
     { id: 'wellhead', name: 'Wellhead', icon: '⛽', x: 50, y: 150, width: 80, height: 60, color: '#e3f2fd', status: 'normal' },
     { id: 'esd', name: 'ESD/SSV', icon: '🔒', x: 200, y: 150, width: 80, height: 60, color: '#f3e5f5', status: 'normal' },
     { id: 'filter', name: 'Sand Filter', icon: '🔍', x: 350, y: 150, width: 80, height: 60, color: '#e8f5e8', status: 'normal' },
@@ -47,19 +47,26 @@ const ProcessFlowDiagram = ({
     { id: 'flare', name: 'Flare', icon: '💨', x: 950, y: 150, width: 80, height: 60, color: '#f1f8e9', status: 'normal' }
   ];
 
+  // State for equipment nodes with status updates
+  const [equipmentNodes, setEquipmentNodes] = useState<EquipmentNode[]>(baseEquipmentNodes);
+
   // Update node status based on outputs
   useEffect(() => {
     if (outputs) {
-      equipmentNodes.forEach((node, index) => {
-        if (index < outputs.nodes.length) {
-          const nodeData = outputs.nodes[index];
-          if (nodeData.warnings.length > 0) {
-            node.status = 'warning';
-          } else {
-            node.status = 'normal';
+      setEquipmentNodes(prevNodes => 
+        prevNodes.map((node, index) => {
+          if (index < outputs.nodes.length) {
+            const nodeData = outputs.nodes[index];
+            return {
+              ...node,
+              status: nodeData.warnings.length > 0 ? 'warning' : 'normal'
+            };
           }
-        }
-      });
+          return node;
+        })
+      );
+    } else {
+      setEquipmentNodes(baseEquipmentNodes);
     }
   }, [outputs]);
 
